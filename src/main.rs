@@ -88,8 +88,6 @@ async fn main() {
     let file = std::fs::File::open("./samples/small_arpeggio.wav").unwrap();
 
     let mut d = Decoder::new_wav(file).unwrap();
-    println!("{}", d.sample_rate());
-    println!("{:?}", d.channels());
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let _sink = Sink::try_new(&stream_handle).unwrap();
@@ -116,7 +114,9 @@ async fn main() {
     loop {
         clear_background(BLACK);
         let position = mouse_position_local();
-        *playback_speed.lock().unwrap() = position.y + 1.0;
+        let new_speed = (position.y + 1.0) / 2.0;
+        println!("{new_speed}");
+        *playback_speed.lock().unwrap() = new_speed;
 
         next_frame().await
     }

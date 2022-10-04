@@ -1,2 +1,2 @@
-Sampled from my Korg Minilogue xd, feel free to use
+Sampled from my *Korg Minilogue xd*, feel free to use
 
