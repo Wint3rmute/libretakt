@@ -6,11 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
-[dependencies.rodio]
-version = "0.15.0"
-default-features=true
-
-[dependencies.macroquad]
-version = "0.3.23"
-default-features=false
+rodio = { version = "0.15", default-features = true }
+macroquad = { version = "0.3", default-features = false }
