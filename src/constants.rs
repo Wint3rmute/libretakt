@@ -1,1 +1,1 @@
-pub static SAMPLE_RATE: usize = 44100;
+pub static SAMPLE_RATE: u32 = 44100;
