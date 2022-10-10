@@ -5,11 +5,13 @@ use rodio::decoder::Decoder;
 use rodio::source::Source;
 use rodio::{OutputStream, Sink};
 
+use std::process::exit;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 pub mod constants;
 pub mod engine;
+pub mod sample_provider;
 pub mod sequencer;
 
 struct Sample {
@@ -89,6 +91,10 @@ impl Source for Sample {
 
 #[macroquad::main("LibreTakt")]
 async fn main() {
+    let provider = sample_provider::SampleProvider::default();
+
+    exit(0);
+
     let file = std::fs::File::open("./samples/small_arpeggio.wav").unwrap();
 
     let mut d = Decoder::new_wav(file).unwrap();
