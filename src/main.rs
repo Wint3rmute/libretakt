@@ -1,3 +1,5 @@
+//! Example module-level docstring
+
 use macroquad::prelude::*;
 use rodio::decoder::Decoder;
 use rodio::source::Source;
@@ -6,7 +8,9 @@ use rodio::{OutputStream, Sink};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-static SAMPLE_RATE: usize = 44100;
+pub mod constants;
+pub mod engine;
+pub mod sequencer;
 
 struct Sample {
     data: Vec<f32>, // TODO: replace with a global sample data provider
@@ -75,7 +79,7 @@ impl Source for Sample {
     }
 
     fn sample_rate(&self) -> u32 {
-        SAMPLE_RATE as u32
+        constants::SAMPLE_RATE as u32
     }
 
     fn total_duration(&self) -> Option<Duration> {
