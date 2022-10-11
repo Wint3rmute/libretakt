@@ -5,7 +5,7 @@ use rodio::decoder::Decoder;
 
 /// Reads samples from files and provides an interface to access them.
 pub struct SampleProvider {
-    samples: Vec<SampleData>,
+    pub samples: Vec<SampleData>,
 }
 
 impl Default for SampleProvider {
@@ -30,9 +30,9 @@ impl Default for SampleProvider {
     }
 }
 
-struct SampleData {
-    name: String,
-    data: Vec<f32>,
+pub struct SampleData {
+    pub name: String,
+    pub data: Vec<f32>,
 }
 
 impl SampleData {

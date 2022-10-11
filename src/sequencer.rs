@@ -64,6 +64,7 @@
 //!
 
 use crate::constants;
+use crate::engine::Voice;
 
 pub struct Sequencer {
     // tracks: Vec<Track>,
@@ -82,16 +83,17 @@ impl Sequencer {
 
     /// Should be called with the sound generation clock,
     /// allows for sample-perfect (aka pixel-perfect) sequence timing
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self, voices: &mut [Voice]) {
         self.time_counter += 1;
 
         // Dividing by 4 in the end to use eight-notes as default step length,
         // it will feel more intuitive to the user this way (trust me)
         if self.time_counter as f32
-            >= 60.0 / self.beats_per_minute as f32 * constants::SAMPLE_RATE as f32 / 4.0
+            >= 60.0 / self.beats_per_minute as f32 * constants::SAMPLE_RATE as f32 / 8.0
         {
             self.time_counter = 0;
             println!("Time to tick!"); // TODO: convert to log
+            voices[0].reset();
         }
     }
 }

@@ -4,15 +4,17 @@ use macroquad::prelude::*;
 use rodio::decoder::Decoder;
 use rodio::source::Source;
 use rodio::{OutputStream, Sink};
+use std::sync::{Arc, Mutex, RwLock};
 
 use std::process::exit;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 pub mod constants;
 pub mod engine;
 pub mod sample_provider;
 pub mod sequencer;
+
+use engine::{Engine, Voice};
 
 struct Sample {
     data: Vec<f32>, // TODO: replace with a global sample data provider
@@ -91,16 +93,27 @@ impl Source for Sample {
 
 #[macroquad::main("LibreTakt")]
 async fn main() {
-    let provider = sample_provider::SampleProvider::default();
+    let provider = Arc::new(sample_provider::SampleProvider::default());
 
-    exit(0);
-
-    let file = std::fs::File::open("./samples/small_arpeggio.wav").unwrap();
-
-    let mut d = Decoder::new_wav(file).unwrap();
+    let sequencer = Arc::new(RwLock::new(sequencer::Sequencer::new()));
+    let voice = Voice::new(&provider);
+    let engine = Engine {
+        sequencer,
+        voices: vec![voice],
+    };
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let _sink = Sink::try_new(&stream_handle).unwrap();
+
+    _sink.append(engine);
+    _sink.play();
+
+    _sink.sleep_until_end();
+
+    exit(0);
+    let file = std::fs::File::open("./samples/small_arpeggio.wav").unwrap();
+
+    let mut d = Decoder::new_wav(file).unwrap();
 
     let mut sample_data: Vec<f32> = vec![];
 
