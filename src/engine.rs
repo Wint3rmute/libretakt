@@ -1,4 +1,4 @@
-//! DSP engine module the contains code responsible for sample playback.
+//! Responsible for sample playback.
 use rodio::Source;
 
 use crate::constants;
@@ -54,28 +54,67 @@ pub struct Voice {
     // sample_provider: Arc<RwLock<SampleProvider>>,
     // pub sample_provider: &'a SampleProvider,
     pub sample_provider: Arc<SampleProvider>,
-    pub play_position: usize,
+    pub play_position: f32,
+    pub sample_played: usize,
+    pub playback_speed: f32,
 }
 
 impl Voice {
+    fn get_at_index(&self, sample_position: f32) -> f32 {
+        let left_sample = sample_position.floor();
+        let right_sample = left_sample + 1.0;
+
+        let distance_from_left_sample = sample_position - left_sample;
+        let distance_from_right_sample = 1.0 - distance_from_left_sample;
+
+        let sample = &self.sample_provider.samples[self.sample_played];
+        (sample.data[left_sample as usize] as f32 * (sample_position - left_sample))
+            + (sample.data[right_sample as usize] as f32 * distance_from_right_sample)
+    }
+
     pub fn reset(&mut self) {
-        self.play_position = 0;
+        self.play_position = 0.0;
     }
 
     pub fn new(provider: &Arc<SampleProvider>) -> Self {
         Voice {
             sample_provider: provider.clone(),
-            play_position: 0,
+            play_position: 0.0,
+            sample_played: 1,
+            playback_speed: 1.0,
         }
     }
-    fn tick(&mut self) -> f32 {
-        let sample = &self.sample_provider.samples[0];
 
-        if self.play_position >= sample.data.len() {
-            0.0 // Silence if end of sample reached
+    /// TLDR linear interpolation for sample playback,
+    /// allowing for speeding up and slowing down samples:
+    ///
+    /// Each sound has a "playback position", from 0.0 to <num_of_samples>.
+    /// When a next sample is requested, it is calculated as follows:
+    /// - Find the 2 samples closest to the playback position
+    /// - Return a weighted average
+    ///
+    /// Example:
+    /// Position = 112.2
+    /// Total number of points in the sample: 128
+    ///
+    /// 128 * 0.23 = 29.44
+    /// Distance from:
+    ///     - sample 112 => 0.2
+    ///     - sample 113 => 0.8
+    ///
+    /// Result: avg(
+    ///     Sample 112 * 0.2
+    ///     Sample 113 * 0.8
+    /// )
+    fn tick(&mut self) -> f32 {
+        let sample = &self.sample_provider.samples[self.sample_played];
+
+        if (self.play_position + 1.0) >= sample.data.len() as f32 {
+            0.0
         } else {
-            let result = sample.data[self.play_position];
-            self.play_position += 1;
+            let result = self.get_at_index(self.play_position);
+            self.play_position += self.playback_speed;
+
             result
         }
     }

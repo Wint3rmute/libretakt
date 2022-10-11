@@ -1,9 +1,12 @@
-//! Code responsible for reading sample data from files and providing the data to other components.
+//! Reads sample data from files and and provides it to other components.
 use std::path::Path;
 
 use rodio::decoder::Decoder;
 
 /// Reads samples from files and provides an interface to access them.
+///
+/// Should be wrapped inside an [Arc](std::sync::Arc)
+/// for read-only access for voices and UI.
 pub struct SampleProvider {
     pub samples: Vec<SampleData>,
 }
@@ -30,6 +33,7 @@ impl Default for SampleProvider {
     }
 }
 
+/// Data of a single sample used within Libretakt
 pub struct SampleData {
     pub name: String,
     pub data: Vec<f32>,
