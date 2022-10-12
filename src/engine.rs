@@ -1,9 +1,9 @@
 //! Responsible for sample playback.
 use rodio::Source;
 
-use crate::constants;
 use crate::sample_provider::SampleProvider;
 use crate::sequencer::Sequencer;
+use crate::{constants, sequencer::PlaybackParameters};
 use std::sync::{Arc, RwLock};
 use synfx_dsp::{DattorroReverb, DattorroReverbParams};
 
@@ -57,6 +57,7 @@ pub struct Voice {
     // sample_provider: Arc<RwLock<SampleProvider>>,
     // pub sample_provider: &'a SampleProvider,
     pub sample_provider: Arc<SampleProvider>,
+    pub playback_parameters: Option<PlaybackParameters>,
     pub play_position: f32,
     pub sample_played: usize,
     pub playback_speed: f32,
@@ -127,6 +128,11 @@ impl Voice {
             + (sample.data[right_sample as usize] as f32 * distance_from_right_sample)
     }
 
+    pub fn play(&mut self, parameters: PlaybackParameters) {
+        self.playback_parameters = Some(parameters);
+        self.reset()
+    }
+
     pub fn reset(&mut self) {
         self.play_position = 0.0;
     }
@@ -142,6 +148,7 @@ impl Voice {
             playback_speed: 1.0,
             reverb,
             reverb_params: ReverbParams {},
+            playback_parameters: None,
         }
     }
 

@@ -39,11 +39,9 @@ impl Sequencer {
     }
 
     fn play_step(&mut self, voices: &mut [Voice]) {
-        if let Some(_parameters) = self.tracks[0].next_step() {
-            if !voices.is_empty() {
-                voices[0].reset();
-            } else {
-                println!("No voices!!")
+        for (track, voice) in self.tracks.iter_mut().zip(voices.iter_mut()) {
+            if let Some(parameters) = track.next_step() {
+                voice.play(parameters);
             }
         }
     }
@@ -99,8 +97,8 @@ impl Track {
             self.current_step = 0;
         }
 
-        if self.steps[self.current_step].is_some() {
-            let playback_parameters = self.default_parameters.clone();
+        if let Some(step) = &self.steps[self.current_step] {
+            let playback_parameters = self.default_parameters.merge(step);
             // TODO: parameter locks
             Some(playback_parameters)
         } else {
@@ -211,6 +209,20 @@ impl Default for PlaybackParameters {
     }
 }
 
+impl PlaybackParameters {
+    fn merge(&self, step: &Step) -> Self {
+        let mut result = self.clone();
+
+        for index in 0..self.parameters.len() {
+            if let Some(value) = step.parameters[index] {
+                result.parameters[index] = value;
+            }
+        }
+
+        result
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -221,5 +233,15 @@ mod tests {
         assert_eq!(Parameters::Sample as u8, 2);
         // TODO: think of some cool way to convert those enum values to
         // binary messages efficiently, while reserving type safety
+    }
+
+    #[test]
+    fn test_parameters_merge() {
+        let parameters = PlaybackParameters::default();
+        let mut step = Step::default();
+        step.parameters[Parameters::Sample as usize] = Some(20u8);
+
+        let merged = parameters.merge(&step);
+        assert_eq!(merged.parameters[Parameters::Sample as usize], 20u8);
     }
 }
