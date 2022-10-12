@@ -4,7 +4,7 @@ use libretakt::sequencer::{Parameters, Sequencer, StateController, Step};
 use macroquad::prelude::*;
 
 use macroquad::telemetry::frame;
-use macroquad::ui::{hash, root_ui};
+use macroquad::ui::{hash, root_ui, widgets};
 use rodio::{OutputStream, Sink};
 use std::sync::{Arc, RwLock};
 
@@ -45,23 +45,34 @@ async fn main() {
             let current_pattern = &mut sequencer.tracks[0].patterns[0]; // Hardcoded
             let num_of_steps = current_pattern.steps.len();
 
-            for i in 0..num_of_steps {
-                root_ui().slider(hash!(), "[-10 .. 10]", 0f32..10f32, &mut sample);
-                if root_ui().button(
-                    None,
-                    if current_pattern.steps[i].is_some() {
-                        "X"
-                    } else {
-                        " "
-                    },
-                ) {
-                    if current_pattern.steps[i].is_some() {
-                        current_pattern.steps[i] = None;
-                    } else {
-                        current_pattern.steps[i] = Some(Step::default());
+            let fps = get_fps();
+            root_ui().button(None, format!("{fps}"));
+
+            widgets::Window::new(
+                hash!(),
+                vec2(0.0, 0.0),
+                vec2(screen_width() / 2.0, screen_height()),
+            )
+            .label("whatever")
+            .ui(&mut *root_ui(), |ui| {
+                for i in 0..num_of_steps {
+                    ui.slider(hash!(), "[-10 .. 10]", 0f32..10f32, &mut sample);
+                    if ui.button(
+                        None,
+                        if current_pattern.steps[i].is_some() {
+                            "X"
+                        } else {
+                            " "
+                        },
+                    ) {
+                        if current_pattern.steps[i].is_some() {
+                            current_pattern.steps[i] = None;
+                        } else {
+                            current_pattern.steps[i] = Some(Step::default());
+                        }
                     }
                 }
-            }
+            });
         }
         next_frame().await;
     }
