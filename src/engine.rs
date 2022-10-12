@@ -5,6 +5,7 @@ use crate::constants;
 use crate::sample_provider::SampleProvider;
 use crate::sequencer::Sequencer;
 use std::sync::{Arc, RwLock};
+use synfx_dsp::{DattorroReverb, DattorroReverbParams};
 
 /// Top-level component of the DSP pipeline.
 ///
@@ -44,6 +45,8 @@ impl Iterator for Engine {
     }
 }
 
+pub struct ReverbParams {}
+
 /// An audible voice, playing a single sample at a time.
 /// Receives events from the [Track](crate::sequencer::Track).
 ///
@@ -57,6 +60,58 @@ pub struct Voice {
     pub play_position: f32,
     pub sample_played: usize,
     pub playback_speed: f32,
+    pub reverb: DattorroReverb,
+    pub reverb_params: ReverbParams,
+}
+
+impl DattorroReverbParams for ReverbParams {
+    fn pre_delay_time_ms(&self) -> f64 {
+        0.0
+    }
+
+    fn time_scale(&self) -> f64 {
+        0.5
+    }
+
+    fn input_low_cutoff_hz(&self) -> f64 {
+        22000.0
+    }
+
+    fn input_high_cutoff_hz(&self) -> f64 {
+        0.0
+    }
+
+    fn reverb_high_cutoff_hz(&self) -> f64 {
+        0.0
+    }
+
+    fn reverb_low_cutoff_hz(&self) -> f64 {
+        0.0
+    }
+
+    fn mod_speed(&self) -> f64 {
+        0.0
+    }
+
+    fn mod_depth(&self) -> f64 {
+        0.0
+    }
+
+    fn mod_shape(&self) -> f64 {
+        0.5
+    }
+
+    fn input_diffusion_mix(&self) -> f64 {
+        1.0
+    }
+
+    fn diffusion(&self) -> f64 {
+        0.5
+    }
+
+    fn decay(&self) -> f64 {
+        0.6
+    }
 }
 
 impl Voice {
@@ -77,11 +132,16 @@ impl Voice {
     }
 
     pub fn new(provider: &Arc<SampleProvider>) -> Self {
+        let mut reverb = DattorroReverb::new();
+        reverb.set_sample_rate(constants::SAMPLE_RATE as f64);
+
         Voice {
             sample_provider: provider.clone(),
             play_position: 0.0,
             sample_played: 1,
             playback_speed: 1.0,
+            reverb,
+            reverb_params: ReverbParams {},
         }
     }
 
@@ -116,6 +176,10 @@ impl Voice {
             self.play_position += self.playback_speed;
 
             result
+            // + self
+            //     .reverb
+            //     .process(&mut self.reverb_params, result as f64, result as f64)
+            //     .0 as f32
         }
     }
 }
