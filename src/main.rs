@@ -37,24 +37,25 @@ async fn main() {
 
         {
             let mut sequencer = sequencer.write().unwrap();
-            let num_of_steps = sequencer.tracks[0].steps.len();
             sequencer.tracks[0].default_parameters.parameters[Parameters::Sample as usize] =
                 sample as u8;
+            let current_pattern = &mut sequencer.tracks[0].patterns[0]; // Hardcoded
+            let num_of_steps = current_pattern.steps.len();
 
             for i in 0..num_of_steps {
                 root_ui().slider(hash!(), "[-10 .. 10]", 0f32..10f32, &mut sample);
                 if root_ui().button(
                     None,
-                    if sequencer.tracks[0].steps[i].is_some() {
+                    if current_pattern.steps[i].is_some() {
                         "X"
                     } else {
                         " "
                     },
                 ) {
-                    if sequencer.tracks[0].steps[i].is_some() {
-                        sequencer.tracks[0].steps[i] = None;
+                    if current_pattern.steps[i].is_some() {
+                        current_pattern.steps[i] = None;
                     } else {
-                        sequencer.tracks[0].steps[i] = Some(sequencer::Step::default());
+                        current_pattern.steps[i] = Some(sequencer::Step::default());
                     }
                 }
             }
