@@ -247,17 +247,31 @@ impl PlaybackParameters {
 ///
 /// Handles a WebSocket connection to the Synchronisation Service
 pub struct StateController {
-    sequencer: Arc<RwLock<Sequencer>>,
+    pub sequencer: Arc<RwLock<Sequencer>>,
 }
 
 impl StateController {
-    fn mutate_track(
+    pub fn mutate_step(
+        &mut self,
         track_num: usize,
-        pattern: usize,
-        step: usize,
+        pattern_num: usize,
+        step_num: usize,
         param_num: Parameters,
         value: u8,
     ) {
+        let pattern =
+            &mut (&mut self.sequencer.write().unwrap().tracks[track_num].patterns[pattern_num]);
+        if pattern.steps[step_num].is_none() {
+            pattern.steps[step_num] = Some(Step::default());
+        }
+
+        pattern.steps[step_num].as_mut().unwrap().parameters[param_num as usize] = Some(value);
+    }
+
+    pub fn mutate_default_param(&mut self, track_num: usize, param: Parameters, value: u8) {
+        self.sequencer.write().unwrap().tracks[track_num]
+            .default_parameters
+            .parameters[param as usize] = value;
     }
 }
 

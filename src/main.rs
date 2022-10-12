@@ -1,4 +1,6 @@
-use libretakt::sequencer::Parameters;
+use libretakt::engine::{Engine, Voice};
+use libretakt::sample_provider::SampleProvider;
+use libretakt::sequencer::{Parameters, Sequencer, StateController, Step};
 use macroquad::prelude::*;
 
 use macroquad::telemetry::frame;
@@ -6,22 +8,23 @@ use macroquad::ui::{hash, root_ui};
 use rodio::{OutputStream, Sink};
 use std::sync::{Arc, RwLock};
 
-pub mod constants;
-pub mod engine;
-pub mod sample_provider;
-pub mod sequencer;
-
-use engine::{Engine, Voice};
+// pub mod constants;
+// pub mod engine;
+// pub mod sample_provider;
+// pub mod sequencer;
 
 #[macroquad::main("LibreTakt")]
 async fn main() {
-    let provider = Arc::new(sample_provider::SampleProvider::default());
+    let provider = Arc::new(SampleProvider::default());
 
-    let sequencer = Arc::new(RwLock::new(sequencer::Sequencer::new()));
+    let sequencer = Arc::new(RwLock::new(Sequencer::new()));
     let voice = Voice::new(&provider);
     let engine = Engine {
         sequencer: sequencer.clone(),
         voices: vec![voice],
+    };
+    let mut controller = StateController {
+        sequencer: sequencer.clone(),
     };
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
@@ -36,9 +39,9 @@ async fn main() {
         clear_background(BLACK);
 
         {
+            controller.mutate_default_param(0, Parameters::Sample, sample as u8);
             let mut sequencer = sequencer.write().unwrap();
-            sequencer.tracks[0].default_parameters.parameters[Parameters::Sample as usize] =
-                sample as u8;
+
             let current_pattern = &mut sequencer.tracks[0].patterns[0]; // Hardcoded
             let num_of_steps = current_pattern.steps.len();
 
@@ -55,7 +58,7 @@ async fn main() {
                     if current_pattern.steps[i].is_some() {
                         current_pattern.steps[i] = None;
                     } else {
-                        current_pattern.steps[i] = Some(sequencer::Step::default());
+                        current_pattern.steps[i] = Some(Step::default());
                     }
                 }
             }
