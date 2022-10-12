@@ -414,6 +414,7 @@ version = "0.1.0"
 dependencies = [
  "macroquad",
  "rodio",
+ "synfx-dsp",
 ]
 
 [[package]]
@@ -933,6 +934,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "synfx-dsp"
+version = "0.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ec94d7388305c0aa7954233479befb684a3076e168d146b2b26991c07fc6ee8"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
