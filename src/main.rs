@@ -1,6 +1,7 @@
+use libretakt::sequencer::Parameters;
 use macroquad::prelude::*;
 
-use macroquad::ui::root_ui;
+use macroquad::ui::{hash, root_ui};
 use rodio::{OutputStream, Sink};
 use std::sync::{Arc, RwLock};
 
@@ -28,14 +29,24 @@ async fn main() {
     sink.append(engine);
     sink.play();
 
+    let mut sample = 0.0;
+
     loop {
         clear_background(BLACK);
 
         {
             let mut sequencer = sequencer.write().unwrap();
             let num_of_steps = sequencer.tracks[0].steps.len();
+            sequencer.tracks[0].default_parameters.parameters[Parameters::Sample as usize] =
+                sample as u8;
+
+            println!(
+                "{}",
+                sequencer.tracks[0].default_parameters.parameters[Parameters::Sample as usize]
+            );
 
             for i in 0..num_of_steps {
+                root_ui().slider(hash!(), "[-10 .. 10]", 0f32..10f32, &mut sample);
                 if root_ui().button(
                     None,
                     if sequencer.tracks[0].steps[i].is_some() {

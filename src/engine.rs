@@ -1,8 +1,8 @@
 //! Responsible for sample playback.
 use rodio::Source;
 
-use crate::sample_provider::SampleProvider;
-use crate::sequencer::Sequencer;
+use crate::sample_provider::{SampleData, SampleProvider};
+use crate::sequencer::{Parameters, Sequencer};
 use crate::{constants, sequencer::PlaybackParameters};
 use std::sync::{Arc, RwLock};
 use synfx_dsp::{DattorroReverb, DattorroReverbParams};
@@ -116,14 +116,13 @@ impl DattorroReverbParams for ReverbParams {
 }
 
 impl Voice {
-    fn get_at_index(&self, sample_position: f32) -> f32 {
+    fn get_at_index(&self, sample: &SampleData, sample_position: f32) -> f32 {
         let left_sample = sample_position.floor();
         let right_sample = left_sample + 1.0;
 
         let distance_from_left_sample = sample_position - left_sample;
         let distance_from_right_sample = 1.0 - distance_from_left_sample;
 
-        let sample = &self.sample_provider.samples[self.sample_played];
         (sample.data[left_sample as usize] as f32 * (sample_position - left_sample))
             + (sample.data[right_sample as usize] as f32 * distance_from_right_sample)
     }
@@ -174,19 +173,24 @@ impl Voice {
     ///     Sample 113 * 0.8
     /// )
     fn tick(&mut self) -> f32 {
-        let sample = &self.sample_provider.samples[self.sample_played];
+        if let Some(parameters) = &self.playback_parameters {
+            let sample = &self.sample_provider.samples
+                [parameters.parameters[Parameters::Sample as usize] as usize];
 
-        if (self.play_position + 1.0) >= sample.data.len() as f32 {
-            0.0
+            if (self.play_position + 1.0) >= sample.data.len() as f32 {
+                0.0
+            } else {
+                let result = self.get_at_index(sample, self.play_position);
+                self.play_position += self.playback_speed;
+
+                result
+                // + self
+                //     .reverb
+                //     .process(&mut self.reverb_params, result as f64, result as f64)
+                //     .0 as f32
+            }
         } else {
-            let result = self.get_at_index(self.play_position);
-            self.play_position += self.playback_speed;
-
-            result
-            // + self
-            //     .reverb
-            //     .process(&mut self.reverb_params, result as f64, result as f64)
-            //     .0 as f32
+            0.0
         }
     }
 }

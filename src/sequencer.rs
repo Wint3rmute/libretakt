@@ -58,7 +58,7 @@ impl Default for Sequencer {
 /// Each [Track](Track) has a default value for all [PlaybackParameters](PlaybackParameters),
 /// but each [Step](Step) can override them using *parameter locks*.
 pub struct Track {
-    default_parameters: PlaybackParameters,
+    pub default_parameters: PlaybackParameters,
     pub steps: Vec<Option<Step>>,
     pub current_step: usize,
 }
@@ -195,7 +195,7 @@ impl Default for Step {
 #[derive(Clone)]
 pub struct PlaybackParameters {
     #[allow(dead_code)] // TODO: remove after parameter locks are added
-    parameters: [u8; NUM_OF_PARAMETERS],
+    pub parameters: [u8; NUM_OF_PARAMETERS],
 }
 
 impl Default for PlaybackParameters {
