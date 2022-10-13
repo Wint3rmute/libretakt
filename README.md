@@ -9,6 +9,7 @@ Project name based on Elektron's [Digitakt](https://www.elektron.se/us/digitakt-
 - Music genre classification:
   - [python tools overview](https://farranaanjum05.medium.com/music-genre-classification-with-python-51bff77adfd6)
   - [GTZAN dataset](https://www.kaggle.com/datasets/andradaolteanu/gtzan-dataset-music-genre-classification)
+- On mutexes and audio processing - [using locks in real-time audio processing](Using locks in real-time audio processing, safely)
 
 ## Component diagram
 

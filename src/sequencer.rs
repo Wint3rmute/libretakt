@@ -268,6 +268,16 @@ impl StateController {
         pattern.steps[step_num].as_mut().unwrap().parameters[param_num as usize] = Some(value);
     }
 
+    pub fn set_step(&mut self, track_num: usize, pattern_num: usize, step_num: usize) {
+        self.sequencer.write().unwrap().tracks[track_num].patterns[pattern_num].steps[step_num] =
+            Some(Step::default());
+    }
+
+    pub fn remove_step(&mut self, track_num: usize, pattern_num: usize, step_num: usize) {
+        self.sequencer.write().unwrap().tracks[track_num].patterns[pattern_num].steps[step_num] =
+            None;
+    }
+
     pub fn mutate_default_param(&mut self, track_num: usize, param: Parameters, value: u8) {
         self.sequencer.write().unwrap().tracks[track_num]
             .default_parameters

@@ -1,6 +1,6 @@
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
-use libretakt::sequencer::{Parameters, Sequencer, StateController, Step};
+use libretakt::sequencer::{Parameters, Sequencer, StateController};
 use macroquad::prelude::*;
 
 use macroquad::telemetry::frame;
@@ -66,9 +66,9 @@ async fn main() {
                         },
                     ) {
                         if current_pattern.steps[i].is_some() {
-                            current_pattern.steps[i] = None;
+                            controller.set_step(0, 0, i);
                         } else {
-                            current_pattern.steps[i] = Some(Step::default());
+                            controller.remove_step(0, 0, i);
                         }
                     }
                 }
