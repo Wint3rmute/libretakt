@@ -6,6 +6,7 @@
 //!
 use crate::constants;
 use crate::engine::Voice;
+use serde::{Deserialize, Serialize};
 
 /// Main clock for all [Tracks](Track), triggers [Steps](Step) at the right time.
 pub struct Sequencer {
@@ -57,6 +58,7 @@ impl Default for Sequencer {
 ///
 /// Each [Track](Track) has a default value for all [PlaybackParameters](PlaybackParameters),
 /// but each [Step](Step) can override them using *parameter locks*.
+#[derive(Serialize, Deserialize)]
 pub struct Track {
     pub default_parameters: PlaybackParameters,
     pub steps: Vec<Option<Step>>,
@@ -175,7 +177,7 @@ pub const NUM_OF_PARAMETERS: usize = Parameters::Sample as usize + 1;
 ///
 /// Contains possible overrides for playback parameters.
 /// May also be reffered to as "*note on*" event in other samplers/sequencers.
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Step {
     #[allow(dead_code)] // TODO: remove after parameter locks are added
     parameters: [Option<u8>; NUM_OF_PARAMETERS],
@@ -192,7 +194,7 @@ impl Default for Step {
 ///
 /// Used both as default playback parameters for a track
 /// and as an input message for [Voice](crate::engine::Voice).
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlaybackParameters {
     #[allow(dead_code)] // TODO: remove after parameter locks are added
     pub parameters: [u8; NUM_OF_PARAMETERS],
