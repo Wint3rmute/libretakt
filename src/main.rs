@@ -1,17 +1,11 @@
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
-use libretakt::sequencer::{Parameters, Sequencer, StateController};
+use libretakt::sequencer::Sequencer;
 use macroquad::prelude::*;
 
-use macroquad::telemetry::frame;
 use macroquad::ui::{hash, root_ui, widgets};
 use rodio::{OutputStream, Sink};
 use std::sync::{Arc, RwLock};
-
-// pub mod constants;
-// pub mod engine;
-// pub mod sample_provider;
-// pub mod sequencer;
 
 #[macroquad::main("LibreTakt")]
 async fn main() {
@@ -22,9 +16,6 @@ async fn main() {
     let engine = Engine {
         sequencer: sequencer.clone(),
         voices: vec![voice],
-    };
-    let mut controller = StateController {
-        sequencer: sequencer.clone(),
     };
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
@@ -39,7 +30,7 @@ async fn main() {
         clear_background(BLACK);
 
         {
-            controller.mutate_default_param(0, Parameters::Sample, sample as u8);
+            // controller.mutate_default_param(0, Parameters::Sample, sample as u8);
             let mut sequencer = sequencer.write().unwrap();
 
             let current_pattern = &mut sequencer.tracks[0].patterns[0]; // Hardcoded
@@ -66,9 +57,11 @@ async fn main() {
                         },
                     ) {
                         if current_pattern.steps[i].is_some() {
-                            controller.set_step(0, 0, i);
+                            // controller.set_step(0, 0, i);
+                            println!("TODO set step");
                         } else {
-                            controller.remove_step(0, 0, i);
+                            // controller.remove_step(0, 0, i);
+                            println!("TODO remove step");
                         }
                     }
                 }

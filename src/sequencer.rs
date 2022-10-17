@@ -8,7 +8,6 @@ use crate::constants;
 use crate::engine::Voice;
 use serde::{Deserialize, Serialize};
 
-use std::sync::{Arc, RwLock};
 /// Main clock for all [Tracks](Track), triggers [Steps](Step) at the right time.
 pub struct Sequencer {
     pub tracks: Vec<Track>,
@@ -240,48 +239,6 @@ impl PlaybackParameters {
         }
 
         result
-    }
-}
-
-/// Manages mutations to Sequencer's state from both UI and from the Synchronisation Service
-///
-/// Handles a WebSocket connection to the Synchronisation Service
-pub struct StateController {
-    pub sequencer: Arc<RwLock<Sequencer>>,
-}
-
-impl StateController {
-    pub fn mutate_step(
-        &mut self,
-        track_num: usize,
-        pattern_num: usize,
-        step_num: usize,
-        param_num: Parameters,
-        value: u8,
-    ) {
-        let pattern =
-            &mut (&mut self.sequencer.write().unwrap().tracks[track_num].patterns[pattern_num]);
-        if pattern.steps[step_num].is_none() {
-            pattern.steps[step_num] = Some(Step::default());
-        }
-
-        pattern.steps[step_num].as_mut().unwrap().parameters[param_num as usize] = Some(value);
-    }
-
-    pub fn set_step(&mut self, track_num: usize, pattern_num: usize, step_num: usize) {
-        self.sequencer.write().unwrap().tracks[track_num].patterns[pattern_num].steps[step_num] =
-            Some(Step::default());
-    }
-
-    pub fn remove_step(&mut self, track_num: usize, pattern_num: usize, step_num: usize) {
-        self.sequencer.write().unwrap().tracks[track_num].patterns[pattern_num].steps[step_num] =
-            None;
-    }
-
-    pub fn mutate_default_param(&mut self, track_num: usize, param: Parameters, value: u8) {
-        self.sequencer.write().unwrap().tracks[track_num]
-            .default_parameters
-            .parameters[param as usize] = value;
     }
 }
 
