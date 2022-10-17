@@ -2,9 +2,9 @@
 use rodio::Source;
 
 use crate::sample_provider::{SampleData, SampleProvider};
-use crate::sequencer::{Parameters, Sequencer};
+use crate::sequencer::{Parameter, Sequencer};
 use crate::{constants, sequencer::PlaybackParameters};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use synfx_dsp::{DattorroReverb, DattorroReverbParams};
 
 /// Top-level component of the DSP pipeline.
@@ -14,7 +14,7 @@ use synfx_dsp::{DattorroReverb, DattorroReverbParams};
 /// 3. Acts as a mixer for all [Voices](Voice).
 pub struct Engine {
     pub voices: Vec<Voice>,
-    pub sequencer: Arc<RwLock<Sequencer>>,
+    pub sequencer: Sequencer,
 }
 
 impl Source for Engine {
@@ -39,7 +39,8 @@ impl Iterator for Engine {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.sequencer.write().unwrap().tick(&mut self.voices);
+        self.sequencer.apply_mutations();
+        self.sequencer.tick(&mut self.voices);
 
         Some(self.voices.iter_mut().map(|voice| voice.tick()).sum())
     }
@@ -175,7 +176,7 @@ impl Voice {
     fn tick(&mut self) -> f32 {
         if let Some(parameters) = &self.playback_parameters {
             let sample = &self.sample_provider.samples
-                [parameters.parameters[Parameters::Sample as usize] as usize];
+                [parameters.parameters[Parameter::Sample as usize] as usize];
 
             if (self.play_position + 1.0) >= sample.data.len() as f32 {
                 0.0
