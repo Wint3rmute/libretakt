@@ -1,26 +1,106 @@
 //! Lets the [DSP Engine](crate::engine) know what notes to play at what time.
 //!
 //! # Nomenclature
+//! [Sequencer] stores all the notes to play, within a tree structure:
+//! - [Sequencer] stores a list of [Tracks](Track)
+//!   - [Track] stores a list of [Patterns](Pattern)
+//!     - [Pattern] stores a list of [Steps](Step)
+//!       - [Step] stores a list of optional parameter locks
 //!
-//! [Track](Track) is played by a single voice of the [DSP Engine](crate::engine)
+//! [Track] is played by a single voice of the [DSP Engine](crate::engine).
+//! It is usually used to play a single *part* within a song. For example, one could say:
+//! - "Track 1 plays the kick drum"
+//! - "Track 2 plays the snares"
+//! - "Track 3 plays the base line samples"
+//! - "Track 4 plays the synth lead"
 //!
+
 use crate::constants;
 use crate::engine::Voice;
+use flume::{Receiver, Sender};
 use serde::{Deserialize, Serialize};
 
+use flume::bounded;
+
+/// Allows lock-free synchronisation between multiple [Sequencer] instances,
+/// shared across different threads.
+///
+/// Why not just use [Mutexes](std::sync::Mutex), you might be wandering.
+/// [Here's a good explanation](https://timur.audio/using-locks-in-real-time-audio-processing-safely)
+#[derive(Default)]
+pub struct SynchronisationController {
+    senders: Vec<Sender<SequencerMutation>>,
+}
+
+impl SynchronisationController {
+    /// Returns a new rx channel, which you can pass to a [Sequencer] to keep it synchronised.
+    pub fn register_new(&mut self) -> Receiver<SequencerMutation> {
+        let (mutations_tx, mutations_rx) = bounded::<SequencerMutation>(64);
+        self.senders.push(mutations_tx);
+
+        mutations_rx
+    }
+
+    /// Applies a mutation to all registered [Sequencers](Sequencer).
+    pub fn mutate(&mut self, mutation: SequencerMutation) {
+        for sender in &self.senders {
+            sender.send(mutation.clone()).unwrap();
+        }
+    }
+}
+
+/// Represents a single change applied to the [Sequencer] structure
+#[derive(Clone)]
+pub enum SequencerMutation {
+    CreateStep(usize, usize, usize),
+    RemoveStep(usize, usize, usize),
+    SetParam(usize, usize, usize, Parameter, u8),
+}
+
 /// Main clock for all [Tracks](Track), triggers [Steps](Step) at the right time.
+///
+/// **Important:** this structure is not shared within threads and **should not be mutated directly**.
+/// To synchronise mutations across different copies of the Sequencer, use the [SynchronisationController].
 pub struct Sequencer {
     pub tracks: Vec<Track>,
     pub beats_per_minute: u8,
     pub time_counter: usize,
+    pub mutations_queue: Receiver<SequencerMutation>,
 }
 
 impl Sequencer {
-    pub fn new() -> Self {
+    pub fn new(mutations_queue: Receiver<SequencerMutation>) -> Self {
         Sequencer {
             tracks: vec![Track::new()],
             beats_per_minute: 120,
             time_counter: 0,
+            mutations_queue,
+        }
+    }
+
+    /// Lock-free synchronisation of [Sequencer]s between threads.
+    /// Should be called as often as possible :)
+    pub fn apply_mutations(&mut self) {
+        while let Ok(mutation) = self.mutations_queue.try_recv() {
+            println!("Got mutation");
+            match mutation {
+                SequencerMutation::CreateStep(track, pattern, step) => {
+                    self.tracks[track].patterns[pattern].steps[step] = Some(Step::default());
+                }
+                SequencerMutation::RemoveStep(track, pattern, step) => {
+                    self.tracks[track].patterns[pattern].steps[step] = None;
+                }
+                SequencerMutation::SetParam(track, pattern, step, parameter, value) => {
+                    if self.tracks[track].patterns[pattern].steps[step].is_none() {
+                        self.tracks[track].patterns[pattern].steps[step] = Some(Step::default());
+                    }
+
+                    self.tracks[track].patterns[pattern].steps[step]
+                        .as_mut()
+                        .unwrap()
+                        .parameters[parameter as usize] = Some(value);
+                }
+            }
         }
     }
 
@@ -48,12 +128,6 @@ impl Sequencer {
     }
 }
 
-impl Default for Sequencer {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 /// Represents a single track within a song.
 ///
 /// Each [Track](Track) has a default value for all [PlaybackParameters](PlaybackParameters),
@@ -66,6 +140,7 @@ pub struct Track {
     pub current_step: usize,
 }
 
+/// Variation of a melody played within a [Track].
 #[derive(Serialize, Deserialize)]
 pub struct Pattern {
     pub steps: Vec<Option<Step>>,
@@ -182,13 +257,14 @@ impl Track {
 /// 6. Pan
 /// 7. Reverb dry/wet
 /// 8. Delay dry/wet
+#[derive(Clone)]
 #[repr(u8)]
-pub enum Parameters {
+pub enum Parameter {
     Note = 0,
     PitchShift,
     Sample, // Remember: if adding new values to this enum, set the last value in NUM_OF_PARAMETERS below
 }
-pub const NUM_OF_PARAMETERS: usize = Parameters::Sample as usize + 1;
+pub const NUM_OF_PARAMETERS: usize = Parameter::Sample as usize + 1;
 
 /// Represents a single step event, saved within a [Track](Track).
 ///
@@ -220,9 +296,9 @@ pub struct PlaybackParameters {
 impl Default for PlaybackParameters {
     fn default() -> Self {
         let mut parameters = [0u8; NUM_OF_PARAMETERS];
-        parameters[Parameters::Note as usize] = 64u8;
-        parameters[Parameters::PitchShift as usize] = 64u8;
-        parameters[Parameters::Sample as usize] = 0u8;
+        parameters[Parameter::Note as usize] = 64u8;
+        parameters[Parameter::PitchShift as usize] = 64u8;
+        parameters[Parameter::Sample as usize] = 0u8;
 
         PlaybackParameters { parameters }
     }
@@ -248,8 +324,8 @@ mod tests {
 
     #[test]
     fn test_parameter_serialisation() {
-        assert_eq!(Parameters::Note as u8, 0);
-        assert_eq!(Parameters::Sample as u8, 2);
+        assert_eq!(Parameter::Note as u8, 0);
+        assert_eq!(Parameter::Sample as u8, 2);
         // TODO: think of some cool way to convert those enum values to
         // binary messages efficiently, while reserving type safety
     }
@@ -258,9 +334,9 @@ mod tests {
     fn test_parameters_merge() {
         let parameters = PlaybackParameters::default();
         let mut step = Step::default();
-        step.parameters[Parameters::Sample as usize] = Some(20u8);
+        step.parameters[Parameter::Sample as usize] = Some(20u8);
 
         let merged = parameters.merge(&step);
-        assert_eq!(merged.parameters[Parameters::Sample as usize], 20u8);
+        assert_eq!(merged.parameters[Parameter::Sample as usize], 20u8);
     }
 }

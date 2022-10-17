@@ -1,20 +1,20 @@
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
-use libretakt::sequencer::Sequencer;
+use libretakt::sequencer::{Parameter, Sequencer, SequencerMutation, SynchronisationController};
 use macroquad::prelude::*;
-
 use macroquad::ui::{hash, root_ui, widgets};
 use rodio::{OutputStream, Sink};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 #[macroquad::main("LibreTakt")]
 async fn main() {
     let provider = Arc::new(SampleProvider::default());
 
-    let sequencer = Arc::new(RwLock::new(Sequencer::new()));
+    let mut synchronisation_controller = SynchronisationController::default();
+
     let voice = Voice::new(&provider);
     let engine = Engine {
-        sequencer: sequencer.clone(),
+        sequencer: Sequencer::new(synchronisation_controller.register_new()),
         voices: vec![voice],
     };
 
@@ -24,20 +24,36 @@ async fn main() {
     sink.append(engine);
     sink.play();
 
+    let sequencer = Sequencer::new(synchronisation_controller.register_new());
+
+    ui_main(sequencer, synchronisation_controller).await;
+}
+
+async fn ui_main(
+    mut sequencer: Sequencer,
+    mut synchronisation_controller: SynchronisationController,
+) {
     let mut sample = 0.0;
 
     loop {
-        clear_background(BLACK);
-
         {
-            // controller.mutate_default_param(0, Parameters::Sample, sample as u8);
-            let mut sequencer = sequencer.write().unwrap();
+            // Alias the name to make the sequencer immutable for the drawing code.
+            let sequencer = &sequencer; // Do not change to mutable!
+            clear_background(BLACK);
 
-            let current_pattern = &mut sequencer.tracks[0].patterns[0]; // Hardcoded
+            let current_pattern = &sequencer.tracks[0].patterns[0]; // Hardcoded for now
             let num_of_steps = current_pattern.steps.len();
 
             let fps = get_fps();
             root_ui().button(None, format!("{fps}"));
+
+            synchronisation_controller.mutate(SequencerMutation::SetParam(
+                0,
+                0,
+                0,
+                Parameter::Sample,
+                sample as u8,
+            ));
 
             widgets::Window::new(
                 hash!(),
@@ -57,16 +73,17 @@ async fn main() {
                         },
                     ) {
                         if current_pattern.steps[i].is_some() {
-                            // controller.set_step(0, 0, i);
-                            println!("TODO set step");
+                            synchronisation_controller
+                                .mutate(SequencerMutation::RemoveStep(0, 0, i));
                         } else {
-                            // controller.remove_step(0, 0, i);
-                            println!("TODO remove step");
+                            synchronisation_controller
+                                .mutate(SequencerMutation::CreateStep(0, 0, i));
                         }
                     }
                 }
             });
         }
+        sequencer.apply_mutations();
         next_frame().await;
     }
 }
