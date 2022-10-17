@@ -61,14 +61,19 @@ impl Default for Sequencer {
 #[derive(Serialize, Deserialize)]
 pub struct Track {
     pub default_parameters: PlaybackParameters,
-    pub steps: Vec<Option<Step>>,
+    pub patterns: Vec<Pattern>,
+    pub current_pattern: usize,
     pub current_step: usize,
 }
 
-impl Track {
+#[derive(Serialize, Deserialize)]
+pub struct Pattern {
+    pub steps: Vec<Option<Step>>,
+}
+
+impl Pattern {
     fn new() -> Self {
-        Track {
-            default_parameters: PlaybackParameters::default(),
+        Self {
             steps: vec![
                 Some(Step::default()),
                 None,
@@ -87,7 +92,17 @@ impl Track {
                 None,
                 None,
             ],
+        }
+    }
+}
+
+impl Track {
+    fn new() -> Self {
+        Track {
+            default_parameters: PlaybackParameters::default(),
+            patterns: vec![Pattern::new()],
             current_step: 0,
+            current_pattern: 0,
         }
     }
 
@@ -95,11 +110,13 @@ impl Track {
     /// Applies all parameter locks defined in the step to default [PlaybackParameters](Track::playback_parameters).
     fn next_step(&mut self) -> Option<PlaybackParameters> {
         self.current_step += 1;
-        if self.current_step >= self.steps.len() {
+        let pattern = &self.patterns[self.current_pattern];
+
+        if self.current_step >= pattern.steps.len() {
             self.current_step = 0;
         }
 
-        if let Some(step) = &self.steps[self.current_step] {
+        if let Some(step) = &pattern.steps[self.current_step] {
             let playback_parameters = self.default_parameters.merge(step);
             // TODO: parameter locks
             Some(playback_parameters)
