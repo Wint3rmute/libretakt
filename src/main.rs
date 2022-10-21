@@ -1,6 +1,6 @@
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
-use libretakt::sequencer::{Parameter, Sequencer, SequencerMutation, SynchronisationController};
+use libretakt::sequencer::{Parameter, Sequencer, SequencerMutation, SynchronisationController, Step};
 use macroquad::prelude::*;
 
 use macroquad::ui::{
@@ -361,9 +361,9 @@ async fn ui_main(
         {
             //Assigning main variables from sequencer. 
             //Not sure if they should be assinged to some context or exist freely this way
-            let mut sequencer = sequencer.write().unwrap();
-            let num_of_steps = sequencer.tracks[0].steps.len();
-            sequencer.tracks[0].default_parameters.parameters[Parameters::Sample as usize] =
+            let mut sequencer = &sequencer;
+            let num_of_steps = sequencer.tracks[0].patterns[0].steps.len();
+            sequencer.tracks[0].default_parameters.parameters[Parameter::Sample as usize] =
                 sample as u8;
             context.currentStepPlay = sequencer.tracks[0].current_step as i32;
             
@@ -411,7 +411,7 @@ async fn ui_main(
                                 ui.push_skin(&noteSelected_skin);
                             }else if context.currentStepPlay == i as i32{
                                 ui.push_skin(&notePlaying_skin);
-                            }else if sequencer.tracks[0].steps[i].is_some(){
+                            }else if sequencer.tracks[0].patterns[0].steps[i].is_some(){
                                 ui.push_skin(&notePlaced_skin);
                             }else{
                                 ui.push_skin(&noteEmpty_skin);
@@ -423,15 +423,15 @@ async fn ui_main(
                                 //im not sure if this kind of if/else chain is valid
                                 //i would use some "returns" and tide it up a bit but i think i cant coz its not a method
                                 context.selectedStep = -1;
-                                if sequencer.tracks[0].steps[i].is_some(){
+                                if sequencer.tracks[0].patterns[0].steps[i].is_some(){
                                     //EDIT MODE:
                                     if context.isEditNotePressed{
                                         context.selectedStep = i as i32;
                                     }else{
-                                        sequencer.tracks[0].steps[i] = None;
+                                        sequencer.tracks[0].patterns[0].steps[i] = None;
                                     }
                                 }else{
-                                    sequencer.tracks[0].steps[i] = Some(sequencer::Step::default());
+                                    sequencer.tracks[0].patterns[0].steps[i] = Some(Step::default());
                                 }
                             }
                             
