@@ -57,6 +57,8 @@ pub enum SequencerMutation {
     SetParam(usize, usize, usize, Parameter, u8),
 }
 
+pub type CurrentStepData = [usize; 8];
+
 /// Main clock for all [Tracks](Track), triggers [Steps](Step) at the right time.
 ///
 /// **Important:** this structure is not shared within threads and **should not be mutated directly**.
@@ -66,15 +68,20 @@ pub struct Sequencer {
     pub beats_per_minute: u8,
     pub time_counter: usize,
     pub mutations_queue: Receiver<SequencerMutation>,
+    pub current_step_sender: Sender<CurrentStepData>,
 }
 
 impl Sequencer {
-    pub fn new(mutations_queue: Receiver<SequencerMutation>) -> Self {
+    pub fn new(
+        mutations_queue: Receiver<SequencerMutation>,
+        current_step_sender: Sender<CurrentStepData>,
+    ) -> Self {
         Sequencer {
             tracks: vec![Track::new()],
             beats_per_minute: 120,
             time_counter: 0,
             mutations_queue,
+            current_step_sender,
         }
     }
 
@@ -120,9 +127,19 @@ impl Sequencer {
     }
 
     fn play_step(&mut self, voices: &mut [Voice]) {
-        for (track, voice) in self.tracks.iter_mut().zip(voices.iter_mut()) {
+        let mut step_data: CurrentStepData = [0; 8];
+        for (track_num, (track, voice)) in self.tracks.iter_mut().zip(voices.iter_mut()).enumerate()
+        {
             if let Some(parameters) = track.next_step() {
                 voice.play(parameters);
+            }
+
+            step_data[track_num] = track.current_step;
+        }
+        match self.current_step_sender.try_send(step_data) {
+            Ok(_) => {}
+            Err(_) => {
+                println!("Unable to send step data, is the UI thread too slow?");
             }
         }
     }
