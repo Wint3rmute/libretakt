@@ -1,12 +1,12 @@
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
 use libretakt::sequencer::{
-    CurrentStepData, Parameter, Sequencer, SequencerMutation, Step, SynchronisationController,
+    CurrentStepData, Sequencer, SequencerMutation, SynchronisationController,
 };
 use macroquad::prelude::*;
 
-use flume::{bounded, Receiver, Sender};
-use macroquad::ui::{hash, root_ui, widgets::Group, Drag, Skin, Ui};
+use flume::{bounded, Receiver};
+use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
 use rodio::{OutputStream, Sink};
 use std::sync::Arc;
 
@@ -172,9 +172,9 @@ async fn main() {
 async fn ui_main(
     mut sequencer: Sequencer,
     mut synchronisation_controller: SynchronisationController,
-    mut step_data_receiver: Receiver<CurrentStepData>,
+    step_data_receiver: Receiver<CurrentStepData>,
 ) {
-    let mut sample = 0.0;
+    let _sample = 0.0;
 
     //***UI Skins***
     //There is probably way to edit ui elements properties more efficiently but
@@ -308,12 +308,12 @@ async fn ui_main(
     };
 
     //UI Skins Load
-    let default_skin = root_ui().default_skin().clone();
-    let mut titleBanner_skin = titleSkin.clone();
-    let mut noteEmpty_skin = emptyNoteSkin.clone();
-    let mut notePlaced_skin = notePlacedSkin.clone();
-    let mut notePlaying_skin = notePlayingSkin.clone();
-    let mut noteSelected_skin = noteSelectedSkin.clone();
+    let _default_skin = root_ui().default_skin().clone();
+    let titleBanner_skin = titleSkin.clone();
+    let noteEmpty_skin = emptyNoteSkin.clone();
+    let notePlaced_skin = notePlacedSkin.clone();
+    let notePlaying_skin = notePlayingSkin.clone();
+    let noteSelected_skin = noteSelectedSkin.clone();
 
     //Building Context
     //This struck will change but im too lazy to fix it right now
