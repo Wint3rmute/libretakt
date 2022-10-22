@@ -9,6 +9,7 @@ Project name based on Elektron's [Digitakt](https://www.elektron.se/us/digitakt-
 - Music genre classification:
   - [python tools overview](https://farranaanjum05.medium.com/music-genre-classification-with-python-51bff77adfd6)
   - [GTZAN dataset](https://www.kaggle.com/datasets/andradaolteanu/gtzan-dataset-music-genre-classification)
+- On mutexes and audio processing - [using locks in real-time audio processing](Using locks in real-time audio processing, safely)
 
 ## Component diagram
 
@@ -129,26 +130,26 @@ gantt
     dateFormat  YYYY-MM-DD
 
     section Web
-    POC serwer websocket    :w1, 2022-10-15, 5d
-    POC serializacja&deserializacja Cap'n'Proto  : 5d
-    Testy synchronizacji stanu za pomocą Cap'n'Proto  : 5d 
+    POC serwer websocket    :w1, 2022-10-15, 7d
+    POC serializacja&deserializacja Cap'n'Proto  : 2022-10-15, 7d
+    Testy synchronizacji stanu za pomocą Cap'n'Proto  : 7d
 
     section Logika biznesowa
-    Mechanizm synchronizacji stanu :crit, 2022-10-15, 5d
-    Zapisywanie stanu sequencera: 5d
-    Blockowanie ścieżek na jednego użytkownika: 10d
+    Mechanizm synchronizacji stanu :crit, 2022-10-15, 7d
+    Zapisywanie stanu sequencera: 7d
+    Blockowanie ścieżek na jednego użytkownika: 7d
 
     section UI
-    Widgety z wizualizacją parametrów   :crit, 2022-10-15, 5d
-    Podpięcie sequencera do widgetów   :crit, 5d
-    Podgląd i edycja sekwencji : 5d
-    Obsługa parameter locks : 5d
-    Obsługa przełączania ścieżek i patternów : 5d
+    Widgety z wizualizacją parametrów   :crit, 2022-10-15, 7d
+    Podpięcie sequencera do widgetów   :crit, 7d
+    Podgląd i edycja sekwencji : 7d
+    Obsługa parameter locks : 7d
+    Obsługa przełączania ścieżek i patternów : 7d
 
     section DSP&Sequencing
-    Filtry na audio :2022-10-15, 5d
-    Efekty reverb + delay : 5d
-    (AMP + Filter) ADSR: 5d
+    Filtry na audio :2022-10-15, 7d
+    Efekty reverb + delay : 7d
+    (AMP + Filter) ADSR: 7d
 ```
 
 
