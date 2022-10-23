@@ -15,15 +15,22 @@
 //! - "Track 4 plays the synth lead"
 //!
 
+<<<<<<< HEAD
 extern crate flexbuffers;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
+=======
+>>>>>>> origin/master
 use crate::constants;
 use crate::engine::Voice;
 use flume::{Receiver, Sender};
 use serde::{Deserialize, Serialize};
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
 use flume::bounded;
 
 /// Allows lock-free synchronisation between multiple [Sequencer] instances,
