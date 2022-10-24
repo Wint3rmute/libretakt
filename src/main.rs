@@ -13,7 +13,7 @@ use std::sync::Arc;
 //Most of those traits and structs might be deleted but im too lazy  right now to figure it out
 //which might be usefull in the future...
 pub trait Interactive {
-    fn checkBounds(&self);
+    fn check_bounds(&self);
 }
 
 pub trait Draw {
@@ -22,7 +22,7 @@ pub trait Draw {
 
 pub struct NULL {}
 impl Interactive for NULL {
-    fn checkBounds(&self) {}
+    fn check_bounds(&self) {}
 }
 impl Draw for NULL {
     fn draw(&self) {}
@@ -34,18 +34,18 @@ pub struct Context<I: Interactive, D: Draw> {
     pub drawable: Vec<D>,
 
     //(temporary) variables for UI windows dimensions
-    pub trackChoicePanel_w: f32,
-    pub userPanel_w: f32,
-    pub trackPanel_h: f32,
-    pub titleBanner_h: f32,
+    pub track_choice_panel_w: f32,
+    pub user_panel_w: f32,
+    pub track_panel_h: f32,
+    pub title_banner_h: f32,
 
     //Sampler state variables
-    pub currentTrack: i32,
-    pub currentStepPlay: i32,
-    pub selectedStep: i32,
+    pub current_track: i32,
+    pub current_step_play: i32,
+    pub selected_step: i32,
 
     //Keyboard varbiales
-    pub isEditNotePressed: bool,
+    pub is_edit_note_pressed: bool,
 }
 
 impl<I, D> Context<I, D>
@@ -54,9 +54,9 @@ where
     D: Draw,
 {
     //Tu jest jakieś gówno które kiedyś usunę
-    pub fn checkAllBounds(&self) {
+    pub fn check_all_bounds(&self) {
         for element in self.interactives.iter() {
-            element.checkBounds();
+            element.check_bounds();
         }
     }
     pub fn draw(&self) {}
@@ -64,11 +64,11 @@ where
     //Tu są cenne rzeczy
     //jakieś to zjebane to zrobie metode obok xd.
 
-    fn readUserInput(&mut self) {
-        self.isEditNotePressed = false;
+    fn check_user_input(&mut self) {
+        self.is_edit_note_pressed = false;
 
         if is_key_down(KeyCode::LeftControl) {
-            self.isEditNotePressed = true;
+            self.is_edit_note_pressed = true;
         }
     }
 }
@@ -125,7 +125,7 @@ impl Button {
 }
 
 impl Interactive for Button {
-    fn checkBounds(&self) {
+    fn check_bounds(&self) {
         let (x, y) = macroquad::input::mouse_position();
         if x >= self.x && x < self.x + self.w && y > self.y && y < self.y + self.h {
             println!("{}", self.name);
@@ -180,7 +180,7 @@ async fn ui_main(
     //There is probably way to edit ui elements properties more efficiently but
     //im too stupid to figure it out from documentation and i found examples
     //of doing it so this way uwu
-    let titleSkin = {
+    let titlebanner_skin = {
         let label_style = root_ui()
             .style_builder()
             .font(include_bytes!("../fff-forward/MinimalPixel v2.ttf"))
@@ -195,7 +195,7 @@ async fn ui_main(
         }
     };
 
-    let emptyNoteSkin = {
+    let empty_note_skin = {
         let button_style = root_ui()
             .style_builder()
             .background(Image::from_file_with_format(
@@ -223,7 +223,7 @@ async fn ui_main(
         }
     };
 
-    let notePlacedSkin = {
+    let note_placed_skin = {
         let button_style = root_ui()
             .style_builder()
             .background(Image::from_file_with_format(
@@ -251,7 +251,7 @@ async fn ui_main(
         }
     };
 
-    let notePlayingSkin = {
+    let note_playing_skin = {
         let button_style = root_ui()
             .style_builder()
             .background(Image::from_file_with_format(
@@ -279,7 +279,7 @@ async fn ui_main(
         }
     };
 
-    let noteSelectedSkin = {
+    let note_selected_skin = {
         let button_style = root_ui()
             .style_builder()
             .background(Image::from_file_with_format(
@@ -309,11 +309,11 @@ async fn ui_main(
 
     //UI Skins Load
     let _default_skin = root_ui().default_skin().clone();
-    let titleBanner_skin = titleSkin.clone();
-    let noteEmpty_skin = emptyNoteSkin.clone();
-    let notePlaced_skin = notePlacedSkin.clone();
-    let notePlaying_skin = notePlayingSkin.clone();
-    let noteSelected_skin = noteSelectedSkin.clone();
+    let titlebanner_skin_clone = titlebanner_skin.clone();
+    let note_empty_skin_clone = empty_note_skin.clone();
+    let note_placed_skin_clone = note_placed_skin.clone();
+    let note_playing_skin_clone = note_playing_skin.clone();
+    let note_selected_skin_clone = note_selected_skin.clone();
 
     //Building Context
     //This struck will change but im too lazy to fix it right now
@@ -326,16 +326,16 @@ async fn ui_main(
             name: "BUTTON C".to_string(),
         }],
         drawable: vec![NULL {}],
-        trackChoicePanel_w: 100.,
-        userPanel_w: 100.,
-        trackPanel_h: 300.,
-        titleBanner_h: 60.,
+        track_choice_panel_w: 100.,
+        user_panel_w: 100.,
+        track_panel_h: 300.,
+        title_banner_h: 60.,
 
-        currentTrack: -1,
-        currentStepPlay: 0,
-        selectedStep: -1,
+        current_track: -1,
+        current_step_play: 0,
+        selected_step: -1,
 
-        isEditNotePressed: false,
+        is_edit_note_pressed: false,
     };
     context.interactives.pop();
     context.drawable.pop();
@@ -356,20 +356,20 @@ async fn ui_main(
             // sample as u8;
 
             // TODO BACZEK FIX
-            context.currentStepPlay = sequencer.tracks[0].current_step as i32;
+            context.current_step_play = sequencer.tracks[0].current_step as i32;
 
             //READ USER INPUT
-            context.readUserInput();
+            context.check_user_input();
 
             //***DRAWING UI PANELS***
             //***TITLE PANEL***
             //This panel is purely for aesthetic reason and shows the title of
             //app in fancy way (hopefully in the future...)
-            root_ui().push_skin(&titleBanner_skin);
+            root_ui().push_skin(&titlebanner_skin_clone);
             root_ui().window(
                 hash!(),
                 vec2(0., 0.),
-                vec2(screen_width(), context.titleBanner_h),
+                vec2(screen_width(), context.title_banner_h),
                 |ui| {
                     ui.label(Vec2::new(0., 0.), "TURBO SAMPLER");
                 },
@@ -381,45 +381,45 @@ async fn ui_main(
             //Clicking displayed notes allows user to edit their sound.
             root_ui().window(
                 hash!(),
-                vec2(context.trackChoicePanel_w, context.titleBanner_h),
+                vec2(context.track_choice_panel_w, context.title_banner_h),
                 vec2(
-                    screen_width() - context.trackChoicePanel_w - context.userPanel_w,
-                    context.trackPanel_h,
+                    screen_width() - context.track_choice_panel_w - context.user_panel_w,
+                    context.track_panel_h,
                 ),
                 |ui| {
                     Group::new(hash!(), Vec2::new(screen_width() - 210., 40.)).ui(ui, |ui| {
-                        if context.currentTrack != -1 {
+                        if context.current_track != -1 {
                             ui.label(
                                 Vec2::new(0., 0.),
-                                &("TRACK #".to_owned() + &(context.currentTrack + 1).to_string()),
+                                &("TRACK #".to_owned() + &(context.current_track + 1).to_string()),
                             );
                         } else {
                             ui.label(Vec2::new(0., 0.), "SELECT TRACK");
                         }
-                        ui.label(Vec2::new(100., 0.), &context.currentStepPlay.to_string());
+                        ui.label(Vec2::new(100., 0.), &context.current_step_play.to_string());
                     });
 
-                    if context.currentTrack != -1 {
+                    if context.current_track != -1 {
                         for i in 0..num_of_steps {
                             Group::new(hash!(), Vec2::new(70., 60.)).ui(ui, |ui| {
-                                if context.selectedStep == i as i32 {
-                                    ui.push_skin(&noteSelected_skin);
-                                } else if context.currentStepPlay == i as i32 {
-                                    ui.push_skin(&notePlaying_skin);
+                                if context.selected_step == i as i32 {
+                                    ui.push_skin(&note_selected_skin_clone);
+                                } else if context.current_step_play == i as i32 {
+                                    ui.push_skin(&note_playing_skin_clone);
                                 } else if sequencer.tracks[0].patterns[0].steps[i].is_some() {
-                                    ui.push_skin(&notePlaced_skin);
+                                    ui.push_skin(&note_placed_skin_clone);
                                 } else {
-                                    ui.push_skin(&noteEmpty_skin);
+                                    ui.push_skin(&note_empty_skin_clone);
                                 }
 
                                 if ui.button(Vec2::new(0., 0.), "....") {
                                     //im not sure if this kind of if/else chain is valid
                                     //i would use some "returns" and tide it up a bit but i think i cant coz its not a method
-                                    context.selectedStep = -1;
+                                    context.selected_step = -1;
                                     if sequencer.tracks[0].patterns[0].steps[i].is_some() {
                                         //EDIT MODE:
-                                        if context.isEditNotePressed {
-                                            context.selectedStep = i as i32;
+                                        if context.is_edit_note_pressed {
+                                            context.selected_step = i as i32;
                                         } else {
                                             synchronisation_controller
                                                 .mutate(SequencerMutation::RemoveStep(0, 0, i))
@@ -445,8 +445,8 @@ async fn ui_main(
             //Todo: Tracks in use have different colors. They can not be selected by user.
             root_ui().window(
                 hash!(),
-                vec2(0., context.titleBanner_h),
-                vec2(context.trackChoicePanel_w, context.trackPanel_h),
+                vec2(0., context.title_banner_h),
+                vec2(context.track_choice_panel_w, context.track_panel_h),
                 |ui| {
                     Group::new(hash!(), Vec2::new(90., 20.)).ui(ui, |ui| {
                         ui.label(Vec2::new(0., 0.), "TRACKS");
@@ -456,7 +456,7 @@ async fn ui_main(
                         Group::new(hash!(), Vec2::new(90., 30.)).ui(ui, |ui| {
                             if ui.button(Vec2::new(30., 0.), (i + 1).to_string()) {
                                 //TODO - dodać warunek że track nie jest zalockowany przez innego uzytkownika!!!
-                                context.currentTrack = i as i32;
+                                context.current_track = i as i32;
                             }
                         });
                     }
@@ -467,8 +467,8 @@ async fn ui_main(
             //Displays current users in the jam session, their nick with the corresponding colour.
             root_ui().window(
                 hash!(),
-                vec2(screen_width() - context.userPanel_w, context.titleBanner_h),
-                vec2(context.userPanel_w, context.trackPanel_h),
+                vec2(screen_width() - context.user_panel_w, context.title_banner_h),
+                vec2(context.user_panel_w, context.track_panel_h),
                 |ui| {
                     Group::new(hash!(), Vec2::new(90., 20.)).ui(ui, |ui| {
                         ui.label(Vec2::new(0., 0.), "USERS");
@@ -480,18 +480,18 @@ async fn ui_main(
             //This panel allows user to edit parameters of currently selected note.
             root_ui().window(
                 hash!(),
-                vec2(0., context.titleBanner_h + context.trackPanel_h),
+                vec2(0., context.title_banner_h + context.track_panel_h),
                 vec2(
                     screen_width(),
-                    screen_height() - context.titleBanner_h - context.trackPanel_h,
+                    screen_height() - context.title_banner_h - context.track_panel_h,
                 ),
                 |ui| {
                     Group::new(hash!(), Vec2::new(200., 20.)).ui(ui, |ui| {
-                        if context.selectedStep != -1 {
+                        if context.selected_step != -1 {
                             ui.label(
                                 Vec2::new(0., 0.),
                                 &("SELECTED STEP #".to_owned()
-                                    + &(context.selectedStep + 1).to_string()),
+                                    + &(context.selected_step + 1).to_string()),
                             );
                         } else {
                             ui.label(Vec2::new(0., 0.), "NO STEP SELECTED");
@@ -504,7 +504,7 @@ async fn ui_main(
             //WILL BE DELETED LATER!!!
 
             // main_window.draw();
-            // context.checkAllBounds();
+            // context.check_all_bounds();
             /*
                 for i in 0..num_of_steps {
                     root_ui().slider(hash!(), "[-10 .. 10]", 0f32..10f32, &mut sample);
