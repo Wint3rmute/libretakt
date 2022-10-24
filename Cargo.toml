@@ -2,7 +2,7 @@
 name = "libretakt"
 version = "0.1.0"
 edition = "2021"
-
+default-run = "client"
 # Required to use library in the `examples` folder
 [lib]
 bench = false
@@ -21,6 +21,10 @@ actix-web-actors="3"
 actix = "0.10.0"
 uuid = { version = "0.8", features = ["v4", "serde"] }
 
+[[bin]]
+bench = false
+path = "src/main.rs"
+name = "client"
 
 [[bin]]
 bench = false
