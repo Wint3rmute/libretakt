@@ -15,6 +15,11 @@
 //! - "Track 4 plays the synth lead"
 //!
 
+extern crate flexbuffers;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+
 use crate::constants;
 use crate::engine::Voice;
 use flume::{Receiver, Sender};
