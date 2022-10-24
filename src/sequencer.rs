@@ -33,6 +33,19 @@ pub struct SynchronisationController {
 }
 
 impl SynchronisationController {
+    /// Returns serialized mutation
+    pub fn serialize(&mut self, mutation: SequencerMutation) -> &[u8] {
+        let mut serializer = flexbuffers::FlexbufferSerializer::new();
+        mutation.serialize(&mut serializer).unwrap();
+        return serializer.view();
+    }
+
+    /// Returns mutation from serialized object
+    pub fn deserialize(&mut self, data: &[u8]) -> SequencerMutation {
+        let reader = flexbuffers::Reader::get_root(data).unwrap();
+        return SequencerMutation::deserialize(reader).unwrap();
+    }
+
     /// Returns a new rx channel, which you can pass to a [Sequencer] to keep it synchronised.
     pub fn register_new(&mut self) -> Receiver<SequencerMutation> {
         let (mutations_tx, mutations_rx) = bounded::<SequencerMutation>(64);
@@ -55,21 +68,6 @@ pub enum SequencerMutation {
     CreateStep(usize, usize, usize),
     RemoveStep(usize, usize, usize),
     SetParam(usize, usize, usize, Parameter, u8),
-}
-
-fn serialize_deserialize_example() {
-    let mutation = SequencerMutation::CreateStep(0,2,3);
-    let mut s = flexbuffers::FlexbufferSerializer::new();
-    mutation.serialize(&mut s).unwrap();
-
-    let r = flexbuffers::Reader::get_root(s.view()).unwrap();
-
-    println!("Enum stored in {:?} bytes.", s.view().len());
-    println!("{}", r);
-
-    let mutation2 = SequencerMutation::deserialize(r).unwrap();
-
-    println!("{:?} === {:?}", mutation, mutation2);
 }
 
 /// Main clock for all [Tracks](Track), triggers [Steps](Step) at the right time.
