@@ -22,8 +22,8 @@ extern crate serde_derive;
 use crate::constants;
 use crate::engine::Voice;
 use flume::{Receiver, Sender};
-use serde::{Deserialize, Serialize};
 use log::{debug, error};
+use serde::{Deserialize, Serialize};
 
 use flume::bounded;
 
@@ -38,12 +38,14 @@ pub struct SynchronisationController {
 }
 
 pub fn serialize_example() {
-    let mut m = SequencerMutation::CreateStep(1,2,3);
-    let mut sc = SynchronisationController { senders: Vec::new() };
+    let mut m = SequencerMutation::CreateStep(1, 2, 3);
+    let mut sc = SynchronisationController {
+        senders: Vec::new(),
+    };
     let mut vec = sc.serialize(m);
     let mut slice = vec.as_slice();
     let m2 = sc.deserialize(&mut slice);
-    
+
     println!("{:?}", m2);
 }
 
@@ -52,7 +54,7 @@ impl SynchronisationController {
     pub fn serialize(&mut self, mutation: SequencerMutation) -> Vec<u8> {
         let mut serializer = flexbuffers::FlexbufferSerializer::new();
         mutation.serialize(&mut serializer).unwrap();
-        return serializer.take_buffer()
+        return serializer.take_buffer();
     }
 
     /// Returns mutation from serialized object
@@ -83,6 +85,7 @@ pub enum SequencerMutation {
     CreateStep(usize, usize, usize),
     RemoveStep(usize, usize, usize),
     SetParam(usize, usize, usize, Parameter, u8),
+    RemoveParam(usize, usize, usize, Parameter),
 }
 
 pub type CurrentStepData = [usize; 8];
@@ -134,6 +137,16 @@ impl Sequencer {
                         .as_mut()
                         .unwrap()
                         .parameters[parameter as usize] = Some(value);
+                }
+                SequencerMutation::RemoveParam(track, pattern, step, parameter) => {
+                    if self.tracks[track].patterns[pattern].steps[step].is_none() {
+                        self.tracks[track].patterns[pattern].steps[step] = Some(Step::default());
+                    }
+
+                    self.tracks[track].patterns[pattern].steps[step]
+                        .as_mut()
+                        .unwrap()
+                        .parameters[parameter as usize] = None;
                 }
             }
         }
@@ -318,7 +331,7 @@ pub const NUM_OF_PARAMETERS: usize = Parameter::Sample as usize + 1;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Step {
     #[allow(dead_code)] // TODO: remove after parameter locks are added
-    parameters: [Option<u8>; NUM_OF_PARAMETERS],
+    pub parameters: [Option<u8>; NUM_OF_PARAMETERS],
 }
 
 impl Default for Step {

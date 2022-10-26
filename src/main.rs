@@ -1,40 +1,18 @@
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
 use libretakt::sequencer::{
-    CurrentStepData, Sequencer, SequencerMutation, SynchronisationController
+    CurrentStepData, Parameter, Sequencer, SequencerMutation, SynchronisationController,
+    NUM_OF_PARAMETERS,
 };
 use macroquad::prelude::*;
 
 use flume::{bounded, Receiver};
+use log::{debug, error, info, log_enabled, Level};
 use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
 use rodio::{OutputStream, Sink};
 use std::sync::Arc;
-use log::{debug, error, log_enabled, info, Level};
 
-
-//Most of those traits and structs might be deleted but im too lazy  right now to figure it out
-//which might be usefull in the future...
-pub trait Interactive {
-    fn check_bounds(&self);
-}
-
-pub trait Draw {
-    fn draw(&self);
-}
-
-pub struct NULL {}
-impl Interactive for NULL {
-    fn check_bounds(&self) {}
-}
-impl Draw for NULL {
-    fn draw(&self) {}
-}
-
-pub struct Context<I: Interactive, D: Draw> {
-    //jakieś gówno które kiedyś usune. Teraz jest do flexowania się żę użyłem generics
-    pub interactives: Vec<I>,
-    pub drawable: Vec<D>,
-
+pub struct Context {
     //(temporary) variables for UI windows dimensions
     pub track_choice_panel_w: f32,
     pub user_panel_w: f32,
@@ -44,25 +22,17 @@ pub struct Context<I: Interactive, D: Draw> {
     //Sampler state variables
     pub current_track: i32,
     pub current_step_play: i32,
+
+    //Step selection
     pub selected_step: i32,
+    pub parameter_vals: [u8; NUM_OF_PARAMETERS],
+    pub parameter_vals_float: [f32; NUM_OF_PARAMETERS],
 
     //Keyboard varbiales
     pub is_edit_note_pressed: bool,
 }
 
-impl<I, D> Context<I, D>
-where
-    I: Interactive,
-    D: Draw,
-{
-    //Tu jest jakieś gówno które kiedyś usunę
-    pub fn check_all_bounds(&self) {
-        for element in self.interactives.iter() {
-            element.check_bounds();
-        }
-    }
-    pub fn draw(&self) {}
-
+impl Context {
     //Tu są cenne rzeczy
     //jakieś to zjebane to zrobie metode obok xd.
 
@@ -75,69 +45,102 @@ where
     }
 }
 
-pub struct Window {
-    x: f32,
-    y: f32,
-    w: f32,
-    h: f32,
-}
-
-impl Window {
-    pub fn draw(&mut self) {
-        draw_rectangle_lines(self.x, self.y, self.w, self.h, 10.0, BLACK);
+pub fn param_of_idx(i: usize) -> Parameter {
+    if i == 0 {
+        return Parameter::Note;
+    }
+    if i == 1 {
+        return Parameter::PitchShift;
+    }
+    if i == 2 {
+        return Parameter::Sample;
+    } else {
+        return Parameter::Sample;
     }
 }
 
-/*
-pub trait Function{
-    fn invoke(&self);
-}
+pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_index: usize) {
+    //Pobranie pojedyńczego parametru
+    let _temp = sequencer.tracks[0].patterns[0].steps[context.selected_step as usize]
+        .as_ref()
+        .unwrap()
+        .parameters[param_index];
 
-pub struct FunA{
+    let mut is_param = false;
+    let mut param_val = 0;
 
-}
-impl Function for FunA{
-    fn invoke(&self){
-        println!("AAAAA");
+    match _temp {
+        Some(x) => {
+            is_param = true;
+            param_val = x;
+        }
+
+        None => {}
     }
-}
 
-pub struct FunB{
-
-}
-impl Function for FunB{
-    fn invoke(&self){
-        println!("BBBBB");
+    if is_param == false {
+        context.parameter_vals_float[param_index] = 7 as f32;
+        return;
     }
-}
-*/
 
-pub struct Button {
-    x: f32,
-    y: f32,
-    w: f32,
-    h: f32,
-    name: String,
+    context.parameter_vals_float[param_index] = param_val as f32;
 }
 
-impl Button {
-    pub fn interact(&mut self) {
-        //self.fun.invoke();
+pub fn compare_params_floats_with_original(
+    synchronisation_controller: &mut SynchronisationController,
+    sequencer: &Sequencer,
+    context: &mut Context,
+) {
+    if context.selected_step == -1 {
+        return;
     }
-}
 
-impl Interactive for Button {
-    fn check_bounds(&self) {
-        let (x, y) = macroquad::input::mouse_position();
-        if x >= self.x && x < self.x + self.w && y > self.y && y < self.y + self.h {
-            debug!("{}", self.name);
+    //Pobranie pojedyńczego parametru
+    for i in 0..NUM_OF_PARAMETERS {
+        let _temp = sequencer.tracks[0].patterns[0].steps[context.selected_step as usize]
+            .as_ref()
+            .unwrap()
+            .parameters[i as usize];
+
+        let mut is_param = false;
+        let mut param_val = 0;
+
+        match _temp {
+            Some(x) => {
+                is_param = true;
+                param_val = x;
+            }
+
+            None => {}
+        }
+
+        if !is_param {
+            continue;
+        }
+
+        let eps = 1.0;
+        if (context.parameter_vals_float[i] < param_val as f32 - eps)
+            || (context.parameter_vals_float[i] > param_val as f32 + eps)
+        {
+            synchronisation_controller.mutate(SequencerMutation::SetParam(
+                0,
+                0,
+                context.selected_step as usize,
+                param_of_idx(i),
+                (context.parameter_vals_float[i] as usize)
+                    .try_into()
+                    .unwrap(),
+            ));
         }
     }
 }
 
-impl Draw for Button {
-    fn draw(&self) {
-        draw_rectangle_lines(self.x, self.y, self.w, self.h, 10.0, BLACK);
+pub fn select_step(sequencer: &Sequencer, context: &mut Context, step_index: i32) {
+    context.selected_step = step_index;
+
+    //Initialize proper params values
+    for i in 0..NUM_OF_PARAMETERS {
+        assing_context_param(sequencer, context, i as usize);
     }
 }
 
@@ -322,14 +325,6 @@ async fn ui_main(
     //Building Context
     //This struck will change but im too lazy to fix it right now
     let mut context = Context {
-        interactives: vec![Button {
-            x: 100.0,
-            y: 200.0,
-            w: 200.0,
-            h: 100.0,
-            name: "BUTTON C".to_string(),
-        }],
-        drawable: vec![NULL {}],
         track_choice_panel_w: 100.,
         user_panel_w: 100.,
         track_panel_h: 300.,
@@ -337,12 +332,13 @@ async fn ui_main(
 
         current_track: -1,
         current_step_play: 0,
+
         selected_step: -1,
+        parameter_vals: [0u8; NUM_OF_PARAMETERS],
+        parameter_vals_float: [0f32; NUM_OF_PARAMETERS],
 
         is_edit_note_pressed: false,
     };
-    context.interactives.pop();
-    context.drawable.pop();
 
     loop {
         clear_background(WHITE);
@@ -365,13 +361,20 @@ async fn ui_main(
             //READ USER INPUT
             context.check_user_input();
 
+            //Jakiś extra space na logike kodu
+            compare_params_floats_with_original(
+                &mut synchronisation_controller,
+                &sequencer,
+                &mut context,
+            );
+
             //***DRAWING UI PANELS***
             //***TITLE PANEL***
             //This panel is purely for aesthetic reason and shows the title of
             //app in fancy way (hopefully in the future...)
             root_ui().push_skin(&titlebanner_skin_clone);
             root_ui().window(
-                hash!(),
+                hash!("Titlewindow"),
                 vec2(0., 0.),
                 vec2(screen_width(), context.title_banner_h),
                 |ui| {
@@ -384,14 +387,14 @@ async fn ui_main(
             //This panel shows the track currently selected by user.
             //Clicking displayed notes allows user to edit their sound.
             root_ui().window(
-                hash!(),
+                hash!("MainWindow"),
                 vec2(context.track_choice_panel_w, context.title_banner_h),
                 vec2(
                     screen_width() - context.track_choice_panel_w - context.user_panel_w,
                     context.track_panel_h,
                 ),
                 |ui| {
-                    Group::new(hash!(), Vec2::new(screen_width() - 210., 40.)).ui(ui, |ui| {
+                    Group::new(hash!("GRP1"), Vec2::new(screen_width() - 210., 40.)).ui(ui, |ui| {
                         if context.current_track != -1 {
                             ui.label(
                                 Vec2::new(0., 0.),
@@ -405,7 +408,7 @@ async fn ui_main(
 
                     if context.current_track != -1 {
                         for i in 0..num_of_steps {
-                            Group::new(hash!(), Vec2::new(70., 60.)).ui(ui, |ui| {
+                            Group::new(hash!("Tracks", i), Vec2::new(70., 60.)).ui(ui, |ui| {
                                 if context.selected_step == i as i32 {
                                     ui.push_skin(&note_selected_skin_clone);
                                 } else if context.current_step_play == i as i32 {
@@ -423,7 +426,7 @@ async fn ui_main(
                                     if sequencer.tracks[0].patterns[0].steps[i].is_some() {
                                         //EDIT MODE:
                                         if context.is_edit_note_pressed {
-                                            context.selected_step = i as i32;
+                                            select_step(&sequencer, &mut context, i as i32);
                                         } else {
                                             synchronisation_controller
                                                 .mutate(SequencerMutation::RemoveStep(0, 0, i))
@@ -448,16 +451,16 @@ async fn ui_main(
             //on the main Panel.
             //Todo: Tracks in use have different colors. They can not be selected by user.
             root_ui().window(
-                hash!(),
+                hash!("ChoiceWindow"),
                 vec2(0., context.title_banner_h),
                 vec2(context.track_choice_panel_w, context.track_panel_h),
                 |ui| {
-                    Group::new(hash!(), Vec2::new(90., 20.)).ui(ui, |ui| {
+                    Group::new(hash!("GRP3"), Vec2::new(90., 20.)).ui(ui, |ui| {
                         ui.label(Vec2::new(0., 0.), "TRACKS");
                     });
 
                     for i in 0..sequencer.tracks.len() {
-                        Group::new(hash!(), Vec2::new(90., 30.)).ui(ui, |ui| {
+                        Group::new(hash!("Track2", i), Vec2::new(90., 30.)).ui(ui, |ui| {
                             if ui.button(Vec2::new(30., 0.), (i + 1).to_string()) {
                                 //TODO - dodać warunek że track nie jest zalockowany przez innego uzytkownika!!!
                                 context.current_track = i as i32;
@@ -470,11 +473,14 @@ async fn ui_main(
             //***USER PANEL***
             //Displays current users in the jam session, their nick with the corresponding colour.
             root_ui().window(
-                hash!(),
-                vec2(screen_width() - context.user_panel_w, context.title_banner_h),
+                hash!("USERWINDOW"),
+                vec2(
+                    screen_width() - context.user_panel_w,
+                    context.title_banner_h,
+                ),
                 vec2(context.user_panel_w, context.track_panel_h),
                 |ui| {
-                    Group::new(hash!(), Vec2::new(90., 20.)).ui(ui, |ui| {
+                    Group::new(hash!("GRP6"), Vec2::new(90., 20.)).ui(ui, |ui| {
                         ui.label(Vec2::new(0., 0.), "USERS");
                     });
                 },
@@ -483,24 +489,120 @@ async fn ui_main(
             //***SETTINGS/EDIT PANEL***
             //This panel allows user to edit parameters of currently selected note.
             root_ui().window(
-                hash!(),
+                hash!("Settings"),
                 vec2(0., context.title_banner_h + context.track_panel_h),
                 vec2(
                     screen_width(),
                     screen_height() - context.title_banner_h - context.track_panel_h,
                 ),
                 |ui| {
-                    Group::new(hash!(), Vec2::new(200., 20.)).ui(ui, |ui| {
-                        if context.selected_step != -1 {
-                            ui.label(
-                                Vec2::new(0., 0.),
-                                &("SELECTED STEP #".to_owned()
-                                    + &(context.selected_step + 1).to_string()),
+                    //Jeżeli jest wybrany step w trybie edycji zrób całą magię
+                    if context.selected_step == -1 {
+                        //UI Lable in top left
+                        ui.label(Vec2::new(0., 0.), "NO STEP SELECTED!");
+                    }
+
+                    //Option BOX
+                    if context.selected_step != -1 {
+                        //Utwórz 4 slidery do edycji parametrów:
+                        for i in 0..sequencer.tracks[0].patterns[0].steps
+                            [context.selected_step as usize]
+                            .as_ref()
+                            .unwrap()
+                            .parameters
+                            .len()
+                        {
+                            //Pobranie pojedyńczego parametru
+                            let _temp = sequencer.tracks[0].patterns[0].steps
+                                [context.selected_step as usize]
+                                .as_ref()
+                                .unwrap()
+                                .parameters[i];
+
+                            let mut is_param = false;
+                            let mut param_val = 0;
+
+                            match _temp {
+                                Some(x) => {
+                                    is_param = true;
+                                    param_val = x;
+                                }
+
+                                None => {}
+                            }
+
+                            Group::new(hash!("PanelSettings", i), Vec2::new(700., 70.)).ui(
+                                ui,
+                                |ui| {
+                                    Group::new(hash!("Group LAbel", i), Vec2::new(680., 20.)).ui(
+                                        ui,
+                                        |ui| {
+                                            ui.label(
+                                                Vec2::new(0., 0.),
+                                                &("Parameter #".to_owned() + &(i + 1).to_string()),
+                                            );
+                                        },
+                                    );
+
+                                    Group::new(hash!("Group Button", i), Vec2::new(40., 38.)).ui(
+                                        ui,
+                                        |ui| {
+                                            if ui.button(
+                                                Vec2::new(0., 0.),
+                                                if is_param { "X" } else { "." },
+                                            ) {
+                                                if is_param {
+                                                    //switch is_param
+                                                    is_param = false;
+
+                                                    //Delete parameter
+                                                    synchronisation_controller.mutate(
+                                                        SequencerMutation::RemoveParam(
+                                                            0,
+                                                            0,
+                                                            context.selected_step as usize,
+                                                            param_of_idx(i),
+                                                        ),
+                                                    );
+                                                } else {
+                                                    //switch is_param
+                                                    is_param = true;
+                                                    //Add parameter
+                                                    let default_param = 0.0;
+                                                    context.parameter_vals_float[i] = default_param;
+                                                    synchronisation_controller.mutate(
+                                                        SequencerMutation::SetParam(
+                                                            0,
+                                                            0,
+                                                            context.selected_step as usize,
+                                                            param_of_idx(i),
+                                                            (default_param as usize)
+                                                                .try_into()
+                                                                .unwrap(),
+                                                        ),
+                                                    );
+                                                }
+                                            }
+                                        },
+                                    );
+
+                                    Group::new(hash!("Group Slider", i), Vec2::new(500., 38.)).ui(
+                                        ui,
+                                        |ui| {
+                                            if is_param == true {
+                                                ui.slider(
+                                                    hash!("param slider", i),
+                                                    "",
+                                                    0f32..64f32,
+                                                    &mut context.parameter_vals_float[i],
+                                                );
+                                            }
+                                        },
+                                    );
+                                },
                             );
-                        } else {
-                            ui.label(Vec2::new(0., 0.), "NO STEP SELECTED");
                         }
-                    });
+                    }
                 },
             );
 
