@@ -1,7 +1,7 @@
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
 use libretakt::sequencer::{
-    CurrentStepData, Sequencer, SequencerMutation, SynchronisationController,
+    CurrentStepData, Sequencer, SequencerMutation, SynchronisationController
 };
 use macroquad::prelude::*;
 

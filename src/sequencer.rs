@@ -15,6 +15,10 @@
 //! - "Track 4 plays the synth lead"
 //!
 
+extern crate flexbuffers;
+extern crate serde;
+extern crate serde_derive;
+
 use crate::constants;
 use crate::engine::Voice;
 use flume::{Receiver, Sender};
@@ -32,7 +36,30 @@ pub struct SynchronisationController {
     senders: Vec<Sender<SequencerMutation>>,
 }
 
+pub fn serialize_example() {
+    let mut m = SequencerMutation::CreateStep(1,2,3);
+    let mut sc = SynchronisationController { senders: Vec::new() };
+    let mut vec = sc.serialize(m);
+    let mut slice = vec.as_slice();
+    let m2 = sc.deserialize(&mut slice);
+    
+    println!("{:?}", m2);
+}
+
 impl SynchronisationController {
+    /// Returns serialized mutation
+    pub fn serialize(&mut self, mutation: SequencerMutation) -> Vec<u8> {
+        let mut serializer = flexbuffers::FlexbufferSerializer::new();
+        mutation.serialize(&mut serializer).unwrap();
+        return serializer.take_buffer()
+    }
+
+    /// Returns mutation from serialized object
+    pub fn deserialize(&mut self, data: &[u8]) -> SequencerMutation {
+        let reader = flexbuffers::Reader::get_root(data).unwrap();
+        return SequencerMutation::deserialize(reader).unwrap();
+    }
+
     /// Returns a new rx channel, which you can pass to a [Sequencer] to keep it synchronised.
     pub fn register_new(&mut self) -> Receiver<SequencerMutation> {
         let (mutations_tx, mutations_rx) = bounded::<SequencerMutation>(64);
@@ -50,7 +77,7 @@ impl SynchronisationController {
 }
 
 /// Represents a single change applied to the [Sequencer] structure
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SequencerMutation {
     CreateStep(usize, usize, usize),
     RemoveStep(usize, usize, usize),
@@ -274,7 +301,7 @@ impl Track {
 /// 6. Pan
 /// 7. Reverb dry/wet
 /// 8. Delay dry/wet
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum Parameter {
     Note = 0,
