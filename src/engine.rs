@@ -78,7 +78,7 @@ impl DattorroReverbParams for ReverbParams {
     }
 
     fn time_scale(&self) -> f64 {
-        0.5
+        0.9
     }
 
     fn input_low_cutoff_hz(&self) -> f64 {
@@ -106,7 +106,7 @@ impl DattorroReverbParams for ReverbParams {
     }
 
     fn mod_shape(&self) -> f64 {
-        0.5
+        0.0
     }
 
     fn input_diffusion_mix(&self) -> f64 {
@@ -114,11 +114,11 @@ impl DattorroReverbParams for ReverbParams {
     }
 
     fn diffusion(&self) -> f64 {
-        0.5
+        0.0
     }
 
     fn decay(&self) -> f64 {
-        0.6
+        1.0
     }
 }
 
@@ -135,6 +135,7 @@ impl Voice {
     }
 
     pub fn play(&mut self, parameters: PlaybackParameters) {
+        self.playback_speed = parameters.parameters[Parameter::PitchShift as usize] as f32 / 10.0;
         self.playback_parameters = Some(parameters);
         self.reset()
     }

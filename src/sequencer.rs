@@ -80,13 +80,18 @@ impl SynchronisationController {
     }
 }
 
+type TrackNum = usize;
+type PatternNum = usize;
+type StepNum = usize;
+type ParamValue = u8;
+
 /// Represents a single change applied to the [Sequencer] structure
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SequencerMutation {
-    CreateStep(usize, usize, usize),
-    RemoveStep(usize, usize, usize),
-    SetParam(usize, usize, usize, Parameter, u8),
-    RemoveParam(usize, usize, usize, Parameter),
+    CreateStep(TrackNum, PatternNum, StepNum),
+    RemoveStep(TrackNum, PatternNum, StepNum),
+    SetParam(TrackNum, PatternNum, StepNum, Parameter, ParamValue),
+    RemoveParam(TrackNum, PatternNum, StepNum, Parameter),
 }
 
 pub type CurrentStepData = [usize; 8];
