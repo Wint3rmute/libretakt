@@ -17,7 +17,6 @@
 
 extern crate flexbuffers;
 extern crate serde;
-#[macro_use]
 extern crate serde_derive;
 
 use crate::constants;
@@ -37,12 +36,22 @@ pub struct SynchronisationController {
     senders: Vec<Sender<SequencerMutation>>,
 }
 
+pub fn serialize_example() {
+    let mut m = SequencerMutation::CreateStep(1,2,3);
+    let mut sc = SynchronisationController { senders: Vec::new() };
+    let mut vec = sc.serialize(m);
+    let mut slice = vec.as_slice();
+    let m2 = sc.deserialize(&mut slice);
+    
+    println!("{:?}", m2);
+}
+
 impl SynchronisationController {
     /// Returns serialized mutation
-    pub fn serialize(&mut self, mutation: SequencerMutation) -> &[u8] {
+    pub fn serialize(&mut self, mutation: SequencerMutation) -> Vec<u8> {
         let mut serializer = flexbuffers::FlexbufferSerializer::new();
         mutation.serialize(&mut serializer).unwrap();
-        return serializer.view();
+        return serializer.take_buffer()
     }
 
     /// Returns mutation from serialized object
