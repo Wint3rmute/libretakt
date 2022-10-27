@@ -175,6 +175,12 @@ impl Voice {
     /// )
     fn tick(&mut self) -> f32 {
         if let Some(parameters) = &self.playback_parameters {
+            if parameters.parameters[Parameter::Sample as usize] as usize
+                >= self.sample_provider.samples.len()
+            {
+                return 0.0;
+            }
+
             let sample = &self.sample_provider.samples
                 [parameters.parameters[Parameter::Sample as usize] as usize];
 
