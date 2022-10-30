@@ -9,6 +9,8 @@ use flume::{bounded, Receiver};
 use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
 use rodio::{OutputStream, Sink};
 use std::sync::Arc;
+use log::{debug, error, log_enabled, info, Level};
+
 
 //Most of those traits and structs might be deleted but im too lazy  right now to figure it out
 //which might be usefull in the future...
@@ -142,6 +144,10 @@ impl Draw for Button {
 #[macroquad::main("LibreTakt")]
 async fn main() {
     //***SAMPLER***
+    env_logger::init();
+
+    debug!("this is a debug {}", "message");
+    error!("this is printed by default");
     //To be honest i haven't been looking at this code yet but Bączek wrote it
     //so i guess its something important and i trust him.
     let provider = Arc::new(SampleProvider::default());
