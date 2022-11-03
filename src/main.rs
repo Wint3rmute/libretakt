@@ -130,7 +130,7 @@ impl Interactive for Button {
     fn check_bounds(&self) {
         let (x, y) = macroquad::input::mouse_position();
         if x >= self.x && x < self.x + self.w && y > self.y && y < self.y + self.h {
-            println!("{}", self.name);
+            debug!("{}", self.name);
         }
     }
 }
@@ -146,8 +146,6 @@ async fn main() {
     //***SAMPLER***
     env_logger::init();
 
-    debug!("this is a debug {}", "message");
-    error!("this is printed by default");
     //To be honest i haven't been looking at this code yet but Bączek wrote it
     //so i guess its something important and i trust him.
     let provider = Arc::new(SampleProvider::default());

@@ -116,7 +116,7 @@ impl Sequencer {
     /// Should be called as often as possible :)
     pub fn apply_mutations(&mut self) {
         while let Ok(mutation) = self.mutations_queue.try_recv() {
-            println!("Got mutation");
+            debug!("Got mutation");
             match mutation {
                 SequencerMutation::CreateStep(track, pattern, step) => {
                     self.tracks[track].patterns[pattern].steps[step] = Some(Step::default());
@@ -166,7 +166,7 @@ impl Sequencer {
         match self.current_step_sender.try_send(step_data) {
             Ok(_) => {}
             Err(_) => {
-                println!("Unable to send step data, is the UI thread too slow?");
+                error!("Unable to send step data, is the UI thread too slow?");
             }
         }
     }

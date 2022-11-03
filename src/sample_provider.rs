@@ -24,7 +24,7 @@ impl Default for SampleProvider {
                 continue;
             }
             let path_display = path.display();
-            println!("Loading {path_display}");
+            debug!("Loading {path_display}");
 
             samples.push(SampleData::from_file(path.as_path()));
         }

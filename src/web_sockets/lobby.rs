@@ -27,7 +27,7 @@ impl Lobby {
             let _ = socket_recipient
                 .do_send(WsMessage(message.to_owned()));
         } else {
-            println!("attempting to send message but couldn't find user id.");
+            error!("attempting to send message but couldn't find user id.");
         }
     }
 }
