@@ -2,6 +2,7 @@
 use std::path::Path;
 
 use rodio::decoder::Decoder;
+use log::{debug, error};
 
 /// Reads samples from files and provides an interface to access them.
 ///
@@ -24,7 +25,7 @@ impl Default for SampleProvider {
                 continue;
             }
             let path_display = path.display();
-            println!("Loading {path_display}");
+            debug!("Loading {path_display}");
 
             samples.push(SampleData::from_file(path.as_path()));
         }

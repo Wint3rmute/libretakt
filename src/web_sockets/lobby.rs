@@ -3,6 +3,7 @@ use crate::messages::{ClientActorMessage, Connect, Disconnect, WsMessage};
 use actix::prelude::{Actor, Context, Handler, Recipient};
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
+use log::{debug, error, log_enabled, info, Level};
 
 
 type Socket = Recipient<WsMessage>;
@@ -27,7 +28,7 @@ impl Lobby {
             let _ = socket_recipient
                 .do_send(WsMessage(message.to_owned()));
         } else {
-            println!("attempting to send message but couldn't find user id.");
+            error!("attempting to send message but couldn't find user id.");
         }
     }
 }
