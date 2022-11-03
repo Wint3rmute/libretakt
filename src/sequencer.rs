@@ -23,7 +23,7 @@ use crate::constants;
 use crate::engine::Voice;
 use flume::{Receiver, Sender};
 use serde::{Deserialize, Serialize};
-use log::{debug, error, log_enabled, info, Level};
+use log::{debug, error};
 
 use flume::bounded;
 

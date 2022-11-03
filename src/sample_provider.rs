@@ -2,6 +2,7 @@
 use std::path::Path;
 
 use rodio::decoder::Decoder;
+use log::{debug, error};
 
 /// Reads samples from files and provides an interface to access them.
 ///
