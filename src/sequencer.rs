@@ -80,13 +80,18 @@ impl SynchronisationController {
     }
 }
 
+type TrackNum = usize;
+type PatternNum = usize;
+type StepNum = usize;
+type ParamValue = u8;
+
 /// Represents a single change applied to the [Sequencer] structure
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SequencerMutation {
-    CreateStep(usize, usize, usize),
-    RemoveStep(usize, usize, usize),
-    SetParam(usize, usize, usize, Parameter, u8),
-    RemoveParam(usize, usize, usize, Parameter),
+    CreateStep(TrackNum, PatternNum, StepNum),
+    RemoveStep(TrackNum, PatternNum, StepNum),
+    SetParam(TrackNum, PatternNum, StepNum, Parameter, ParamValue),
+    RemoveParam(TrackNum, PatternNum, StepNum, Parameter),
 }
 
 pub type CurrentStepData = [usize; 8];
@@ -379,7 +384,7 @@ impl Default for PlaybackParameters {
     fn default() -> Self {
         let mut parameters = [0u8; NUM_OF_PARAMETERS];
         parameters[Parameter::Note as usize] = 64u8;
-        parameters[Parameter::PitchShift as usize] = 0u8;
+        parameters[Parameter::PitchShift as usize] = 20u8;
         parameters[Parameter::Sample as usize] = 0u8;
 
         PlaybackParameters { parameters }
