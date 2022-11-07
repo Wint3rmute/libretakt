@@ -1,8 +1,8 @@
 //! Reads sample data from files and and provides it to other components.
 use std::path::Path;
 
-use rodio::decoder::Decoder;
 use log::{debug, error};
+use rodio::decoder::Decoder;
 
 /// Reads samples from files and provides an interface to access them.
 ///

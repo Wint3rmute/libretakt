@@ -25,5 +25,5 @@ pub struct Disconnect {
 pub struct ClientActorMessage {
     pub id: Uuid,
     pub msg: String,
-    pub room_id: Uuid
+    pub room_id: Uuid,
 }

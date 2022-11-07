@@ -5,9 +5,9 @@ use actix::{Actor, Addr, Running, StreamHandler};
 use actix::{AsyncContext, Handler};
 use actix_web_actors::ws;
 use actix_web_actors::ws::Message::Text;
+use log::{debug, error, info, log_enabled, Level};
 use std::time::{Duration, Instant};
 use uuid::Uuid;
-use log::{debug, error, log_enabled, info, Level};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -118,4 +118,3 @@ impl Handler<WsMessage> for WsConn {
         ctx.text(msg.0);
     }
 }
-

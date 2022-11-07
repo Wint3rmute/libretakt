@@ -5,7 +5,7 @@ use crate::sample_provider::{SampleData, SampleProvider};
 use crate::sequencer::{Parameter, Sequencer};
 use crate::{constants, sequencer::PlaybackParameters};
 use std::sync::Arc;
-use synfx_dsp::{DattorroReverb, DattorroReverbParams};
+use synfx_dsp::*;
 
 /// Top-level component of the DSP pipeline.
 ///
@@ -64,6 +64,12 @@ pub struct Voice {
     pub playback_speed: f32,
     pub reverb: DattorroReverb,
     pub reverb_params: ReverbParams,
+
+    pub b0: f32,
+    pub b1: f32,
+    pub b2: f32,
+    pub b3: f32,
+    pub filter_delay: [f32; 4],
 }
 
 impl DattorroReverbParams for ReverbParams {
@@ -149,6 +155,12 @@ impl Voice {
             reverb,
             reverb_params: ReverbParams {},
             playback_parameters: None,
+
+            b0: 0.0,
+            b1: 0.0,
+            b2: 0.0,
+            b3: 0.0,
+            filter_delay: [0.0; 4],
         }
     }
 
@@ -175,8 +187,17 @@ impl Voice {
     /// )
     fn tick(&mut self) -> f32 {
         if let Some(parameters) = &self.playback_parameters {
+            if parameters.parameters[Parameter::Sample as usize] as usize
+                >= self.sample_provider.samples.len()
+            {
+                return 0.0;
+            }
+
             let sample = &self.sample_provider.samples
                 [parameters.parameters[Parameter::Sample as usize] as usize];
+
+            let freq = parameters.parameters[Parameter::Note as usize] as f32 * 200.0;
+            let resonance = parameters.parameters[Parameter::PitchShift as usize] as f32 / 64.0;
 
             if (self.play_position + 1.0) >= sample.data.len() as f32 {
                 0.0
@@ -184,7 +205,29 @@ impl Voice {
                 let result = self.get_at_index(sample, self.play_position);
                 self.play_position += self.playback_speed;
 
-                result
+                // result
+                let (low, _band, _high) = process_simper_svf(
+                    result,
+                    freq,
+                    resonance,
+                    1.0 / constants::SAMPLE_RATE as f32,
+                    &mut self.b0,
+                    &mut self.b1,
+                );
+
+                low
+
+                // process_stilson_moog(
+                //     result,
+                //     freq,
+                //     resonance,
+                //     1.0 / constants::SAMPLE_RATE as f32,
+                //     &mut self.b0,
+                //     &mut self.b1,
+                //     &mut self.b2,
+                //     &mut self.b3,
+                //     &mut self.filter_delay,
+                // )
                 // + self
                 //     .reverb
                 //     .process(&mut self.reverb_params, result as f64, result as f64)

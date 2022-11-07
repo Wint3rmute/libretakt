@@ -16,14 +16,15 @@
 //!
 
 extern crate flexbuffers;
+use num_derive::FromPrimitive;
 extern crate serde;
 extern crate serde_derive;
 
 use crate::constants;
 use crate::engine::Voice;
 use flume::{Receiver, Sender};
-use serde::{Deserialize, Serialize};
 use log::{debug, error};
+use serde::{Deserialize, Serialize};
 
 use flume::bounded;
 
@@ -38,12 +39,14 @@ pub struct SynchronisationController {
 }
 
 pub fn serialize_example() {
-    let mut m = SequencerMutation::CreateStep(1,2,3);
-    let mut sc = SynchronisationController { senders: Vec::new() };
-    let mut vec = sc.serialize(m);
+    let m = SequencerMutation::CreateStep(1, 2, 3);
+    let mut sc = SynchronisationController {
+        senders: Vec::new(),
+    };
+    let vec = sc.serialize(m);
     let mut slice = vec.as_slice();
     let m2 = sc.deserialize(&mut slice);
-    
+
     println!("{:?}", m2);
 }
 
@@ -52,7 +55,7 @@ impl SynchronisationController {
     pub fn serialize(&mut self, mutation: SequencerMutation) -> Vec<u8> {
         let mut serializer = flexbuffers::FlexbufferSerializer::new();
         mutation.serialize(&mut serializer).unwrap();
-        return serializer.take_buffer()
+        return serializer.take_buffer();
     }
 
     /// Returns mutation from serialized object
@@ -83,6 +86,7 @@ pub enum SequencerMutation {
     CreateStep(usize, usize, usize),
     RemoveStep(usize, usize, usize),
     SetParam(usize, usize, usize, Parameter, u8),
+    RemoveParam(usize, usize, usize, Parameter),
 }
 
 pub type CurrentStepData = [usize; 8];
@@ -105,7 +109,7 @@ impl Sequencer {
         current_step_sender: Sender<CurrentStepData>,
     ) -> Self {
         Sequencer {
-            tracks: vec![Track::new()],
+            tracks: vec![Track::new(), Track::new()],
             beats_per_minute: 120,
             time_counter: 0,
             mutations_queue,
@@ -134,6 +138,16 @@ impl Sequencer {
                         .as_mut()
                         .unwrap()
                         .parameters[parameter as usize] = Some(value);
+                }
+                SequencerMutation::RemoveParam(track, pattern, step, parameter) => {
+                    if self.tracks[track].patterns[pattern].steps[step].is_none() {
+                        self.tracks[track].patterns[pattern].steps[step] = Some(Step::default());
+                    }
+
+                    self.tracks[track].patterns[pattern].steps[step]
+                        .as_mut()
+                        .unwrap()
+                        .parameters[parameter as usize] = None;
                 }
             }
         }
@@ -195,22 +209,8 @@ impl Pattern {
     fn new() -> Self {
         Self {
             steps: vec![
-                Some(Step::default()),
-                None,
-                Some(Step::default()),
-                None,
-                None,
-                None,
-                None,
-                None,
-                Some(Step::default()),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None,
             ],
         }
     }
@@ -302,14 +302,51 @@ impl Track {
 /// 6. Pan
 /// 7. Reverb dry/wet
 /// 8. Delay dry/wet
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromPrimitive)]
 #[repr(u8)]
 pub enum Parameter {
+    // Page 1: playback
     Note = 0,
     PitchShift,
-    Sample, // Remember: if adding new values to this enum, set the last value in NUM_OF_PARAMETERS below
+    Sample,   // Only changes in integer values
+    PlayMode, // Only changes in integer values
+    NoteLength,
+    NoteVelocity,
+    SampleStart,
+    SampleEnd,
+
+    // Page 2: filtering
+    FilterCutoff,
+    FilterResonance,
+    FilterAttack,
+    FilterDecay,
+    FilterSustain,
+    FilterRelease,
+    FilterType, // Only changes in integer values
+    FilterEnvelope,
+
+    // Page 3: effects
+    ReverbSize,
+    ReverbSend,
+    ReverbParamIdkWhatYet1,
+    ReverbParamIdkWhatYet2,
+    DelayTime,
+    DelayFeedback,
+    DelaySend,
+    DelayParamIdkWhatYet1,
+    // Remember: if adding new values to this enum, set the last value in NUM_OF_PARAMETERS below
 }
-pub const NUM_OF_PARAMETERS: usize = Parameter::Sample as usize + 1;
+pub const NUM_OF_PARAMETERS: usize = Parameter::DelayParamIdkWhatYet1 as usize + 1;
+
+impl std::fmt::Display for Parameter {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        // Write strictly the first element into the supplied output
+        // stream: `f`. Returns `fmt::Result` which indicates whether the
+        // operation succeeded or failed. Note that `write!` uses syntax which
+        // is very similar to `println!`.
+        write!(f, "{:?}", self)
+    }
+}
 
 /// Represents a single step event, saved within a [Track](Track).
 ///
@@ -318,7 +355,7 @@ pub const NUM_OF_PARAMETERS: usize = Parameter::Sample as usize + 1;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Step {
     #[allow(dead_code)] // TODO: remove after parameter locks are added
-    parameters: [Option<u8>; NUM_OF_PARAMETERS],
+    pub parameters: [Option<u8>; NUM_OF_PARAMETERS],
 }
 
 impl Default for Step {
@@ -342,7 +379,7 @@ impl Default for PlaybackParameters {
     fn default() -> Self {
         let mut parameters = [0u8; NUM_OF_PARAMETERS];
         parameters[Parameter::Note as usize] = 64u8;
-        parameters[Parameter::PitchShift as usize] = 64u8;
+        parameters[Parameter::PitchShift as usize] = 0u8;
         parameters[Parameter::Sample as usize] = 0u8;
 
         PlaybackParameters { parameters }
