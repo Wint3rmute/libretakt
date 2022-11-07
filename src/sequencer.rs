@@ -108,7 +108,7 @@ impl Sequencer {
         current_step_sender: Sender<CurrentStepData>,
     ) -> Self {
         Sequencer {
-            tracks: vec![Track::new()],
+            tracks: vec![Track::new(), Track::new()],
             beats_per_minute: 120,
             time_counter: 0,
             mutations_queue,
@@ -208,22 +208,8 @@ impl Pattern {
     fn new() -> Self {
         Self {
             steps: vec![
-                Some(Step::default()),
-                None,
-                Some(Step::default()),
-                None,
-                None,
-                None,
-                None,
-                None,
-                Some(Step::default()),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None,
             ],
         }
     }
@@ -355,7 +341,7 @@ impl Default for PlaybackParameters {
     fn default() -> Self {
         let mut parameters = [0u8; NUM_OF_PARAMETERS];
         parameters[Parameter::Note as usize] = 64u8;
-        parameters[Parameter::PitchShift as usize] = 64u8;
+        parameters[Parameter::PitchShift as usize] = 0u8;
         parameters[Parameter::Sample as usize] = 0u8;
 
         PlaybackParameters { parameters }

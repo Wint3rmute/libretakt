@@ -61,7 +61,8 @@ pub fn param_of_idx(i: usize) -> Parameter {
 
 pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_index: usize) {
     //Pobranie pojedyńczego parametru
-    let _temp = sequencer.tracks[0].patterns[0].steps[context.selected_step as usize]
+    let _temp = sequencer.tracks[context.current_track as usize].patterns[0].steps
+        [context.selected_step as usize]
         .as_ref()
         .unwrap()
         .parameters[param_index];
@@ -97,7 +98,8 @@ pub fn compare_params_floats_with_original(
 
     //Pobranie pojedyńczego parametru
     for i in 0..NUM_OF_PARAMETERS {
-        let _temp = sequencer.tracks[0].patterns[0].steps[context.selected_step as usize]
+        let _temp = sequencer.tracks[context.current_track as usize].patterns[0].steps
+            [context.selected_step as usize]
             .as_ref()
             .unwrap()
             .parameters[i as usize];
@@ -123,7 +125,7 @@ pub fn compare_params_floats_with_original(
             || (context.parameter_vals_float[i] > param_val as f32 + eps)
         {
             synchronisation_controller.mutate(SequencerMutation::SetParam(
-                0,
+                context.current_track as usize,
                 0,
                 context.selected_step as usize,
                 param_of_idx(i),
@@ -162,7 +164,7 @@ async fn main() {
             synchronisation_controller.register_new(),
             current_step_tx.clone(),
         ),
-        voices: vec![voice],
+        voices: vec![Voice::new(&provider), Voice::new(&provider)],
     };
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
@@ -330,7 +332,7 @@ async fn ui_main(
         track_panel_h: 300.,
         title_banner_h: 60.,
 
-        current_track: -1,
+        current_track: 0,
         current_step_play: 0,
 
         selected_step: -1,
@@ -344,19 +346,22 @@ async fn ui_main(
         clear_background(WHITE);
 
         if let Ok(step_data) = step_data_receiver.try_recv() {
-            sequencer.tracks[0].current_step = step_data[0];
+            sequencer.tracks[context.current_track as usize].current_step = step_data[0];
         }
 
         {
             //Assigning main variables from sequencer.
             //Not sure if they should be assinged to some context or exist freely this way
             let sequencer = &sequencer;
-            let num_of_steps = sequencer.tracks[0].patterns[0].steps.len();
+            let num_of_steps = sequencer.tracks[context.current_track as usize].patterns[0]
+                .steps
+                .len();
             // sequencer.tracks[0].default_parameters.parameters[Parameter::Sample as usize] =
             // sample as u8;
 
             // TODO BACZEK FIX
-            context.current_step_play = sequencer.tracks[0].current_step as i32;
+            context.current_step_play =
+                sequencer.tracks[context.current_track as usize].current_step as i32;
 
             //READ USER INPUT
             context.check_user_input();
@@ -413,7 +418,11 @@ async fn ui_main(
                                     ui.push_skin(&note_selected_skin_clone);
                                 } else if context.current_step_play == i as i32 {
                                     ui.push_skin(&note_playing_skin_clone);
-                                } else if sequencer.tracks[0].patterns[0].steps[i].is_some() {
+                                } else if sequencer.tracks[context.current_track as usize].patterns
+                                    [0]
+                                .steps[i]
+                                    .is_some()
+                                {
                                     ui.push_skin(&note_placed_skin_clone);
                                 } else {
                                     ui.push_skin(&note_empty_skin_clone);
@@ -423,18 +432,31 @@ async fn ui_main(
                                     //im not sure if this kind of if/else chain is valid
                                     //i would use some "returns" and tide it up a bit but i think i cant coz its not a method
                                     context.selected_step = -1;
-                                    if sequencer.tracks[0].patterns[0].steps[i].is_some() {
+                                    if sequencer.tracks[context.current_track as usize].patterns[0]
+                                        .steps[i]
+                                        .is_some()
+                                    {
                                         //EDIT MODE:
                                         if context.is_edit_note_pressed {
                                             select_step(&sequencer, &mut context, i as i32);
                                         } else {
-                                            synchronisation_controller
-                                                .mutate(SequencerMutation::RemoveStep(0, 0, i))
+                                            synchronisation_controller.mutate(
+                                                SequencerMutation::RemoveStep(
+                                                    context.current_track as usize,
+                                                    0,
+                                                    i,
+                                                ),
+                                            )
                                             // sequencer.tracks[0].patterns[0].steps[i] = None;
                                         }
                                     } else {
-                                        synchronisation_controller
-                                            .mutate(SequencerMutation::CreateStep(0, 0, i))
+                                        synchronisation_controller.mutate(
+                                            SequencerMutation::CreateStep(
+                                                context.current_track as usize,
+                                                0,
+                                                i,
+                                            ),
+                                        )
                                         // sequencer.tracks[0].patterns[0].steps[i] = Some(Step::default());
                                     }
                                 }
@@ -464,6 +486,7 @@ async fn ui_main(
                             if ui.button(Vec2::new(30., 0.), (i + 1).to_string()) {
                                 //TODO - dodać warunek że track nie jest zalockowany przez innego uzytkownika!!!
                                 context.current_track = i as i32;
+                                context.selected_step = -1; // Todo use Option<usize>
                             }
                         });
                     }
@@ -503,18 +526,25 @@ async fn ui_main(
                     }
 
                     //Option BOX
-                    if context.selected_step != -1 {
-                        //Utwórz 4 slidery do edycji parametrów:
-                        for i in 0..sequencer.tracks[0].patterns[0].steps
+
+                    if context.selected_step != -1
+                        && sequencer.tracks[context.current_track as usize].patterns[0].steps
                             [context.selected_step as usize]
+                            .as_ref()
+                            .is_some()
+                    {
+                        //Utwórz 4 slidery do edycji parametrów:
+                        for i in 0..sequencer.tracks[context.current_track as usize].patterns[0]
+                            .steps[context.selected_step as usize]
                             .as_ref()
                             .unwrap()
                             .parameters
                             .len()
                         {
                             //Pobranie pojedyńczego parametru
-                            let _temp = sequencer.tracks[0].patterns[0].steps
-                                [context.selected_step as usize]
+                            let _temp = sequencer.tracks[context.current_track as usize].patterns
+                                [0]
+                            .steps[context.selected_step as usize]
                                 .as_ref()
                                 .unwrap()
                                 .parameters[i];
@@ -558,7 +588,7 @@ async fn ui_main(
                                                     //Delete parameter
                                                     synchronisation_controller.mutate(
                                                         SequencerMutation::RemoveParam(
-                                                            0,
+                                                            context.current_track as usize,
                                                             0,
                                                             context.selected_step as usize,
                                                             param_of_idx(i),
@@ -572,7 +602,7 @@ async fn ui_main(
                                                     context.parameter_vals_float[i] = default_param;
                                                     synchronisation_controller.mutate(
                                                         SequencerMutation::SetParam(
-                                                            0,
+                                                            context.current_track as usize,
                                                             0,
                                                             context.selected_step as usize,
                                                             param_of_idx(i),
