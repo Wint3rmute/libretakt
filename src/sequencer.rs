@@ -38,11 +38,11 @@ pub struct SynchronisationController {
 }
 
 pub fn serialize_example() {
-    let mut m = SequencerMutation::CreateStep(1, 2, 3);
+    let m = SequencerMutation::CreateStep(1, 2, 3);
     let mut sc = SynchronisationController {
         senders: Vec::new(),
     };
-    let mut vec = sc.serialize(m);
+    let vec = sc.serialize(m);
     let mut slice = vec.as_slice();
     let m2 = sc.deserialize(&mut slice);
 
