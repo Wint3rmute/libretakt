@@ -304,11 +304,38 @@ impl Track {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum Parameter {
+    // Page 1: playback
     Note = 0,
     PitchShift,
-    Sample, // Remember: if adding new values to this enum, set the last value in NUM_OF_PARAMETERS below
+    Sample,
+    PlayMode,
+    NoteLength,
+    NoteVelocity,
+    SampleStart,
+    SampleEnd,
+
+    // Page 2: filtering
+    FilterCutoff,
+    FilterResonance,
+    FilterAttack,
+    FilterDecay,
+    FilterSustain,
+    FilterRelease,
+    FilterType,
+    FilterEnvelope,
+
+    // Page 3: effects
+    ReverbSize,
+    ReverbSend,
+    ReverbParamIdkWhatYet1,
+    ReverbParamIdkWhatYet2,
+    DelayTime,
+    DelayFeedback,
+    DelaySend,
+    DelayParamIdkWhatYet1,
+    // Remember: if adding new values to this enum, set the last value in NUM_OF_PARAMETERS below
 }
-pub const NUM_OF_PARAMETERS: usize = Parameter::Sample as usize + 1;
+pub const NUM_OF_PARAMETERS: usize = Parameter::DelayParamIdkWhatYet1 as usize + 1;
 
 /// Represents a single step event, saved within a [Track](Track).
 ///
