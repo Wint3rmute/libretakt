@@ -1,3 +1,7 @@
+extern crate num;
+#[macro_use]
+extern crate num_derive;
+
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
 use libretakt::sequencer::{
@@ -5,6 +9,7 @@ use libretakt::sequencer::{
     NUM_OF_PARAMETERS,
 };
 use macroquad::prelude::*;
+use num_derive::FromPrimitive;
 
 use flume::{bounded, Receiver};
 use log::{debug, error, info, log_enabled, Level};
@@ -52,9 +57,8 @@ pub fn param_of_idx(i: usize) -> Parameter {
     if i == 1 {
         return Parameter::PitchShift;
     }
-    
+
     return Parameter::Sample;
-    
 }
 
 pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_index: usize) {
@@ -565,10 +569,10 @@ async fn ui_main(
                                     Group::new(hash!("Group LAbel", i), Vec2::new(680., 20.)).ui(
                                         ui,
                                         |ui| {
-                                            ui.label(
-                                                Vec2::new(0., 0.),
-                                                &("Parameter #".to_owned() + &(i + 1).to_string()),
-                                            );
+                                            let parameter: Parameter =
+                                                num::FromPrimitive::from_usize(i).unwrap();
+
+                                            ui.label(Vec2::new(0., 0.), &parameter.to_string());
                                         },
                                     );
 

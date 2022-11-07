@@ -16,6 +16,7 @@
 //!
 
 extern crate flexbuffers;
+use num_derive::FromPrimitive;
 extern crate serde;
 extern crate serde_derive;
 
@@ -301,14 +302,14 @@ impl Track {
 /// 6. Pan
 /// 7. Reverb dry/wet
 /// 8. Delay dry/wet
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromPrimitive)]
 #[repr(u8)]
 pub enum Parameter {
     // Page 1: playback
     Note = 0,
     PitchShift,
-    Sample,
-    PlayMode,
+    Sample,   // Only changes in integer values
+    PlayMode, // Only changes in integer values
     NoteLength,
     NoteVelocity,
     SampleStart,
@@ -321,7 +322,7 @@ pub enum Parameter {
     FilterDecay,
     FilterSustain,
     FilterRelease,
-    FilterType,
+    FilterType, // Only changes in integer values
     FilterEnvelope,
 
     // Page 3: effects
@@ -336,6 +337,16 @@ pub enum Parameter {
     // Remember: if adding new values to this enum, set the last value in NUM_OF_PARAMETERS below
 }
 pub const NUM_OF_PARAMETERS: usize = Parameter::DelayParamIdkWhatYet1 as usize + 1;
+
+impl std::fmt::Display for Parameter {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        // Write strictly the first element into the supplied output
+        // stream: `f`. Returns `fmt::Result` which indicates whether the
+        // operation succeeded or failed. Note that `write!` uses syntax which
+        // is very similar to `println!`.
+        write!(f, "{:?}", self)
+    }
+}
 
 /// Represents a single step event, saved within a [Track](Track).
 ///
