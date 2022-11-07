@@ -52,11 +52,9 @@ pub fn param_of_idx(i: usize) -> Parameter {
     if i == 1 {
         return Parameter::PitchShift;
     }
-    if i == 2 {
-        return Parameter::Sample;
-    } else {
-        return Parameter::Sample;
-    }
+    
+    return Parameter::Sample;
+    
 }
 
 pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_index: usize) {
