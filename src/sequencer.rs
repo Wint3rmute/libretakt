@@ -95,6 +95,7 @@ pub enum SequencerMutation {
     RemoveStep(TrackNum, PatternNum, StepNum),
     SetParam(TrackNum, PatternNum, StepNum, Parameter, ParamValue),
     RemoveParam(TrackNum, PatternNum, StepNum, Parameter),
+    SetTrackParam(TrackNum, Parameter, ParamValue),
 }
 
 pub type CurrentStepData = [usize; 8];
@@ -156,6 +157,10 @@ impl Sequencer {
                         .as_mut()
                         .unwrap()
                         .parameters[parameter as usize] = None;
+                }
+                SequencerMutation::SetTrackParam(track_num, parameter, value) => {
+                    self.tracks[track_num].default_parameters.parameters[parameter as usize] =
+                        value;
                 }
             }
         }
