@@ -77,7 +77,6 @@ pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
     let sliders_group_iter = context.slider_group_sizes.iter();
     
     for val in sliders_group_iter{
-        println!("{}", val);
         if context.current_slider_group == current_iter_group{
             if i + 1 <= sliders_before_count{
                 return false;
@@ -86,7 +85,6 @@ pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
                 return false;
             }
             return true;
-            println!("{}", sliders_before_count);
         }
 
         sliders_before_count = sliders_before_count + val;
