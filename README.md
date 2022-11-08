@@ -1,5 +1,7 @@
 # Libretakt
 
+Zmiana żeby coś było
+
 Project name based on Elektron's [Digitakt](https://www.elektron.se/us/digitakt-explorer) (but free/libre/etc).
 
 ## Learning resources
