@@ -159,7 +159,7 @@ pub fn compare_params_floats_with_original(
         if (context.parameter_vals_float[i] < param_val as f32 - eps)
             || (context.parameter_vals_float[i] > param_val as f32 + eps)
         {
-            synchronisation_controller.mutate(SequencerMutation::SetParam(
+            synchronisation_controller.mutate(SequencerMutation::SetStepParam(
                 context.current_track as usize,
                 0,
                 context.selected_step as usize,
@@ -663,7 +663,7 @@ async fn ui_main(
                                                     let default_param = 0.0;
                                                     context.parameter_vals_float[i] = default_param;
                                                     synchronisation_controller.mutate(
-                                                        SequencerMutation::SetParam(
+                                                        SequencerMutation::SetStepParam(
                                                             context.current_track as usize,
                                                             0,
                                                             context.selected_step as usize,

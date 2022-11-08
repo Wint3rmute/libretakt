@@ -93,7 +93,7 @@ type ParamValue = u8;
 pub enum SequencerMutation {
     CreateStep(TrackNum, PatternNum, StepNum),
     RemoveStep(TrackNum, PatternNum, StepNum),
-    SetParam(TrackNum, PatternNum, StepNum, Parameter, ParamValue),
+    SetStepParam(TrackNum, PatternNum, StepNum, Parameter, ParamValue),
     RemoveParam(TrackNum, PatternNum, StepNum, Parameter),
     SetTrackParam(TrackNum, Parameter, ParamValue),
 }
@@ -138,7 +138,7 @@ impl Sequencer {
                 SequencerMutation::RemoveStep(track, pattern, step) => {
                     self.tracks[track].patterns[pattern].steps[step] = None;
                 }
-                SequencerMutation::SetParam(track, pattern, step, parameter, value) => {
+                SequencerMutation::SetStepParam(track, pattern, step, parameter, value) => {
                     if self.tracks[track].patterns[pattern].steps[step].is_none() {
                         self.tracks[track].patterns[pattern].steps[step] = Some(Step::default());
                     }
