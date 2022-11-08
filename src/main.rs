@@ -17,6 +17,9 @@ use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
 use rodio::{OutputStream, Sink};
 use std::sync::Arc;
 
+use strum::IntoEnumIterator; // 0.17.1
+use strum_macros::EnumIter; // 0.17.1
+
 pub struct Context {
     //(temporary) variables for UI windows dimensions
     pub track_choice_panel_w: f32,
@@ -51,12 +54,13 @@ impl Context {
 }
 
 pub fn param_of_idx(i: usize) -> Parameter {
-    if i == 0 {
-        return Parameter::Note;
-    }
-    if i == 1 {
-        return Parameter::PitchShift;
-    }
+    let mut iterator = 0;
+    for param in Parameter::iter(){
+        if i == iterator{
+            return param;
+        }
+        iterator = iterator + 1;
+    } 
 
     return Parameter::Sample;
 }

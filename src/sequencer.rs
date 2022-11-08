@@ -28,6 +28,9 @@ use serde::{Deserialize, Serialize};
 
 use flume::bounded;
 
+use strum::IntoEnumIterator; // 0.17.1
+use strum_macros::EnumIter; // 0.17.1
+
 /// Allows lock-free synchronisation between multiple [Sequencer] instances,
 /// shared across different threads.
 ///
@@ -307,7 +310,7 @@ impl Track {
 /// 6. Pan
 /// 7. Reverb dry/wet
 /// 8. Delay dry/wet
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromPrimitive)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromPrimitive, EnumIter)]
 #[repr(u8)]
 pub enum Parameter {
     // Page 1: playback
