@@ -46,8 +46,6 @@ impl Iterator for Engine {
     }
 }
 
-pub struct ReverbParams {}
-
 /// An audible voice, playing a single sample at a time.
 /// Receives events from the [Track](crate::sequencer::Track).
 ///
@@ -72,13 +70,29 @@ pub struct Voice {
     pub filter_delay: [f32; 4],
 }
 
+pub struct ReverbParams {
+    time_scale: f64,
+}
+
+impl Default for ReverbParams {
+    fn default() -> Self {
+        Self { time_scale: 0.0 }
+    }
+}
+
+impl ReverbParams {
+    fn fill(&mut self, time_scale: f32) {
+        self.time_scale = time_scale as f64;
+    }
+}
+
 impl DattorroReverbParams for ReverbParams {
     fn pre_delay_time_ms(&self) -> f64 {
         0.0
     }
 
     fn time_scale(&self) -> f64 {
-        0.9
+        self.time_scale
     }
 
     fn input_low_cutoff_hz(&self) -> f64 {
@@ -118,7 +132,7 @@ impl DattorroReverbParams for ReverbParams {
     }
 
     fn decay(&self) -> f64 {
-        1.0
+        self.time_scale
     }
 }
 
@@ -135,7 +149,11 @@ impl Voice {
     }
 
     pub fn play(&mut self, parameters: PlaybackParameters) {
-        self.playback_speed = parameters.parameters[Parameter::PitchShift as usize] as f32 / 20.0;
+        // self.playback_speed = parameters.parameters[Parameter::PitchShift as usize] as f32 / 20.0;
+        self.playback_speed = 1.0;
+
+        self.reverb_params
+            .fill(parameters.parameters[Parameter::PitchShift as usize as usize] as f32 / 64.0);
         self.playback_parameters = Some(parameters);
         self.reset()
     }
@@ -154,7 +172,7 @@ impl Voice {
             sample_played: 1,
             playback_speed: 1.0,
             reverb,
-            reverb_params: ReverbParams {},
+            reverb_params: ReverbParams::default(),
             playback_parameters: None,
 
             b0: 0.0,
@@ -163,6 +181,28 @@ impl Voice {
             b3: 0.0,
             filter_delay: [0.0; 4],
         }
+    }
+
+    fn get_next_raw_sample_and_progress(&mut self) -> f32 {
+        if let Some(parameters) = &self.playback_parameters {
+            if parameters.parameters[Parameter::Sample as usize] as usize
+                >= self.sample_provider.samples.len()
+            {
+                return 0.0;
+            }
+            let sample = &self.sample_provider.samples
+                [parameters.parameters[Parameter::Sample as usize] as usize];
+
+            if (self.play_position + 1.0) >= sample.data.len() as f32 {
+                return 0.0;
+            } else {
+                let result = self.get_at_index(sample, self.play_position);
+                self.play_position += self.playback_speed;
+                return result;
+            }
+        }
+
+        return 0.0;
     }
 
     /// TLDR linear interpolation for sample playback,
@@ -187,55 +227,26 @@ impl Voice {
     ///     Sample 113 * 0.8
     /// )
     fn tick(&mut self) -> f32 {
-        if let Some(parameters) = &self.playback_parameters {
-            if parameters.parameters[Parameter::Sample as usize] as usize
-                >= self.sample_provider.samples.len()
-            {
-                return 0.0;
-            }
+        let result = self.get_next_raw_sample_and_progress();
 
-            let sample = &self.sample_provider.samples
-                [parameters.parameters[Parameter::Sample as usize] as usize];
+        // let freq = parameters.parameters[Parameter::Note as usize] as f32 * 200.0;
+        // let resonance = parameters.parameters[Parameter::PitchShift as usize] as f32 / 64.0;
 
-            let freq = parameters.parameters[Parameter::Note as usize] as f32 * 200.0;
-            let resonance = parameters.parameters[Parameter::PitchShift as usize] as f32 / 64.0;
+        // result
+        // let (low, _band, _high) = process_simper_svf(
+        //     result,
+        //     freq,
+        //     resonance,
+        //     1.0 / constants::SAMPLE_RATE as f32,
+        //     &mut self.b0,
+        //     &mut self.b1,
+        // );
 
-            if (self.play_position + 1.0) >= sample.data.len() as f32 {
-                0.0
-            } else {
-                let result = self.get_at_index(sample, self.play_position);
-                self.play_position += self.playback_speed;
+        // low
+        let (reverb_result, _) =
+            self.reverb
+                .process(&mut self.reverb_params, result as f64, result as f64);
 
-                // result
-                let (low, _band, _high) = process_simper_svf(
-                    result,
-                    freq,
-                    resonance,
-                    1.0 / constants::SAMPLE_RATE as f32,
-                    &mut self.b0,
-                    &mut self.b1,
-                );
-
-                low
-
-                // process_stilson_moog(
-                //     result,
-                //     freq,
-                //     resonance,
-                //     1.0 / constants::SAMPLE_RATE as f32,
-                //     &mut self.b0,
-                //     &mut self.b1,
-                //     &mut self.b2,
-                //     &mut self.b3,
-                //     &mut self.filter_delay,
-                // )
-                // + self
-                //     .reverb
-                //     .process(&mut self.reverb_params, result as f64, result as f64)
-                //     .0 as f32
-            }
-        } else {
-            0.0
-        }
+        result * 0.5 + reverb_result as f32 * 0.5
     }
 }
