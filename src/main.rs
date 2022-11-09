@@ -2,6 +2,7 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
+use libretakt::constants::NUM_OF_VOICES;
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
 use libretakt::sequencer::{
@@ -59,29 +60,28 @@ impl Context {
 
 pub fn param_of_idx(i: usize) -> Parameter {
     let mut iterator = 0;
-    for param in Parameter::iter(){
-        if i == iterator{
+    for param in Parameter::iter() {
+        if i == iterator {
             return param;
         }
         iterator = iterator + 1;
-    } 
+    }
 
     return Parameter::Sample;
 }
 
 pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
-   
     let mut sliders_before_count = 0;
     let mut current_iter_group = 0;
-    
+
     let sliders_group_iter = context.slider_group_sizes.iter();
-    
-    for val in sliders_group_iter{
-        if context.current_slider_group == current_iter_group{
-            if i + 1 <= sliders_before_count{
+
+    for val in sliders_group_iter {
+        if context.current_slider_group == current_iter_group {
+            if i + 1 <= sliders_before_count {
                 return false;
             }
-            if i + 1 > sliders_before_count + val{
+            if i + 1 > sliders_before_count + val {
                 return false;
             }
             return true;
@@ -199,7 +199,7 @@ async fn main() {
             synchronisation_controller.register_new(),
             current_step_tx.clone(),
         ),
-        voices: vec![Voice::new(&provider), Voice::new(&provider)],
+        voices: (0..NUM_OF_VOICES).map(|_| Voice::new(&provider)).collect(), // vec![Voice::new(&provider); 3],
     };
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
@@ -375,7 +375,7 @@ async fn ui_main(
         parameter_vals_float: [0f32; NUM_OF_PARAMETERS],
 
         current_slider_group: 0,
-        slider_group_sizes: vec![8,8,8],
+        slider_group_sizes: vec![8, 8, 8],
 
         is_edit_note_pressed: false,
     };
@@ -575,20 +575,18 @@ async fn ui_main(
                             ui,
                             |ui| {
                                 //ui.label(Vec2::new(0., 0.), "SLIDER GROUPS SELECTOR");
-                                for button_i in 0..3{
-                                    Group::new(hash!("ASGADGXXZXCZSSCBHRAZEEHSEH", button_i), Vec2::new(40., 40.)).ui(
-                                        ui,
-                                        |ui| {
-                                            if ui.button(
-                                                Vec2::new(0., 0.),
-                                                button_i.to_string(),
-                                            ) {
-                                                context.current_slider_group = button_i;
-                                            }
+                                for button_i in 0..3 {
+                                    Group::new(
+                                        hash!("ASGADGXXZXCZSSCBHRAZEEHSEH", button_i),
+                                        Vec2::new(40., 40.),
+                                    )
+                                    .ui(ui, |ui| {
+                                        if ui.button(Vec2::new(0., 0.), button_i.to_string()) {
+                                            context.current_slider_group = button_i;
                                         }
-                                    );
+                                    });
                                 }
-                            }
+                            },
                         );
 
                         //Utwórz  slidery do edycji parametrów:
@@ -601,7 +599,7 @@ async fn ui_main(
                         {
                             //Sprawdź czy jest to current slider group
                             //if not current slider group => continue
-                            if !is_in_current_slided_group(&context, i as i32 ){
+                            if !is_in_current_slided_group(&context, i as i32) {
                                 continue;
                             }
 
@@ -684,7 +682,6 @@ async fn ui_main(
                                         ui,
                                         |ui| {
                                             if is_param == true {
-
                                                 ui.slider(
                                                     hash!("param slider", i),
                                                     "",

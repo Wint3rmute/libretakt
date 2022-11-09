@@ -20,7 +20,7 @@ use num_derive::FromPrimitive;
 extern crate serde;
 extern crate serde_derive;
 
-use crate::constants;
+use crate::constants::{self, NUM_OF_VOICES};
 use crate::engine::Voice;
 use flume::{Receiver, Sender};
 use log::{debug, error};
@@ -117,7 +117,7 @@ impl Sequencer {
         current_step_sender: Sender<CurrentStepData>,
     ) -> Self {
         Sequencer {
-            tracks: vec![Track::new(), Track::new()],
+            tracks: (0..NUM_OF_VOICES).map(|_| Track::new()).collect(),
             beats_per_minute: 120,
             time_counter: 0,
             mutations_queue,
