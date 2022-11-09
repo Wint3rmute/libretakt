@@ -17,6 +17,9 @@ use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
 use rodio::{OutputStream, Sink};
 use std::sync::Arc;
 
+use strum::IntoEnumIterator; // 0.17.1
+use strum_macros::EnumIter; // 0.17.1
+
 pub struct Context {
     //(temporary) variables for UI windows dimensions
     pub track_choice_panel_w: f32,
@@ -32,6 +35,10 @@ pub struct Context {
     pub selected_step: i32,
     pub parameter_vals: [u8; NUM_OF_PARAMETERS],
     pub parameter_vals_float: [f32; NUM_OF_PARAMETERS],
+
+    //SliderGroups
+    pub current_slider_group: i32,
+    pub slider_group_sizes: Vec<i32>,
 
     //Keyboard varbiales
     pub is_edit_note_pressed: bool,
@@ -51,14 +58,40 @@ impl Context {
 }
 
 pub fn param_of_idx(i: usize) -> Parameter {
-    if i == 0 {
-        return Parameter::Note;
-    }
-    if i == 1 {
-        return Parameter::PitchShift;
-    }
+    let mut iterator = 0;
+    for param in Parameter::iter(){
+        if i == iterator{
+            return param;
+        }
+        iterator = iterator + 1;
+    } 
 
     return Parameter::Sample;
+}
+
+pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
+   
+    let mut sliders_before_count = 0;
+    let mut current_iter_group = 0;
+    
+    let sliders_group_iter = context.slider_group_sizes.iter();
+    
+    for val in sliders_group_iter{
+        if context.current_slider_group == current_iter_group{
+            if i + 1 <= sliders_before_count{
+                return false;
+            }
+            if i + 1 > sliders_before_count + val{
+                return false;
+            }
+            return true;
+        }
+
+        sliders_before_count = sliders_before_count + val;
+        current_iter_group = current_iter_group + 1;
+    }
+
+    return false;
 }
 
 pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_index: usize) {
@@ -341,6 +374,9 @@ async fn ui_main(
         parameter_vals: [0u8; NUM_OF_PARAMETERS],
         parameter_vals_float: [0f32; NUM_OF_PARAMETERS],
 
+        current_slider_group: 0,
+        slider_group_sizes: vec![8,8,8],
+
         is_edit_note_pressed: false,
     };
 
@@ -535,7 +571,27 @@ async fn ui_main(
                             .as_ref()
                             .is_some()
                     {
-                        //Utwórz 4 slidery do edycji parametrów:
+                        Group::new(hash!("Slider Group Selector Box"), Vec2::new(700., 45.)).ui(
+                            ui,
+                            |ui| {
+                                //ui.label(Vec2::new(0., 0.), "SLIDER GROUPS SELECTOR");
+                                for button_i in 0..3{
+                                    Group::new(hash!("ASGADGXXZXCZSSCBHRAZEEHSEH", button_i), Vec2::new(40., 40.)).ui(
+                                        ui,
+                                        |ui| {
+                                            if ui.button(
+                                                Vec2::new(0., 0.),
+                                                button_i.to_string(),
+                                            ) {
+                                                context.current_slider_group = button_i;
+                                            }
+                                        }
+                                    );
+                                }
+                            }
+                        );
+
+                        //Utwórz  slidery do edycji parametrów:
                         for i in 0..sequencer.tracks[context.current_track as usize].patterns[0]
                             .steps[context.selected_step as usize]
                             .as_ref()
@@ -543,6 +599,12 @@ async fn ui_main(
                             .parameters
                             .len()
                         {
+                            //Sprawdź czy jest to current slider group
+                            //if not current slider group => continue
+                            if !is_in_current_slided_group(&context, i as i32 ){
+                                continue;
+                            }
+
                             //Pobranie pojedyńczego parametru
                             let _temp = sequencer.tracks[context.current_track as usize].patterns
                                 [0]
@@ -622,6 +684,7 @@ async fn ui_main(
                                         ui,
                                         |ui| {
                                             if is_param == true {
+
                                                 ui.slider(
                                                     hash!("param slider", i),
                                                     "",
