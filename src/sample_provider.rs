@@ -34,6 +34,11 @@ impl Default for SampleProvider {
     }
 }
 
+
+
+
+
+
 /// Data of a single sample used within Libretakt
 pub struct SampleData {
     pub name: String,
