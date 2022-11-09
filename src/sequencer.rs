@@ -169,7 +169,7 @@ impl Sequencer {
         // Dividing by 4 in the end to use eight-notes as default step length,
         // it will feel more intuitive to the user this way (trust me)
         if self.time_counter as f32
-            >= 60.0 / self.beats_per_minute as f32 * constants::SAMPLE_RATE as f32 / 2.0
+            >= 60.0 / self.beats_per_minute as f32 * constants::SAMPLE_RATE as f32 / 4.0
         {
             self.time_counter = 0;
             self.play_step(voices);
@@ -389,6 +389,7 @@ impl Default for PlaybackParameters {
         parameters[Parameter::Note as usize] = 64u8;
         parameters[Parameter::PitchShift as usize] = 20u8;
         parameters[Parameter::Sample as usize] = 0u8;
+        parameters[Parameter::FilterCutoff as usize] = 100u8;
 
         PlaybackParameters { parameters }
     }
