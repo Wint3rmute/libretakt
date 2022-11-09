@@ -1,5 +1,6 @@
 //! Collaborative sampler!
 
+pub mod adsr;
 pub mod constants;
 pub mod engine;
 pub mod ladder_filter;
