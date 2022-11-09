@@ -199,7 +199,7 @@ async fn main() {
             synchronisation_controller.register_new(),
             current_step_tx.clone(),
         ),
-        voices: (0..NUM_OF_VOICES).map(|_| Voice::new(&provider)).collect(), // vec![Voice::new(&provider); 3],
+        voices: (0..NUM_OF_VOICES).map(|_| Voice::new(&provider)).collect(),
     };
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
