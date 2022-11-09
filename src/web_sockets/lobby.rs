@@ -1,6 +1,6 @@
 use crate::messages::{ClientActorMessage, Connect, Disconnect, WsMessage};
 use actix::prelude::{Actor, Context, Handler, Recipient};
-use log::{debug, error, info, log_enabled, Level};
+use log::error;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 

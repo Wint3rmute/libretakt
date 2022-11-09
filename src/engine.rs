@@ -1,6 +1,7 @@
 //! Responsible for sample playback.
 use rodio::Source;
 
+use crate::reverb;
 use crate::sample_provider::{SampleData, SampleProvider};
 use crate::sequencer::{Parameter, Sequencer};
 use crate::{constants, sequencer::PlaybackParameters};
@@ -60,7 +61,7 @@ pub struct Voice {
     pub play_position: f32,
     pub sample_played: usize,
     pub playback_speed: f32,
-    pub reverb: DattorroReverb,
+    pub reverb: reverb::DattorroReverbF32,
     pub reverb_params: ReverbParams,
 
     pub b0: f32,
@@ -71,7 +72,7 @@ pub struct Voice {
 }
 
 pub struct ReverbParams {
-    time_scale: f64,
+    time_scale: f32,
 }
 
 impl Default for ReverbParams {
@@ -82,56 +83,56 @@ impl Default for ReverbParams {
 
 impl ReverbParams {
     fn fill(&mut self, time_scale: f32) {
-        self.time_scale = time_scale as f64;
+        self.time_scale = time_scale as f32;
     }
 }
 
-impl DattorroReverbParams for ReverbParams {
-    fn pre_delay_time_ms(&self) -> f64 {
+impl reverb::DattorroReverbParamsF32 for ReverbParams {
+    fn pre_delay_time_ms(&self) -> f32 {
         0.0
     }
 
-    fn time_scale(&self) -> f64 {
+    fn time_scale(&self) -> f32 {
         self.time_scale
     }
 
-    fn input_low_cutoff_hz(&self) -> f64 {
+    fn input_low_cutoff_hz(&self) -> f32 {
         22000.0
     }
 
-    fn input_high_cutoff_hz(&self) -> f64 {
+    fn input_high_cutoff_hz(&self) -> f32 {
         0.0
     }
 
-    fn reverb_high_cutoff_hz(&self) -> f64 {
+    fn reverb_high_cutoff_hz(&self) -> f32 {
         0.0
     }
 
-    fn reverb_low_cutoff_hz(&self) -> f64 {
+    fn reverb_low_cutoff_hz(&self) -> f32 {
         0.0
     }
 
-    fn mod_speed(&self) -> f64 {
+    fn mod_speed(&self) -> f32 {
         0.0
     }
 
-    fn mod_depth(&self) -> f64 {
+    fn mod_depth(&self) -> f32 {
         0.0
     }
 
-    fn mod_shape(&self) -> f64 {
+    fn mod_shape(&self) -> f32 {
         0.0
     }
 
-    fn input_diffusion_mix(&self) -> f64 {
+    fn input_diffusion_mix(&self) -> f32 {
         1.0
     }
 
-    fn diffusion(&self) -> f64 {
+    fn diffusion(&self) -> f32 {
         0.0
     }
 
-    fn decay(&self) -> f64 {
+    fn decay(&self) -> f32 {
         self.time_scale
     }
 }
@@ -163,8 +164,8 @@ impl Voice {
     }
 
     pub fn new(provider: &Arc<SampleProvider>) -> Self {
-        let mut reverb = DattorroReverb::new();
-        reverb.set_sample_rate(constants::SAMPLE_RATE as f64);
+        let mut reverb = reverb::DattorroReverbF32::new();
+        reverb.set_sample_rate(constants::SAMPLE_RATE as f32);
 
         let mut parameters = PlaybackParameters::default();
         parameters.parameters[Parameter::Sample as usize] = 126;
@@ -196,11 +197,11 @@ impl Voice {
             [self.playback_parameters.parameters[Parameter::Sample as usize] as usize];
 
         if (self.play_position + 1.0) >= sample.data.len() as f32 {
-            return 0.0;
+            0.0
         } else {
             let result = self.get_at_index(sample, self.play_position);
             self.play_position += self.playback_speed;
-            return result;
+            result
         }
     }
 
@@ -242,14 +243,13 @@ impl Voice {
             &mut self.b1,
         );
 
-        result
+        // result
 
         // low
-        // let (reverb_result, _) =
-        //     self.reverb
-        //         .process(&mut self.reverb_params, result as f64, result as f64);
+        let (reverb_result, _) = self.reverb.process(&mut self.reverb_params, result, result);
 
-        // result + reverb_result as f32 * 0.5
+        // result + reverb_result * 0.5
+        reverb_result
         // result
     }
 }

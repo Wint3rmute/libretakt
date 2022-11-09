@@ -10,16 +10,15 @@ use libretakt::sequencer::{
     NUM_OF_PARAMETERS,
 };
 use macroquad::prelude::*;
-use num_derive::FromPrimitive;
 
 use flume::{bounded, Receiver};
-use log::{debug, error, info, log_enabled, Level};
+
 use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
 use rodio::{OutputStream, Sink};
 use std::sync::Arc;
 
 use strum::IntoEnumIterator; // 0.17.1
-use strum_macros::EnumIter; // 0.17.1
+                             // 0.17.1
 
 pub struct Context {
     //(temporary) variables for UI windows dimensions
@@ -64,10 +63,10 @@ pub fn param_of_idx(i: usize) -> Parameter {
         if i == iterator {
             return param;
         }
-        iterator = iterator + 1;
+        iterator += 1;
     }
 
-    return Parameter::Sample;
+    Parameter::Sample
 }
 
 pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
@@ -78,7 +77,7 @@ pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
 
     for val in sliders_group_iter {
         if context.current_slider_group == current_iter_group {
-            if i + 1 <= sliders_before_count {
+            if i < sliders_before_count {
                 return false;
             }
             if i + 1 > sliders_before_count + val {
@@ -87,11 +86,11 @@ pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
             return true;
         }
 
-        sliders_before_count = sliders_before_count + val;
-        current_iter_group = current_iter_group + 1;
+        sliders_before_count += val;
+        current_iter_group += 1;
     }
 
-    return false;
+    false
 }
 
 pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_index: usize) {
@@ -114,8 +113,8 @@ pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_
         None => {}
     }
 
-    if is_param == false {
-        context.parameter_vals_float[param_index] = 7 as f32;
+    if !is_param {
+        context.parameter_vals_float[param_index] = 7_f32;
         return;
     }
 
@@ -193,7 +192,7 @@ async fn main() {
 
     let (current_step_tx, current_step_rx) = bounded::<CurrentStepData>(64);
 
-    let voice = Voice::new(&provider);
+    let _voice = Voice::new(&provider);
     let engine = Engine {
         sequencer: Sequencer::new(
             synchronisation_controller.register_new(),
@@ -407,7 +406,7 @@ async fn ui_main(
             //Jakiś extra space na logike kodu
             compare_params_floats_with_original(
                 &mut synchronisation_controller,
-                &sequencer,
+                sequencer,
                 &mut context,
             );
 
@@ -476,7 +475,7 @@ async fn ui_main(
                                     {
                                         //EDIT MODE:
                                         if context.is_edit_note_pressed {
-                                            select_step(&sequencer, &mut context, i as i32);
+                                            select_step(sequencer, &mut context, i as i32);
                                         } else {
                                             synchronisation_controller.mutate(
                                                 SequencerMutation::RemoveStep(
@@ -681,7 +680,7 @@ async fn ui_main(
                                     Group::new(hash!("Group Slider", i), Vec2::new(500., 38.)).ui(
                                         ui,
                                         |ui| {
-                                            if is_param == true {
+                                            if is_param {
                                                 ui.slider(
                                                     hash!("param slider", i),
                                                     "",
