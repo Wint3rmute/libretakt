@@ -65,10 +65,6 @@ impl Source for Sample {
     }
 }
 
-fn ffmpeg_stream_example() {
-    
-}
-
 //cargo run --example sample_stream | ffmpeg -f f32le -i pipe: -f mp3 - | ffmpeg -re -f mp3 -i pipe: -c copy -f flv rtmp://baczek.me/live/livestream
 fn main() {
     let mut stdout = io::stdout().lock();
