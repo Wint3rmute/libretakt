@@ -24,6 +24,8 @@ impl Lobby {
     fn send_message(&self, message: &str, id_to: &Uuid) {
         if let Some(socket_recipient) = self.sessions.get(id_to) {
             let _ = socket_recipient.do_send(WsMessage(message.to_owned()));
+            let _ = socket_recipient.do_send(WsMessage(message.to_owned()));
+            info!("Message have been sended");
         } else {
             error!("attempting to send message but couldn't find user id.");
         }
