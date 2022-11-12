@@ -16,10 +16,11 @@ synfx-dsp = "0.5.4"
 serde_json = "1.0.86"
 serde = { version = "1.0", features = ["derive"] }
 flume = "0.10.14"
-actix-web="3.2.0" 
+actix-web = { version = "4.0.0-beta.10" }
 actix-web-actors="3"
 actix = "0.10.0"
 uuid = { version = "0.8", features = ["v4", "serde"] }
+awc = "3.0.1"
 
 [[bin]]
 bench = false
@@ -28,5 +29,10 @@ name = "client"
 
 [[bin]]
 bench = false
-path = "src/web_sockets/main.rs"
-name = "ws"
+path = "src/web_sockets/main_server.rs"
+name = "ws_server"
+
+[[bin]]
+bench = false
+path = "src/web_sockets/main_client.rs"
+name = "ws_client"
