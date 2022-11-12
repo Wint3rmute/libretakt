@@ -26,6 +26,7 @@ impl Lobby {
         if let Some(socket_recipient) = self.sessions.get(id_to) {
             let _ = socket_recipient
                 .do_send(WsMessage(message.to_owned()));
+            println!("Message have been sended");
         } else {
             println!("attempting to send message but couldn't find user id.");
         }
