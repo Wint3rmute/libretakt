@@ -224,7 +224,7 @@ impl<'a> MVerb<'a> {
             (((0.7995 * self.decay) + 0.005) - self.decay_smooth) * OneOverSampleFrames;
         let DensityDelta =
             (((0.7995 * self.density1) + 0.005) - self.density_smooth) * OneOverSampleFrames;
-        let i = 0;
+        let _i = 0;
         let left = input.0;
         // let right = inputs[1][i];
         let right = input.1;
@@ -236,7 +236,7 @@ impl<'a> MVerb<'a> {
         self.size_smooth += SizeDelta;
         self.decay_smooth += DecayDelta;
         self.density_smooth += DensityDelta;
-        if (self.control_rate_counter >= self.control_rate) {
+        if self.control_rate_counter >= self.control_rate {
             self.control_rate_counter = 0;
             self.bandwidth_filter[0].set_frequency(self.bandwidth_smooth);
             self.bandwidth_filter[1].set_frequency(self.bandwidth_smooth);
@@ -246,10 +246,10 @@ impl<'a> MVerb<'a> {
         self.control_rate_counter += 1;
         self.predelay.set_length(self.predelay_smooth as usize);
         self.density2 = self.decay_smooth + 0.15;
-        if (self.density2 > 0.5) {
+        if self.density2 > 0.5 {
             self.density2 = 0.5;
         }
-        if (self.density2 < 0.25) {
+        if self.density2 < 0.25 {
             self.density2 = 0.25;
         }
         self.all_pass_four_tap[1].set_feedback(self.density2);
@@ -313,9 +313,9 @@ impl<'a> MVerb<'a> {
             - (0.6 * self.all_pass_four_tap[3].get_index(2))
             - (0.6 * self.static_delay_line[3].get_index(2));
         accumulatorL =
-            ((accumulatorL * self.early_mix) + ((1.0 - self.early_mix) * earlyReflectionsL));
+            (accumulatorL * self.early_mix) + ((1.0 - self.early_mix) * earlyReflectionsL);
         accumulatorR =
-            ((accumulatorR * self.early_mix) + ((1.0 - self.early_mix) * earlyReflectionsR));
+            (accumulatorR * self.early_mix) + ((1.0 - self.early_mix) * earlyReflectionsR);
 
         let left_output = (left + self.mix_smooth * (accumulatorL - left)) * self.gain;
         let right_output = (right + self.mix_smooth * (accumulatorR - right)) * self.gain;
@@ -761,7 +761,7 @@ pub struct StateVariable<'a, const over_sample_count: usize> {
 
 impl<'a, const over_sample_count: usize> Default for StateVariable<'a, over_sample_count> {
     fn default() -> Self {
-        let mut result = Self {
+        let result = Self {
             sample_rate: 44100.0,
             frequency: 1000.0,
             q: 0.0,
