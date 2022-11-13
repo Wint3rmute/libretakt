@@ -1,5 +1,3 @@
-use std::cell::Cell;
-
 pub enum MVerbParam {
     DampingFrequency,
     Density,
@@ -151,6 +149,174 @@ impl<'a> MVerb<'a> {
         self.static_delay_line[1].set_length((0.12 * self.sample_rate * self.size) as usize);
         self.static_delay_line[2].set_length((0.14 * self.sample_rate * self.size) as usize);
         self.static_delay_line[3].set_length((0.11 * self.sample_rate * self.size) as usize);
+
+        self.static_delay_line[0].set_index(
+            0,
+            (0.067 * self.sample_rate * self.size) as usize,
+            (0.011 * self.sample_rate * self.size) as usize,
+            (0.121 * self.sample_rate * self.size) as usize,
+        );
+
+        self.static_delay_line[1].set_index(
+            0,
+            (0.036 * self.sample_rate * self.size) as usize,
+            (0.089 * self.sample_rate * self.size) as usize,
+            0,
+        );
+        self.static_delay_line[2].set_index(
+            0,
+            (0.0089 * self.sample_rate * self.size) as usize,
+            (0.099 * self.sample_rate * self.size) as usize,
+            0,
+        );
+        self.static_delay_line[3].set_index(
+            0,
+            (0.067 * self.sample_rate * self.size) as usize,
+            (0.0041 * self.sample_rate * self.size) as usize,
+            0,
+        );
+
+        self.early_reflections_delay_line[0].clear();
+        self.early_reflections_delay_line[1].clear();
+        self.early_reflections_delay_line[0].set_length((0.089 * self.sample_rate) as usize);
+
+        self.early_reflections_delay_line[0].set_index(
+            0,
+            (0.0199 * self.sample_rate) as usize,
+            (0.0219 * self.sample_rate) as usize,
+            (0.0354 * self.sample_rate) as usize,
+            (0.0389 * self.sample_rate) as usize,
+            (0.0414 * self.sample_rate) as usize,
+            (0.0692 * self.sample_rate) as usize,
+            0,
+        );
+        self.early_reflections_delay_line[1].set_length((0.069 * self.sample_rate) as usize);
+        self.early_reflections_delay_line[1].set_index(
+            0,
+            (0.0099 * self.sample_rate) as usize,
+            (0.011 * self.sample_rate) as usize,
+            (0.0182 * self.sample_rate) as usize,
+            (0.0189 * self.sample_rate) as usize,
+            (0.0213 * self.sample_rate) as usize,
+            (0.0431 * self.sample_rate) as usize,
+            0,
+        );
+    }
+
+    fn process(&mut self, input: (f32, f32)) -> (f32, f32) {
+        type T = f32;
+        let sampleFrames = 1.0;
+
+        let OneOverSampleFrames: f32 = 1. / sampleFrames;
+
+        let mix_delta = (self.mix - self.mix_smooth) * OneOverSampleFrames;
+        let early_late_delta = (self.early_mix - self.early_late_smooth) * OneOverSampleFrames;
+        let bandwidth_delta = (((self.bandwidth_frequency * 18400.) + 100.)
+            - self.bandwidth_smooth)
+            * OneOverSampleFrames;
+        let DampingDelta = (((self.damping_frequency * 18400.) + 100.) - self.damping_smooth)
+            * OneOverSampleFrames;
+        let PredelayDelta = ((self.pre_delay_time * 200.0 * (self.sample_rate / 1000.0))
+            - self.predelay_smooth)
+            * OneOverSampleFrames;
+        let SizeDelta = (self.size - self.size_smooth) * OneOverSampleFrames;
+        let DecayDelta =
+            (((0.7995 * self.decay) + 0.005) - self.decay_smooth) * OneOverSampleFrames;
+        let DensityDelta =
+            (((0.7995 * self.density1) + 0.005) - self.density_smooth) * OneOverSampleFrames;
+        let i = 0;
+        let left = input.0;
+        // let right = inputs[1][i];
+        let right = input.1;
+        self.mix_smooth += mix_delta;
+        self.early_late_smooth += early_late_delta;
+        self.bandwidth_smooth += bandwidth_delta;
+        self.damping_smooth += DampingDelta;
+        self.predelay_smooth += PredelayDelta;
+        self.size_smooth += SizeDelta;
+        self.decay_smooth += DecayDelta;
+        self.density_smooth += DensityDelta;
+        if (self.control_rate_counter >= self.control_rate) {
+            self.control_rate_counter = 0;
+            self.bandwidth_filter[0].set_frequency(self.bandwidth_smooth);
+            self.bandwidth_filter[1].set_frequency(self.bandwidth_smooth);
+            self.damping[0].set_frequency(self.damping_smooth);
+            self.damping[1].set_frequency(self.damping_smooth);
+        }
+        self.control_rate_counter += 1;
+        self.predelay.set_length(self.predelay_smooth as usize);
+        self.density2 = self.decay_smooth + 0.15;
+        if (self.density2 > 0.5) {
+            self.density2 = 0.5;
+        }
+        if (self.density2 < 0.25) {
+            self.density2 = 0.25;
+        }
+        self.all_pass_four_tap[1].set_feedback(self.density2);
+        self.all_pass_four_tap[3].set_feedback(self.density2);
+        self.all_pass_four_tap[0].set_feedback(self.density1);
+        self.all_pass_four_tap[2].set_feedback(self.density1);
+
+        let bandwidthLeft = self.bandwidth_filter[0].operator(left);
+        let bandwidthRight = self.bandwidth_filter[1].operator(right);
+        let earlyReflectionsL = self.early_reflections_delay_line[0]
+            .operator(bandwidthLeft * 0.5 + bandwidthRight * 0.3)
+            + self.early_reflections_delay_line[0].get_index(2) * 0.6
+            + self.early_reflections_delay_line[0].get_index(3) * 0.4
+            + self.early_reflections_delay_line[0].get_index(4) * 0.3
+            + self.early_reflections_delay_line[0].get_index(5) * 0.3
+            + self.early_reflections_delay_line[0].get_index(6) * 0.1
+            + self.early_reflections_delay_line[0].get_index(7) * 0.1
+            + (bandwidthLeft * 0.4 + bandwidthRight * 0.2) * 0.5;
+        let earlyReflectionsR = self.early_reflections_delay_line[1]
+            .operator(bandwidthLeft * 0.3 + bandwidthRight * 0.5)
+            + self.early_reflections_delay_line[1].get_index(2) * 0.6
+            + self.early_reflections_delay_line[1].get_index(3) * 0.4
+            + self.early_reflections_delay_line[1].get_index(4) * 0.3
+            + self.early_reflections_delay_line[1].get_index(5) * 0.3
+            + self.early_reflections_delay_line[1].get_index(6) * 0.1
+            + self.early_reflections_delay_line[1].get_index(7) * 0.1
+            + (bandwidthLeft * 0.2 + bandwidthRight * 0.4) * 0.5;
+        let predelayMonoInput = self
+            .predelay
+            .operator((bandwidthRight + bandwidthLeft) * 0.5);
+        let smearedInput = predelayMonoInput;
+        for j in 0..4 {
+            smearedInput = self.all_pass[j].operator(smearedInput);
+        }
+        let leftTank = self.all_pass_four_tap[0].operator(smearedInput + self.previous_right_tank);
+        leftTank = self.static_delay_line[0].operator(leftTank);
+        leftTank = self.damping[0].operator(leftTank);
+        leftTank = self.all_pass_four_tap[1].operator(leftTank);
+        leftTank = self.static_delay_line[1].operator(leftTank);
+        let rightTank = self.all_pass_four_tap[2].operator(smearedInput + self.previous_left_tank);
+        rightTank = self.static_delay_line[2].operator(rightTank);
+        rightTank = self.damping[1].operator(rightTank);
+        rightTank = self.all_pass_four_tap[3].operator(rightTank);
+        rightTank = self.static_delay_line[3].operator(rightTank);
+        self.previous_left_tank = leftTank * self.decay_smooth;
+        self.previous_right_tank = rightTank * self.decay_smooth;
+        let accumulatorL = (0.6 * self.static_delay_line[2].get_index(1))
+            + (0.6 * self.static_delay_line[2].get_index(2))
+            - (0.6 * self.all_pass_four_tap[3].get_index(1))
+            + (0.6 * self.static_delay_line[3].get_index(1))
+            - (0.6 * self.static_delay_line[0].get_index(1))
+            - (0.6 * self.all_pass_four_tap[1].get_index(1))
+            - (0.6 * self.static_delay_line[1].get_index(1));
+        let accumulatorR = (0.6 * self.static_delay_line[0].get_index(2))
+            + (0.6 * self.static_delay_line[0].get_index(3))
+            - (0.6 * self.all_pass_four_tap[1].get_index(2))
+            + (0.6 * self.static_delay_line[1].get_index(2))
+            - (0.6 * self.static_delay_line[2].get_index(3))
+            - (0.6 * self.all_pass_four_tap[3].get_index(2))
+            - (0.6 * self.static_delay_line[3].get_index(2));
+        accumulatorL =
+            ((accumulatorL * self.early_mix) + ((1.0 - self.early_mix) * earlyReflectionsL));
+        accumulatorR =
+            ((accumulatorR * self.early_mix) + ((1.0 - self.early_mix) * earlyReflectionsR));
+        left = (left + self.mix_smooth * (accumulatorL - left)) * self.gain;
+        right = (right + self.mix_smooth * (accumulatorR - right)) * self.gain;
+        (right, left)
     }
 }
 
@@ -411,13 +577,11 @@ impl<const max_length: usize> StaticDelayLineFourTap<max_length> {
         output
     }
 
-    fn set_index(&self, index: usize) -> f32 {
-        match index {
-            1 => self.buffer[self.index2],
-            2 => self.buffer[self.index3],
-            3 => self.buffer[self.index4],
-            _ => self.buffer[self.index1],
-        }
+    fn set_index(&self, index1: usize, index2: usize, index3: usize, index4: usize) -> f32 {
+        self.index1 = index1;
+        self.index2 = index2;
+        self.index3 = index3;
+        self.index4 = index4;
     }
 
     fn set_length(&mut self, mut length: usize) {
@@ -602,13 +766,15 @@ impl<'a, const over_sample_count: usize> Default for StateVariable<'a, over_samp
 }
 
 impl<'a, const over_sample_count: usize> StateVariable<'a, over_sample_count> {
-    fn operator(&mut self, input: f32) {
+    fn operator(&mut self, input: f32) -> f32 {
         for _ in 0..over_sample_count {
             self.low += self.f * self.band + 1e-25;
             self.high = input - self.low - self.q * self.band;
             self.band += self.f * self.high;
             self.notch = self.low + self.high;
         }
+
+        *self.out
     }
 
     fn reset(&mut self) {
