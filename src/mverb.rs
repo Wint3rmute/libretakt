@@ -70,7 +70,7 @@ impl<'a> Default for MVerb<'a> {
             early_mix: 0.5,
             previous_left_tank: 0.0,
             previous_right_tank: 0.0,
-            pre_delay_time: 100.0 * (sample_rate / 1000.0),
+            pre_delay_time: 0.0 * (sample_rate / 1000.0),
             mix_smooth: 0.0,
             early_late_smooth: 0.0,
             bandwidth_smooth: 0.0,
@@ -287,11 +287,14 @@ impl<'a> MVerb<'a> {
             .operator((bandwidth_right + bandwidth_left) * 0.5);
 
         // return (predelay_mono_input, predelay_mono_input);
+        // return (early_reflections_l, early_reflections_r);
 
         let mut smeared_input = predelay_mono_input;
         for j in 0..4 {
             smeared_input = self.all_pass[j].operator(smeared_input);
         }
+        // return (smeared_input, smeared_input);
+
         let mut left_tank =
             self.all_pass_four_tap[0].operator(smeared_input + self.previous_right_tank);
         left_tank = self.static_delay_line[0].operator(left_tank);
@@ -308,6 +311,7 @@ impl<'a> MVerb<'a> {
         self.previous_right_tank = right_tank * self.decay_smooth;
 
         // return (left_tank, right_tank);
+
         let mut accumulator_l = (0.6 * self.static_delay_line[2].get_index(1))
             + (0.6 * self.static_delay_line[2].get_index(2))
             - (0.6 * self.all_pass_four_tap[3].get_index(1))
@@ -322,6 +326,9 @@ impl<'a> MVerb<'a> {
             - (0.6 * self.static_delay_line[2].get_index(3))
             - (0.6 * self.all_pass_four_tap[3].get_index(2))
             - (0.6 * self.static_delay_line[3].get_index(2));
+
+        // return (accumulator_l, accumulator_r);
+
         accumulator_l =
             (accumulator_l * self.early_mix) + ((1.0 - self.early_mix) * early_reflections_l);
         accumulator_r =
