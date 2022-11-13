@@ -63,9 +63,9 @@ impl<'a> Default for MVerb<'a> {
             damping_frequency: 0.9,
             bandwidth_frequency: 0.9,
             sample_rate: 44100.0,
-            decay: 0.5,
+            decay: 1.0,
             gain: 1.0,
-            mix: 0.5,
+            mix: 1.0,
             size: 1.0,
             early_mix: 0.5,
             previous_left_tank: 0.0,
@@ -301,6 +301,7 @@ impl<'a> MVerb<'a> {
         left_tank = self.damping[0].operator(left_tank);
         left_tank = self.all_pass_four_tap[1].operator(left_tank);
         left_tank = self.static_delay_line[1].operator(left_tank);
+
         let mut right_tank =
             self.all_pass_four_tap[2].operator(smeared_input + self.previous_left_tank);
         right_tank = self.static_delay_line[2].operator(right_tank);
@@ -778,7 +779,7 @@ pub struct StateVariable<'a, const OVER_SAMPLE_COUNT: usize> {
 
 impl<'a, const OVER_SAMPLE_COUNT: usize> Default for StateVariable<'a, OVER_SAMPLE_COUNT> {
     fn default() -> Self {
-        let result = Self {
+        let mut result = Self {
             sample_rate: 44100.0,
             frequency: 1000.0,
             q: 0.0,
@@ -791,6 +792,9 @@ impl<'a, const OVER_SAMPLE_COUNT: usize> Default for StateVariable<'a, OVER_SAMP
         };
 
         // result.set_type(FilterType::LowPass);
+        result.set_frequency(1000.0);
+        result.set_resonance(0.0);
+        result.reset();
         result
     }
 }

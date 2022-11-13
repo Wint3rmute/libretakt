@@ -1,4 +1,4 @@
- //	Copyright (c) 2010 Martin Eastwood
+//	Copyright (c) 2010 Martin Eastwood
 //  This code is distributed under the terms of the GNU General Public License
 
 //  MVerb is free software: you can redistribute it and/or modify
