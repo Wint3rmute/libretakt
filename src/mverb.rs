@@ -11,14 +11,17 @@ pub enum MVerbParam {
     NumParams,
 }
 
+const BUFFER_SIZE: usize = 96_000;
+// const BUFFER_SIZE: usize = 20_000;
+
 pub struct MVerb<'a> {
-    all_pass: [AllPass<96000>; 4],
-    all_pass_four_tap: [StaticAllPassFourTap<96000>; 4],
+    all_pass: [AllPass<BUFFER_SIZE>; 4],
+    all_pass_four_tap: [StaticAllPassFourTap<BUFFER_SIZE>; 4],
     bandwidth_filter: [StateVariable<'a, 4>; 2],
     damping: [StateVariable<'a, 4>; 2],
-    predelay: StaticDelayLine<96000>,
-    static_delay_line: [StaticDelayLineFourTap<96000>; 4],
-    early_reflections_delay_line: [StaticDelayLineEightTap<96000>; 2],
+    predelay: StaticDelayLine<BUFFER_SIZE>,
+    static_delay_line: [StaticDelayLineFourTap<BUFFER_SIZE>; 4],
+    early_reflections_delay_line: [StaticDelayLineEightTap<BUFFER_SIZE>; 2],
     sample_rate: f32,
     damping_frequency: f32,
     density1: f32,
@@ -46,7 +49,7 @@ pub struct MVerb<'a> {
 
 impl<'a> Default for MVerb<'a> {
     fn default() -> Self {
-        let sample_rate = 441000.0;
+        let sample_rate = 44100.0;
 
         let mut result = Self {
             all_pass: Default::default(),
@@ -61,7 +64,7 @@ impl<'a> Default for MVerb<'a> {
             bandwidth_frequency: 0.9,
             sample_rate: 44100.0,
             decay: 0.5,
-            gain: 1.0,
+            gain: 10.0,
             mix: 1.0,
             size: 1.0,
             early_mix: 1.0,
@@ -82,7 +85,7 @@ impl<'a> Default for MVerb<'a> {
             density1: 0.0,
             density2: 0.0,
         };
-        result.reset();
+        // result.reset();
 
         result
     }
@@ -204,7 +207,6 @@ impl<'a> MVerb<'a> {
     }
 
     pub fn process(&mut self, input: (f32, f32)) -> (f32, f32) {
-        type T = f32;
         let sampleFrames = 1.0;
 
         let OneOverSampleFrames: f32 = 1. / sampleFrames;
@@ -779,7 +781,7 @@ impl<'a, const over_sample_count: usize> Default for StateVariable<'a, over_samp
 }
 
 impl<'a, const over_sample_count: usize> StateVariable<'a, over_sample_count> {
-    fn operator(&mut self, input: f32) -> f32 {
+    pub fn operator(&mut self, input: f32) -> f32 {
         for _ in 0..over_sample_count {
             self.low += self.f * self.band + 1e-25;
             self.high = input - self.low - self.q * self.band;
@@ -836,5 +838,83 @@ impl<'a, const over_sample_count: usize> StateVariable<'a, over_sample_count> {
 
     fn update_coefficient(&mut self) {
         self.f = 2. * (3.141592654 * self.frequency / self.sample_rate).sin();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn filter_construct_and_process<'a>() {
+        let mut filter: StateVariable<'a, 4> = Default::default();
+        filter.operator(1.0);
+    }
+
+    #[test]
+    fn allpass_construct_and_process() {
+        let mut allpass: AllPass<96000> = Default::default();
+        allpass.operator(1.0);
+        allpass.clear();
+    }
+
+    #[test]
+    fn all_pass_four_tap_construct_and_process() {
+        let mut all_pass_four_tap: StaticAllPassFourTap<96000> = Default::default();
+        all_pass_four_tap.operator(1.0);
+        all_pass_four_tap.clear();
+    }
+
+    #[test]
+    fn delay_line_construct_and_process() {
+        let mut delay_line: StaticDelayLine<96000> = Default::default();
+        delay_line.operator(1.0);
+        delay_line.clear();
+    }
+
+    #[test]
+    fn delay_line_four_tap_construct_and_process() {
+        let mut delay_line_four_tap: StaticDelayLineFourTap<96000> = Default::default();
+        delay_line_four_tap.operator(1.0);
+        delay_line_four_tap.clear();
+    }
+
+    #[test]
+    fn delay_line_eight_tap_construct_and_process() {
+        let mut delay_line_eight_tap: StaticDelayLineEightTap<96000> = Default::default();
+        delay_line_eight_tap.operator(1.0);
+        delay_line_eight_tap.clear();
+    }
+
+    #[test]
+    fn mverb_buffers_can_be_constructed() {
+        let builder = std::thread::Builder::new()
+            .name("reductor".into())
+            .stack_size(32 * 1024 * 1024); // 32MB of stack space
+
+        let handler = builder
+            .spawn(|| {
+                // let static_delay_line1: StaticDelayLineFourTap<90_000> = Default::default();
+                // let static_delay_line2: StaticDelayLineFourTap<90_000> = Default::default();
+                // let static_delay_line3: StaticDelayLineFourTap<90_000> = Default::default();
+                // let static_delay_line4: StaticDelayLineFourTap<90_000> = Default::default();
+
+                // let static_delay_line: [StaticDelayLineFourTap<90_000>; 4] = [
+                //     static_delay_line1,
+                //     static_delay_line2,
+                //     static_delay_line3,
+                //     static_delay_line4,
+                // ];
+                //
+                let mverb = MVerb::default();
+            })
+            .unwrap();
+
+        handler.join().unwrap();
+    }
+
+    #[test]
+    fn mverb_can_be_constructed() {
+        let mverb = MVerb::default();
     }
 }

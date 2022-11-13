@@ -62,7 +62,7 @@ pub struct Voice<'a> {
     pub play_position: f32,
     pub sample_played: usize,
     pub playback_speed: f32,
-    pub reverb: reverb::DattorroReverbF32,
+    // pub reverb: reverb::DattorroReverbF32,
     pub mverb: mverb::MVerb<'a>,
     pub reverb_params: ReverbParams,
 
@@ -166,8 +166,8 @@ impl<'a> Voice<'a> {
     }
 
     pub fn new(provider: &Arc<SampleProvider>) -> Self {
-        let mut reverb = reverb::DattorroReverbF32::new();
-        reverb.set_sample_rate(constants::SAMPLE_RATE as f32);
+        // let mut reverb = reverb::DattorroReverbF32::new();
+        // reverb.set_sample_rate(constants::SAMPLE_RATE as f32);
 
         let mut parameters = PlaybackParameters::default();
         parameters.parameters[Parameter::Sample as usize] = 126;
@@ -177,7 +177,7 @@ impl<'a> Voice<'a> {
             play_position: 0.0,
             sample_played: 1,
             playback_speed: 1.0,
-            reverb,
+            // reverb,
             mverb: mverb::MVerb::default(),
             reverb_params: ReverbParams::default(),
             playback_parameters: parameters,
@@ -253,7 +253,7 @@ impl<'a> Voice<'a> {
         let reverb_result = self.mverb.process((result, result));
 
         // result + reverb_result * 0.5
-        reverb_result.0 + result
-        // result
+        reverb_result.0 //+ result
+                        // result
     }
 }
