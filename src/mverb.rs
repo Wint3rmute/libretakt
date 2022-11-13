@@ -65,9 +65,9 @@ impl<'a> Default for MVerb<'a> {
             sample_rate: 44100.0,
             decay: 0.5,
             gain: 1.0,
-            mix: 1.0,
+            mix: 0.5,
             size: 1.0,
-            early_mix: 1.0,
+            early_mix: 0.5,
             previous_left_tank: 0.0,
             previous_right_tank: 0.0,
             pre_delay_time: 100.0 * (sample_rate / 1000.0),
@@ -85,7 +85,7 @@ impl<'a> Default for MVerb<'a> {
             density1: 0.0,
             density2: 0.0,
         };
-        // result.reset();
+        result.reset();
 
         result
     }
@@ -261,6 +261,9 @@ impl<'a> MVerb<'a> {
 
         let bandwidth_left = self.bandwidth_filter[0].operator(left);
         let bandwidth_right = self.bandwidth_filter[1].operator(right);
+
+        // return (bandwidth_left, bandwidth_right);
+
         let early_reflections_l = self.early_reflections_delay_line[0]
             .operator(bandwidth_left * 0.5 + bandwidth_right * 0.3)
             + self.early_reflections_delay_line[0].get_index(2) * 0.6
@@ -282,6 +285,9 @@ impl<'a> MVerb<'a> {
         let predelay_mono_input = self
             .predelay
             .operator((bandwidth_right + bandwidth_left) * 0.5);
+
+        // return (predelay_mono_input, predelay_mono_input);
+
         let mut smeared_input = predelay_mono_input;
         for j in 0..4 {
             smeared_input = self.all_pass[j].operator(smeared_input);
@@ -300,6 +306,8 @@ impl<'a> MVerb<'a> {
         right_tank = self.static_delay_line[3].operator(right_tank);
         self.previous_left_tank = left_tank * self.decay_smooth;
         self.previous_right_tank = right_tank * self.decay_smooth;
+
+        // return (left_tank, right_tank);
         let mut accumulator_l = (0.6 * self.static_delay_line[2].get_index(1))
             + (0.6 * self.static_delay_line[2].get_index(2))
             - (0.6 * self.all_pass_four_tap[3].get_index(1))
@@ -789,7 +797,8 @@ impl<'a, const OVER_SAMPLE_COUNT: usize> StateVariable<'a, OVER_SAMPLE_COUNT> {
             self.notch = self.low + self.high;
         }
 
-        *self.out
+        // *self.out
+        self.low
     }
 
     fn reset(&mut self) {
@@ -837,7 +846,7 @@ impl<'a, const OVER_SAMPLE_COUNT: usize> StateVariable<'a, OVER_SAMPLE_COUNT> {
     }
 
     fn update_coefficient(&mut self) {
-        self.f = 2. * (3.141592654 * self.frequency / self.sample_rate).sin();
+        self.f = 2. * (std::f32::consts::PI * self.frequency / self.sample_rate).sin();
     }
 }
 
