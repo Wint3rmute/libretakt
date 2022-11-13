@@ -64,7 +64,7 @@ impl<'a> Default for MVerb<'a> {
             bandwidth_frequency: 0.9,
             sample_rate: 44100.0,
             decay: 0.5,
-            gain: 10.0,
+            gain: 1.0,
             mix: 1.0,
             size: 1.0,
             early_mix: 1.0,
@@ -207,37 +207,37 @@ impl<'a> MVerb<'a> {
     }
 
     pub fn process(&mut self, input: (f32, f32)) -> (f32, f32) {
-        let sampleFrames = 1.0;
+        let sample_frames = 1.0;
 
-        let OneOverSampleFrames: f32 = 1. / sampleFrames;
+        let over_sample_frames: f32 = 1. / sample_frames;
 
-        let mix_delta = (self.mix - self.mix_smooth) * OneOverSampleFrames;
-        let early_late_delta = (self.early_mix - self.early_late_smooth) * OneOverSampleFrames;
+        let mix_delta = (self.mix - self.mix_smooth) * over_sample_frames;
+        let early_late_delta = (self.early_mix - self.early_late_smooth) * over_sample_frames;
         let bandwidth_delta = (((self.bandwidth_frequency * 18400.) + 100.)
             - self.bandwidth_smooth)
-            * OneOverSampleFrames;
-        let DampingDelta = (((self.damping_frequency * 18400.) + 100.) - self.damping_smooth)
-            * OneOverSampleFrames;
-        let PredelayDelta = ((self.pre_delay_time * 200.0 * (self.sample_rate / 1000.0))
+            * over_sample_frames;
+        let damping_delta =
+            (((self.damping_frequency * 18400.) + 100.) - self.damping_smooth) * over_sample_frames;
+        let predelay_delta = ((self.pre_delay_time * 200.0 * (self.sample_rate / 1000.0))
             - self.predelay_smooth)
-            * OneOverSampleFrames;
-        let SizeDelta = (self.size - self.size_smooth) * OneOverSampleFrames;
-        let DecayDelta =
-            (((0.7995 * self.decay) + 0.005) - self.decay_smooth) * OneOverSampleFrames;
-        let DensityDelta =
-            (((0.7995 * self.density1) + 0.005) - self.density_smooth) * OneOverSampleFrames;
-        let _i = 0;
+            * over_sample_frames;
+        let size_delta = (self.size - self.size_smooth) * over_sample_frames;
+        let decay_delta =
+            (((0.7995 * self.decay) + 0.005) - self.decay_smooth) * over_sample_frames;
+        let density_delta =
+            (((0.7995 * self.density1) + 0.005) - self.density_smooth) * over_sample_frames;
+
         let left = input.0;
-        // let right = inputs[1][i];
         let right = input.1;
+
         self.mix_smooth += mix_delta;
         self.early_late_smooth += early_late_delta;
         self.bandwidth_smooth += bandwidth_delta;
-        self.damping_smooth += DampingDelta;
-        self.predelay_smooth += PredelayDelta;
-        self.size_smooth += SizeDelta;
-        self.decay_smooth += DecayDelta;
-        self.density_smooth += DensityDelta;
+        self.damping_smooth += damping_delta;
+        self.predelay_smooth += predelay_delta;
+        self.size_smooth += size_delta;
+        self.decay_smooth += decay_delta;
+        self.density_smooth += density_delta;
         if self.control_rate_counter >= self.control_rate {
             self.control_rate_counter = 0;
             self.bandwidth_filter[0].set_frequency(self.bandwidth_smooth);
@@ -259,91 +259,91 @@ impl<'a> MVerb<'a> {
         self.all_pass_four_tap[0].set_feedback(self.density1);
         self.all_pass_four_tap[2].set_feedback(self.density1);
 
-        let bandwidthLeft = self.bandwidth_filter[0].operator(left);
-        let bandwidthRight = self.bandwidth_filter[1].operator(right);
-        let earlyReflectionsL = self.early_reflections_delay_line[0]
-            .operator(bandwidthLeft * 0.5 + bandwidthRight * 0.3)
+        let bandwidth_left = self.bandwidth_filter[0].operator(left);
+        let bandwidth_right = self.bandwidth_filter[1].operator(right);
+        let early_reflections_l = self.early_reflections_delay_line[0]
+            .operator(bandwidth_left * 0.5 + bandwidth_right * 0.3)
             + self.early_reflections_delay_line[0].get_index(2) * 0.6
             + self.early_reflections_delay_line[0].get_index(3) * 0.4
             + self.early_reflections_delay_line[0].get_index(4) * 0.3
             + self.early_reflections_delay_line[0].get_index(5) * 0.3
             + self.early_reflections_delay_line[0].get_index(6) * 0.1
             + self.early_reflections_delay_line[0].get_index(7) * 0.1
-            + (bandwidthLeft * 0.4 + bandwidthRight * 0.2) * 0.5;
-        let earlyReflectionsR = self.early_reflections_delay_line[1]
-            .operator(bandwidthLeft * 0.3 + bandwidthRight * 0.5)
+            + (bandwidth_left * 0.4 + bandwidth_right * 0.2) * 0.5;
+        let early_reflections_r = self.early_reflections_delay_line[1]
+            .operator(bandwidth_left * 0.3 + bandwidth_right * 0.5)
             + self.early_reflections_delay_line[1].get_index(2) * 0.6
             + self.early_reflections_delay_line[1].get_index(3) * 0.4
             + self.early_reflections_delay_line[1].get_index(4) * 0.3
             + self.early_reflections_delay_line[1].get_index(5) * 0.3
             + self.early_reflections_delay_line[1].get_index(6) * 0.1
             + self.early_reflections_delay_line[1].get_index(7) * 0.1
-            + (bandwidthLeft * 0.2 + bandwidthRight * 0.4) * 0.5;
-        let predelayMonoInput = self
+            + (bandwidth_left * 0.2 + bandwidth_right * 0.4) * 0.5;
+        let predelay_mono_input = self
             .predelay
-            .operator((bandwidthRight + bandwidthLeft) * 0.5);
-        let mut smearedInput = predelayMonoInput;
+            .operator((bandwidth_right + bandwidth_left) * 0.5);
+        let mut smeared_input = predelay_mono_input;
         for j in 0..4 {
-            smearedInput = self.all_pass[j].operator(smearedInput);
+            smeared_input = self.all_pass[j].operator(smeared_input);
         }
-        let mut leftTank =
-            self.all_pass_four_tap[0].operator(smearedInput + self.previous_right_tank);
-        leftTank = self.static_delay_line[0].operator(leftTank);
-        leftTank = self.damping[0].operator(leftTank);
-        leftTank = self.all_pass_four_tap[1].operator(leftTank);
-        leftTank = self.static_delay_line[1].operator(leftTank);
-        let mut rightTank =
-            self.all_pass_four_tap[2].operator(smearedInput + self.previous_left_tank);
-        rightTank = self.static_delay_line[2].operator(rightTank);
-        rightTank = self.damping[1].operator(rightTank);
-        rightTank = self.all_pass_four_tap[3].operator(rightTank);
-        rightTank = self.static_delay_line[3].operator(rightTank);
-        self.previous_left_tank = leftTank * self.decay_smooth;
-        self.previous_right_tank = rightTank * self.decay_smooth;
-        let mut accumulatorL = (0.6 * self.static_delay_line[2].get_index(1))
+        let mut left_tank =
+            self.all_pass_four_tap[0].operator(smeared_input + self.previous_right_tank);
+        left_tank = self.static_delay_line[0].operator(left_tank);
+        left_tank = self.damping[0].operator(left_tank);
+        left_tank = self.all_pass_four_tap[1].operator(left_tank);
+        left_tank = self.static_delay_line[1].operator(left_tank);
+        let mut right_tank =
+            self.all_pass_four_tap[2].operator(smeared_input + self.previous_left_tank);
+        right_tank = self.static_delay_line[2].operator(right_tank);
+        right_tank = self.damping[1].operator(right_tank);
+        right_tank = self.all_pass_four_tap[3].operator(right_tank);
+        right_tank = self.static_delay_line[3].operator(right_tank);
+        self.previous_left_tank = left_tank * self.decay_smooth;
+        self.previous_right_tank = right_tank * self.decay_smooth;
+        let mut accumulator_l = (0.6 * self.static_delay_line[2].get_index(1))
             + (0.6 * self.static_delay_line[2].get_index(2))
             - (0.6 * self.all_pass_four_tap[3].get_index(1))
             + (0.6 * self.static_delay_line[3].get_index(1))
             - (0.6 * self.static_delay_line[0].get_index(1))
             - (0.6 * self.all_pass_four_tap[1].get_index(1))
             - (0.6 * self.static_delay_line[1].get_index(1));
-        let mut accumulatorR = (0.6 * self.static_delay_line[0].get_index(2))
+        let mut accumulator_r = (0.6 * self.static_delay_line[0].get_index(2))
             + (0.6 * self.static_delay_line[0].get_index(3))
             - (0.6 * self.all_pass_four_tap[1].get_index(2))
             + (0.6 * self.static_delay_line[1].get_index(2))
             - (0.6 * self.static_delay_line[2].get_index(3))
             - (0.6 * self.all_pass_four_tap[3].get_index(2))
             - (0.6 * self.static_delay_line[3].get_index(2));
-        accumulatorL =
-            (accumulatorL * self.early_mix) + ((1.0 - self.early_mix) * earlyReflectionsL);
-        accumulatorR =
-            (accumulatorR * self.early_mix) + ((1.0 - self.early_mix) * earlyReflectionsR);
+        accumulator_l =
+            (accumulator_l * self.early_mix) + ((1.0 - self.early_mix) * early_reflections_l);
+        accumulator_r =
+            (accumulator_r * self.early_mix) + ((1.0 - self.early_mix) * early_reflections_r);
 
-        let left_output = (left + self.mix_smooth * (accumulatorL - left)) * self.gain;
-        let right_output = (right + self.mix_smooth * (accumulatorR - right)) * self.gain;
+        let left_output = (left + self.mix_smooth * (accumulator_l - left)) * self.gain;
+        let right_output = (right + self.mix_smooth * (accumulator_r - right)) * self.gain;
         (left_output, right_output)
     }
 }
 
-pub struct AllPass<const max_length: usize> {
-    buffer: [f32; max_length],
+pub struct AllPass<const MAX_LENGTH: usize> {
+    buffer: Vec<f32>,
     index: usize,
     length: usize,
     feedback: f32,
 }
 
-impl<const max_length: usize> Default for AllPass<max_length> {
+impl<const MAX_LENGTH: usize> Default for AllPass<MAX_LENGTH> {
     fn default() -> Self {
         AllPass {
             feedback: 0.5,
-            buffer: [0.0; max_length],
+            buffer: vec![0.0; MAX_LENGTH],
             index: 0,
-            length: max_length - 1,
+            length: MAX_LENGTH - 1,
         }
     }
 }
 
-impl<const max_length: usize> AllPass<max_length> {
+impl<const MAX_LENGTH: usize> AllPass<MAX_LENGTH> {
     fn operator(&mut self, input: f32) -> f32 {
         let output = 0.0;
 
@@ -360,8 +360,8 @@ impl<const max_length: usize> AllPass<max_length> {
     }
 
     fn set_length(&mut self, mut length: usize) {
-        if length >= max_length {
-            length = max_length;
+        if length >= MAX_LENGTH {
+            length = MAX_LENGTH;
         }
 
         // if length < 0 {
@@ -385,8 +385,8 @@ impl<const max_length: usize> AllPass<max_length> {
     }
 }
 
-struct StaticAllPassFourTap<const max_length: usize> {
-    buffer: [f32; max_length],
+struct StaticAllPassFourTap<const MAX_LENGTH: usize> {
+    buffer: Vec<f32>,
     index1: usize,
     index2: usize,
     index3: usize,
@@ -395,21 +395,21 @@ struct StaticAllPassFourTap<const max_length: usize> {
     feedback: f32,
 }
 
-impl<const max_length: usize> Default for StaticAllPassFourTap<max_length> {
+impl<const MAX_LENGTH: usize> Default for StaticAllPassFourTap<MAX_LENGTH> {
     fn default() -> Self {
         Self {
-            buffer: [0.0; max_length],
+            buffer: vec![0.0; MAX_LENGTH],
             index1: 0,
             index2: 0,
             index3: 0,
             index4: 0,
             feedback: 0.5,
-            length: max_length - 1,
+            length: MAX_LENGTH - 1,
         }
     }
 }
 
-impl<const max_length: usize> StaticAllPassFourTap<max_length> {
+impl<const MAX_LENGTH: usize> StaticAllPassFourTap<MAX_LENGTH> {
     fn operator(&mut self, input: f32) -> f32 {
         let bufout = self.buffer[self.index1];
         let temp = input * -self.feedback;
@@ -454,8 +454,8 @@ impl<const max_length: usize> StaticAllPassFourTap<max_length> {
     }
 
     fn set_length(&mut self, mut length: usize) {
-        if length > max_length {
-            length = max_length;
+        if length > MAX_LENGTH {
+            length = MAX_LENGTH;
         }
 
         self.length = length;
@@ -478,25 +478,25 @@ impl<const max_length: usize> StaticAllPassFourTap<max_length> {
     }
 }
 
-struct StaticDelayLine<const max_length: usize> {
-    buffer: [f32; max_length],
+struct StaticDelayLine<const MAX_LENGTH: usize> {
+    buffer: Vec<f32>,
     index: usize,
     length: usize,
     feedback: f32,
 }
 
-impl<const max_length: usize> Default for StaticDelayLine<max_length> {
+impl<const MAX_LENGTH: usize> Default for StaticDelayLine<MAX_LENGTH> {
     fn default() -> Self {
         Self {
-            buffer: [0.0; max_length],
+            buffer: vec![0.0; MAX_LENGTH],
             index: 0,
             feedback: 0.5,
-            length: max_length - 1,
+            length: MAX_LENGTH - 1,
         }
     }
 }
 
-impl<const max_length: usize> StaticDelayLine<max_length> {
+impl<const MAX_LENGTH: usize> StaticDelayLine<MAX_LENGTH> {
     fn operator(&mut self, input: f32) -> f32 {
         let output = self.buffer[self.index];
 
@@ -511,8 +511,8 @@ impl<const max_length: usize> StaticDelayLine<max_length> {
     }
 
     fn set_length(&mut self, mut length: usize) {
-        if length > max_length {
-            length = max_length;
+        if length > MAX_LENGTH {
+            length = MAX_LENGTH;
         }
 
         self.length = length;
@@ -528,8 +528,8 @@ impl<const max_length: usize> StaticDelayLine<max_length> {
     }
 }
 
-struct StaticDelayLineFourTap<const max_length: usize> {
-    buffer: [f32; max_length],
+struct StaticDelayLineFourTap<const MAX_LENGTH: usize> {
+    buffer: Vec<f32>,
     index1: usize,
     index2: usize,
     index3: usize,
@@ -539,21 +539,21 @@ struct StaticDelayLineFourTap<const max_length: usize> {
     feedback: f32,
 }
 
-impl<const max_length: usize> Default for StaticDelayLineFourTap<max_length> {
+impl<const MAX_LENGTH: usize> Default for StaticDelayLineFourTap<MAX_LENGTH> {
     fn default() -> Self {
         Self {
-            buffer: [0.0; max_length],
+            buffer: vec![0.0; MAX_LENGTH],
             index1: 0,
             index2: 0,
             index3: 0,
             index4: 0,
-            length: max_length - 1,
+            length: MAX_LENGTH - 1,
             feedback: 0.0,
         }
     }
 }
 
-impl<const max_length: usize> StaticDelayLineFourTap<max_length> {
+impl<const MAX_LENGTH: usize> StaticDelayLineFourTap<MAX_LENGTH> {
     fn operator(&mut self, input: f32) -> f32 {
         let output = self.buffer[self.index1];
         self.buffer[self.index1] = input;
@@ -600,8 +600,8 @@ impl<const max_length: usize> StaticDelayLineFourTap<max_length> {
     }
 
     fn set_length(&mut self, mut length: usize) {
-        if length > max_length {
-            length = max_length;
+        if length > MAX_LENGTH {
+            length = MAX_LENGTH;
         }
 
         self.length = length;
@@ -620,8 +620,8 @@ impl<const max_length: usize> StaticDelayLineFourTap<max_length> {
     }
 }
 
-struct StaticDelayLineEightTap<const max_length: usize> {
-    buffer: [f32; max_length],
+struct StaticDelayLineEightTap<const MAX_LENGTH: usize> {
+    buffer: Vec<f32>,
     index1: usize,
     index2: usize,
     index3: usize,
@@ -634,10 +634,10 @@ struct StaticDelayLineEightTap<const max_length: usize> {
     feedback: f32,
 }
 
-impl<const max_length: usize> Default for StaticDelayLineEightTap<max_length> {
+impl<const MAX_LENGTH: usize> Default for StaticDelayLineEightTap<MAX_LENGTH> {
     fn default() -> Self {
         Self {
-            buffer: [0.0; max_length],
+            buffer: vec![0.0; MAX_LENGTH],
             index1: 0,
             index2: 0,
             index3: 0,
@@ -646,13 +646,13 @@ impl<const max_length: usize> Default for StaticDelayLineEightTap<max_length> {
             index6: 0,
             index7: 0,
             index8: 0,
-            length: max_length - 1,
+            length: MAX_LENGTH - 1,
             feedback: 0.0,
         }
     }
 }
 
-impl<const max_length: usize> StaticDelayLineEightTap<max_length> {
+impl<const MAX_LENGTH: usize> StaticDelayLineEightTap<MAX_LENGTH> {
     fn operator(&mut self, input: f32) -> f32 {
         let output: f32 = self.buffer[self.index1];
         self.buffer[self.index1] = input;
@@ -713,8 +713,8 @@ impl<const max_length: usize> StaticDelayLineEightTap<max_length> {
     }
 
     fn set_length(&mut self, mut length: usize) {
-        if length >= max_length {
-            length = max_length;
+        if length >= MAX_LENGTH {
+            length = MAX_LENGTH;
         }
 
         // if length < 0 {
@@ -748,7 +748,7 @@ enum FilterType {
     FilterTypeCount,
 }
 
-pub struct StateVariable<'a, const over_sample_count: usize> {
+pub struct StateVariable<'a, const OVER_SAMPLE_COUNT: usize> {
     sample_rate: f32,
     frequency: f32,
     q: f32,
@@ -761,7 +761,7 @@ pub struct StateVariable<'a, const over_sample_count: usize> {
     // out TODO: defined as T *out; in src
 }
 
-impl<'a, const over_sample_count: usize> Default for StateVariable<'a, over_sample_count> {
+impl<'a, const OVER_SAMPLE_COUNT: usize> Default for StateVariable<'a, OVER_SAMPLE_COUNT> {
     fn default() -> Self {
         let result = Self {
             sample_rate: 44100.0,
@@ -780,9 +780,9 @@ impl<'a, const over_sample_count: usize> Default for StateVariable<'a, over_samp
     }
 }
 
-impl<'a, const over_sample_count: usize> StateVariable<'a, over_sample_count> {
+impl<'a, const OVER_SAMPLE_COUNT: usize> StateVariable<'a, OVER_SAMPLE_COUNT> {
     pub fn operator(&mut self, input: f32) -> f32 {
-        for _ in 0..over_sample_count {
+        for _ in 0..OVER_SAMPLE_COUNT {
             self.low += self.f * self.band + 1e-25;
             self.high = input - self.low - self.q * self.band;
             self.band += self.f * self.high;
@@ -800,7 +800,7 @@ impl<'a, const over_sample_count: usize> StateVariable<'a, over_sample_count> {
     }
 
     fn set_sample_rate(&mut self, sample_rate: f32) {
-        self.sample_rate = sample_rate * over_sample_count as f32;
+        self.sample_rate = sample_rate * OVER_SAMPLE_COUNT as f32;
         self.update_coefficient();
     }
 
@@ -887,34 +887,23 @@ mod tests {
     }
 
     #[test]
-    fn mverb_buffers_can_be_constructed() {
-        let builder = std::thread::Builder::new()
-            .name("reductor".into())
-            .stack_size(32 * 1024 * 1024); // 32MB of stack space
+    fn taps_can_be_constructed() {
+        // This does not blow up
 
-        let handler = builder
-            .spawn(|| {
-                // let static_delay_line1: StaticDelayLineFourTap<90_000> = Default::default();
-                // let static_delay_line2: StaticDelayLineFourTap<90_000> = Default::default();
-                // let static_delay_line3: StaticDelayLineFourTap<90_000> = Default::default();
-                // let static_delay_line4: StaticDelayLineFourTap<90_000> = Default::default();
-
-                // let static_delay_line: [StaticDelayLineFourTap<90_000>; 4] = [
-                //     static_delay_line1,
-                //     static_delay_line2,
-                //     static_delay_line3,
-                //     static_delay_line4,
-                // ];
-                //
-                let mverb = MVerb::default();
-            })
-            .unwrap();
-
-        handler.join().unwrap();
+        let _tap1: StaticDelayLineEightTap<96000> = Default::default();
+        let _tap2: StaticDelayLineEightTap<96000> = Default::default();
+        let _tap3: StaticDelayLineEightTap<96000> = Default::default();
+        let _tap4: StaticDelayLineEightTap<96000> = Default::default();
     }
 
     #[test]
-    fn mverb_can_be_constructed() {
-        let mverb = MVerb::default();
+    fn taps_array_can_be_constructed() {
+        let tap1: StaticDelayLineEightTap<96000> = Default::default();
+        let tap2: StaticDelayLineEightTap<96000> = Default::default();
+        let tap3: StaticDelayLineEightTap<96000> = Default::default();
+        let tap4: StaticDelayLineEightTap<96000> = Default::default();
+
+        // This part blows up!
+        let _taps_array = [tap1, tap2, tap3, tap4];
     }
 }

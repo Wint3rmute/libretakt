@@ -252,8 +252,6 @@ impl<'a> Voice<'a> {
         // let (reverb_result, _) = self.reverb.process(&mut self.reverb_params, result, result);
         let reverb_result = self.mverb.process((result, result));
 
-        // result + reverb_result * 0.5
-        reverb_result.0 //+ result
-                        // result
+        reverb_result.0
     }
 }
