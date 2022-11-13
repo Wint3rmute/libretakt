@@ -203,7 +203,7 @@ impl<'a> MVerb<'a> {
         );
     }
 
-    fn process(&mut self, input: (f32, f32)) -> (f32, f32) {
+    pub fn process(&mut self, input: (f32, f32)) -> (f32, f32) {
         type T = f32;
         let sampleFrames = 1.0;
 
@@ -280,30 +280,32 @@ impl<'a> MVerb<'a> {
         let predelayMonoInput = self
             .predelay
             .operator((bandwidthRight + bandwidthLeft) * 0.5);
-        let smearedInput = predelayMonoInput;
+        let mut smearedInput = predelayMonoInput;
         for j in 0..4 {
             smearedInput = self.all_pass[j].operator(smearedInput);
         }
-        let leftTank = self.all_pass_four_tap[0].operator(smearedInput + self.previous_right_tank);
+        let mut leftTank =
+            self.all_pass_four_tap[0].operator(smearedInput + self.previous_right_tank);
         leftTank = self.static_delay_line[0].operator(leftTank);
         leftTank = self.damping[0].operator(leftTank);
         leftTank = self.all_pass_four_tap[1].operator(leftTank);
         leftTank = self.static_delay_line[1].operator(leftTank);
-        let rightTank = self.all_pass_four_tap[2].operator(smearedInput + self.previous_left_tank);
+        let mut rightTank =
+            self.all_pass_four_tap[2].operator(smearedInput + self.previous_left_tank);
         rightTank = self.static_delay_line[2].operator(rightTank);
         rightTank = self.damping[1].operator(rightTank);
         rightTank = self.all_pass_four_tap[3].operator(rightTank);
         rightTank = self.static_delay_line[3].operator(rightTank);
         self.previous_left_tank = leftTank * self.decay_smooth;
         self.previous_right_tank = rightTank * self.decay_smooth;
-        let accumulatorL = (0.6 * self.static_delay_line[2].get_index(1))
+        let mut accumulatorL = (0.6 * self.static_delay_line[2].get_index(1))
             + (0.6 * self.static_delay_line[2].get_index(2))
             - (0.6 * self.all_pass_four_tap[3].get_index(1))
             + (0.6 * self.static_delay_line[3].get_index(1))
             - (0.6 * self.static_delay_line[0].get_index(1))
             - (0.6 * self.all_pass_four_tap[1].get_index(1))
             - (0.6 * self.static_delay_line[1].get_index(1));
-        let accumulatorR = (0.6 * self.static_delay_line[0].get_index(2))
+        let mut accumulatorR = (0.6 * self.static_delay_line[0].get_index(2))
             + (0.6 * self.static_delay_line[0].get_index(3))
             - (0.6 * self.all_pass_four_tap[1].get_index(2))
             + (0.6 * self.static_delay_line[1].get_index(2))
@@ -314,9 +316,10 @@ impl<'a> MVerb<'a> {
             ((accumulatorL * self.early_mix) + ((1.0 - self.early_mix) * earlyReflectionsL));
         accumulatorR =
             ((accumulatorR * self.early_mix) + ((1.0 - self.early_mix) * earlyReflectionsR));
-        left = (left + self.mix_smooth * (accumulatorL - left)) * self.gain;
-        right = (right + self.mix_smooth * (accumulatorR - right)) * self.gain;
-        (right, left)
+
+        let left_output = (left + self.mix_smooth * (accumulatorL - left)) * self.gain;
+        let right_output = (right + self.mix_smooth * (accumulatorR - right)) * self.gain;
+        (left_output, right_output)
     }
 }
 
@@ -577,11 +580,21 @@ impl<const max_length: usize> StaticDelayLineFourTap<max_length> {
         output
     }
 
-    fn set_index(&self, index1: usize, index2: usize, index3: usize, index4: usize) -> f32 {
+    fn set_index(&mut self, index1: usize, index2: usize, index3: usize, index4: usize) {
         self.index1 = index1;
         self.index2 = index2;
         self.index3 = index3;
         self.index4 = index4;
+    }
+
+    fn get_index(&self, index: usize) -> f32 {
+        match index {
+            0 => self.buffer[self.index1],
+            1 => self.buffer[self.index2],
+            2 => self.buffer[self.index3],
+            3 => self.buffer[self.index4],
+            _ => self.buffer[self.index1],
+        }
     }
 
     fn set_length(&mut self, mut length: usize) {

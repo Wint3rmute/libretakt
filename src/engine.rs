@@ -1,6 +1,7 @@
 //! Responsible for sample playback.
 use rodio::Source;
 
+use crate::mverb;
 use crate::reverb;
 use crate::sample_provider::{SampleData, SampleProvider};
 use crate::sequencer::{Parameter, Sequencer};
@@ -13,12 +14,12 @@ use synfx_dsp::*;
 /// 1. Acts as a final [Source](rodio::Source) for the sampler.
 /// 2. Owns all the [Voices](Voice) and takes care of sound generation.
 /// 3. Acts as a mixer for all [Voices](Voice).
-pub struct Engine {
-    pub voices: Vec<Voice>,
+pub struct Engine<'a> {
+    pub voices: Vec<Voice<'a>>,
     pub sequencer: Sequencer,
 }
 
-impl Source for Engine {
+impl<'a> Source for Engine<'a> {
     fn current_frame_len(&self) -> Option<usize> {
         None
     }
@@ -36,7 +37,7 @@ impl Source for Engine {
     }
 }
 
-impl Iterator for Engine {
+impl<'a> Iterator for Engine<'a> {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -53,7 +54,7 @@ impl Iterator for Engine {
 /// Applies various playback modifiers and effects to the played sound,
 /// depending on the [Step](crate::sequencer::Step) data received and default
 /// [Track](crate::sequencer::Track) settings.
-pub struct Voice {
+pub struct Voice<'a> {
     // sample_provider: Arc<RwLock<SampleProvider>>,
     // pub sample_provider: &'a SampleProvider,
     pub sample_provider: Arc<SampleProvider>,
@@ -62,6 +63,7 @@ pub struct Voice {
     pub sample_played: usize,
     pub playback_speed: f32,
     pub reverb: reverb::DattorroReverbF32,
+    pub mverb: mverb::MVerb<'a>,
     pub reverb_params: ReverbParams,
 
     pub b0: f32,
@@ -137,7 +139,7 @@ impl reverb::DattorroReverbParamsF32 for ReverbParams {
     }
 }
 
-impl Voice {
+impl<'a> Voice<'a> {
     fn get_at_index(&self, sample: &SampleData, sample_position: f32) -> f32 {
         let left_sample = sample_position.floor();
         let right_sample = left_sample + 1.0;
@@ -176,6 +178,7 @@ impl Voice {
             sample_played: 1,
             playback_speed: 1.0,
             reverb,
+            mverb: mverb::MVerb::default(),
             reverb_params: ReverbParams::default(),
             playback_parameters: parameters,
 
@@ -246,10 +249,11 @@ impl Voice {
         // result
 
         // low
-        let (reverb_result, _) = self.reverb.process(&mut self.reverb_params, result, result);
+        // let (reverb_result, _) = self.reverb.process(&mut self.reverb_params, result, result);
+        let reverb_result = self.mverb.process((result, result));
 
         // result + reverb_result * 0.5
-        reverb_result
+        reverb_result.0 + result
         // result
     }
 }
