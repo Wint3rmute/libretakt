@@ -343,9 +343,10 @@ impl<'a> MVerb<'a> {
         accumulator_r =
             (accumulator_r * self.early_mix) + ((1.0 - self.early_mix) * early_reflections_r);
 
-        let left_output = (left + self.mix_smooth * (accumulator_l - left)) * self.gain;
-        let right_output = (right + self.mix_smooth * (accumulator_r - right)) * self.gain;
-        (left_output, right_output)
+        // let left_output = (left + self.mix_smooth * (accumulator_l - left)) * self.gain;
+        // let right_output = (right + self.mix_smooth * (accumulator_r - right)) * self.gain;
+        // (left_output, right_output)
+        (accumulator_l, accumulator_r)
     }
 }
 

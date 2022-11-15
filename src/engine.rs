@@ -67,6 +67,9 @@ pub struct Voice<'a> {
     pub delay: mverb::AllPass<44100>,
     pub reverb_params: ReverbParams,
 
+    pub delay_send: f32,
+    pub reverb_send: f32,
+
     pub b0: f32,
     pub b1: f32,
     pub b2: f32,
@@ -156,21 +159,20 @@ impl<'a> Voice<'a> {
         // self.playback_speed = parameters.parameters[Parameter::PitchShift as usize] as f32 / 20.0;
         self.playback_speed = 1.0;
 
-        self.reverb_params
-            .fill(parameters.parameters[Parameter::PitchShift as usize as usize] as f32 / 64.0);
+        // self.reverb_params
+        //     .fill(parameters.parameters[Parameter::PitchShift as usize as usize] as f32 / 64.0);
         self.playback_parameters = parameters;
+        let ref parameters = self.playback_parameters.parameters;
 
-        self.mverb.mix = self.playback_parameters.parameters
-            [Parameter::ReverbParamIdkWhatYet1 as usize] as f32
-            / 64.0;
+        self.mverb.mix = parameters[Parameter::ReverbParamIdkWhatYet1 as usize] as f32 / 64.0;
 
-        self.mverb.decay = self.playback_parameters.parameters
-            [Parameter::ReverbParamIdkWhatYet2 as usize] as f32
-            / 64.0;
+        self.mverb.decay = parameters[Parameter::ReverbParamIdkWhatYet2 as usize] as f32 / 64.0;
 
-        self.delay.set_length(
-            self.playback_parameters.parameters[Parameter::DelayTime as usize] as usize * 1000,
-        );
+        self.delay_send = parameters[Parameter::DelaySend as usize] as f32 / 64.0;
+        self.reverb_send = parameters[Parameter::DelaySend as usize] as f32 / 64.0;
+
+        self.delay
+            .set_length(parameters[Parameter::DelayTime as usize] as usize * 1000);
 
         self.reset();
     }
@@ -197,29 +199,14 @@ impl<'a> Voice<'a> {
             reverb_params: ReverbParams::default(),
             playback_parameters: parameters,
 
+            reverb_send: 0.0,
+            delay_send: 0.0,
+
             b0: 0.0,
             b1: 0.0,
             b2: 0.0,
             b3: 0.0,
             filter_delay: [0.0; 4],
-        }
-    }
-
-    fn get_next_raw_sample_and_progress(&mut self) -> f32 {
-        if self.playback_parameters.parameters[Parameter::Sample as usize] as usize
-            >= self.sample_provider.samples.len()
-        {
-            return 0.0;
-        }
-        let sample = &self.sample_provider.samples
-            [self.playback_parameters.parameters[Parameter::Sample as usize] as usize];
-
-        if (self.play_position + 1.0) >= sample.data.len() as f32 {
-            0.0
-        } else {
-            let result = self.get_at_index(sample, self.play_position);
-            self.play_position += self.playback_speed;
-            result
         }
     }
 
@@ -244,15 +231,33 @@ impl<'a> Voice<'a> {
     ///     Sample 112 * 0.2
     ///     Sample 113 * 0.8
     /// )
+    fn get_next_raw_sample_and_progress(&mut self) -> f32 {
+        if self.playback_parameters.parameters[Parameter::Sample as usize] as usize
+            >= self.sample_provider.samples.len()
+        {
+            return 0.0;
+        }
+        let sample = &self.sample_provider.samples
+            [self.playback_parameters.parameters[Parameter::Sample as usize] as usize];
+
+        if (self.play_position + 1.0) >= sample.data.len() as f32 {
+            0.0
+        } else {
+            let result = self.get_at_index(sample, self.play_position);
+            self.play_position += self.playback_speed;
+            result
+        }
+    }
+
     fn tick(&mut self) -> f32 {
-        let result = self.get_next_raw_sample_and_progress();
+        let sample_raw = self.get_next_raw_sample_and_progress();
 
         let freq =
             self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 * 200.0;
         let resonance =
             self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0;
-        let (mut result, _band, _high) = process_simper_svf(
-            result,
+        let (sample_filtered, _band, _high) = process_simper_svf(
+            sample_raw,
             freq,
             resonance,
             1.0 / constants::SAMPLE_RATE as f32,
@@ -260,19 +265,15 @@ impl<'a> Voice<'a> {
             &mut self.b1,
         );
 
-        result += self.delay.operator(result);
+        // let delay_effect = self.delay.operator(sample_filtered * self.delay_send);
 
-        // result
+        // let reverb_in = (sample_filtered + delay_effect) * self.reverb_send;
+        // let reverb_effect = self.mverb.process((reverb_in, reverb_in));
 
-        // low
-        // let (reverb_result, _) = self.reverb.process(&mut self.reverb_params, result, result);
-        let reverb_result = self.mverb.process((result, result));
+        // sample_filtered + delay_effect + reverb_effect.0
+        //
+        let reverb_effect = self.mverb.process((sample_filtered, sample_filtered));
 
-        // if reverb_result.0 != 0.0 {
-        // println!("{}", reverb_result.0);
-        // }
-
-        reverb_result.0
-        // result
+        reverb_effect.0
     }
 }
