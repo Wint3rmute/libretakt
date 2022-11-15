@@ -3,6 +3,7 @@ use crate::ws::WsConn;
 use actix::Addr;
 use actix_web::{get, web::Data, web::Path, web::Payload, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
+use log::info;
 use uuid::Uuid;
 
 #[get("/{group_id}")]
