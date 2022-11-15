@@ -67,7 +67,7 @@ impl<'a> Default for MVerb<'a> {
             gain: 1.0,
             mix: 1.0,
             size: 1.0,
-            early_mix: 0.0,
+            early_mix: 0.5,
             previous_left_tank: 0.0,
             previous_right_tank: 0.0,
             pre_delay_time: 0.0 * (sample_rate / 1000.0),
@@ -87,7 +87,7 @@ impl<'a> Default for MVerb<'a> {
         };
         // Multiplying the sample rate by 10 fixes the
         // clipping issue and honestly I'm out of ideas now so let's leave it as it is
-        result.set_sample_rate(sample_rate);
+        result.set_sample_rate(sample_rate * 10.0);
 
         result
     }

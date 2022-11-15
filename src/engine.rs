@@ -169,7 +169,7 @@ impl<'a> Voice<'a> {
         self.mverb.decay = parameters[Parameter::ReverbParamIdkWhatYet2 as usize] as f32 / 64.0;
 
         self.delay_send = parameters[Parameter::DelaySend as usize] as f32 / 64.0;
-        self.reverb_send = parameters[Parameter::DelaySend as usize] as f32 / 64.0;
+        self.reverb_send = parameters[Parameter::ReverbSend as usize] as f32 / 64.0;
 
         self.delay
             .set_length(parameters[Parameter::DelayTime as usize] as usize * 1000);
@@ -265,15 +265,15 @@ impl<'a> Voice<'a> {
             &mut self.b1,
         );
 
-        // let delay_effect = self.delay.operator(sample_filtered * self.delay_send);
+        let delay_effect = self.delay.operator(sample_filtered * self.delay_send);
 
-        // let reverb_in = (sample_filtered + delay_effect) * self.reverb_send;
-        // let reverb_effect = self.mverb.process((reverb_in, reverb_in));
+        let reverb_in = (sample_filtered + delay_effect) * self.reverb_send;
+        let reverb_effect = self.mverb.process((reverb_in, reverb_in));
 
-        // sample_filtered + delay_effect + reverb_effect.0
+        sample_filtered + delay_effect + reverb_effect.0
         //
-        let reverb_effect = self.mverb.process((sample_filtered, sample_filtered));
+        // let reverb_effect = self.mverb.process((sample_filtered, sample_filtered));
 
-        reverb_effect.0
+        // reverb_effect.0
     }
 }
