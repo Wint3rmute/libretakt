@@ -2,7 +2,6 @@
 use rodio::Source;
 
 use crate::mverb;
-use crate::reverb;
 use crate::sample_provider::{SampleData, SampleProvider};
 use crate::sequencer::{Parameter, Sequencer};
 use crate::{constants, sequencer::PlaybackParameters};
@@ -65,7 +64,6 @@ pub struct Voice<'a> {
     // pub reverb: reverb::DattorroReverbF32,
     pub mverb: mverb::MVerb<'a>,
     pub delay: mverb::AllPass<44100>,
-    pub reverb_params: ReverbParams,
 
     pub delay_send: f32,
     pub reverb_send: f32,
@@ -75,72 +73,6 @@ pub struct Voice<'a> {
     pub b2: f32,
     pub b3: f32,
     pub filter_delay: [f32; 4],
-}
-
-pub struct ReverbParams {
-    time_scale: f32,
-}
-
-impl Default for ReverbParams {
-    fn default() -> Self {
-        Self { time_scale: 0.0 }
-    }
-}
-
-impl ReverbParams {
-    fn fill(&mut self, time_scale: f32) {
-        self.time_scale = time_scale as f32;
-    }
-}
-
-impl reverb::DattorroReverbParamsF32 for ReverbParams {
-    fn pre_delay_time_ms(&self) -> f32 {
-        0.0
-    }
-
-    fn time_scale(&self) -> f32 {
-        self.time_scale
-    }
-
-    fn input_low_cutoff_hz(&self) -> f32 {
-        22000.0
-    }
-
-    fn input_high_cutoff_hz(&self) -> f32 {
-        0.0
-    }
-
-    fn reverb_high_cutoff_hz(&self) -> f32 {
-        0.0
-    }
-
-    fn reverb_low_cutoff_hz(&self) -> f32 {
-        0.0
-    }
-
-    fn mod_speed(&self) -> f32 {
-        0.0
-    }
-
-    fn mod_depth(&self) -> f32 {
-        0.0
-    }
-
-    fn mod_shape(&self) -> f32 {
-        0.0
-    }
-
-    fn input_diffusion_mix(&self) -> f32 {
-        1.0
-    }
-
-    fn diffusion(&self) -> f32 {
-        0.0
-    }
-
-    fn decay(&self) -> f32 {
-        self.time_scale
-    }
 }
 
 impl<'a> Voice<'a> {
@@ -156,8 +88,8 @@ impl<'a> Voice<'a> {
     }
 
     pub fn play(&mut self, parameters: PlaybackParameters) {
-        // self.playback_speed = parameters.parameters[Parameter::PitchShift as usize] as f32 / 20.0;
-        self.playback_speed = 1.0;
+        self.playback_speed = parameters.parameters[Parameter::PitchShift as usize] as f32 / 20.0;
+        // self.playback_speed = 1.0;
 
         // self.reverb_params
         //     .fill(parameters.parameters[Parameter::PitchShift as usize as usize] as f32 / 64.0);
@@ -196,7 +128,6 @@ impl<'a> Voice<'a> {
             // reverb,
             mverb: mverb::MVerb::default(),
             delay: mverb::AllPass::default(),
-            reverb_params: ReverbParams::default(),
             playback_parameters: parameters,
 
             reverb_send: 0.0,
