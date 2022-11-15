@@ -64,6 +64,7 @@ pub struct Voice<'a> {
     pub playback_speed: f32,
     // pub reverb: reverb::DattorroReverbF32,
     pub mverb: mverb::MVerb<'a>,
+    pub delay: mverb::AllPass<44100>,
     pub reverb_params: ReverbParams,
 
     pub b0: f32,
@@ -158,7 +159,20 @@ impl<'a> Voice<'a> {
         self.reverb_params
             .fill(parameters.parameters[Parameter::PitchShift as usize as usize] as f32 / 64.0);
         self.playback_parameters = parameters;
-        self.reset()
+
+        self.mverb.mix = self.playback_parameters.parameters
+            [Parameter::ReverbParamIdkWhatYet1 as usize] as f32
+            / 64.0;
+
+        self.mverb.decay = self.playback_parameters.parameters
+            [Parameter::ReverbParamIdkWhatYet2 as usize] as f32
+            / 64.0;
+
+        self.delay.set_length(
+            self.playback_parameters.parameters[Parameter::DelayTime as usize] as usize * 1000,
+        );
+
+        self.reset();
     }
 
     pub fn reset(&mut self) {
@@ -179,6 +193,7 @@ impl<'a> Voice<'a> {
             playback_speed: 1.0,
             // reverb,
             mverb: mverb::MVerb::default(),
+            delay: mverb::AllPass::default(),
             reverb_params: ReverbParams::default(),
             playback_parameters: parameters,
 
@@ -236,8 +251,7 @@ impl<'a> Voice<'a> {
             self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 * 200.0;
         let resonance =
             self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0;
-
-        let (result, _band, _high) = process_simper_svf(
+        let (mut result, _band, _high) = process_simper_svf(
             result,
             freq,
             resonance,
@@ -245,6 +259,8 @@ impl<'a> Voice<'a> {
             &mut self.b0,
             &mut self.b1,
         );
+
+        result += self.delay.operator(result);
 
         // result
 
@@ -256,6 +272,7 @@ impl<'a> Voice<'a> {
         // println!("{}", reverb_result.0);
         // }
 
-        reverb_result.0 + reverb_result.1
+        reverb_result.0
+        // result
     }
 }

@@ -28,9 +28,9 @@ pub struct MVerb<'a> {
     density2: f32,
     bandwidth_frequency: f32,
     pre_delay_time: f32,
-    decay: f32,
+    pub decay: f32,
     gain: f32,
-    mix: f32,
+    pub mix: f32,
     early_mix: f32,
     size: f32,
     mix_smooth: f32,
@@ -67,7 +67,7 @@ impl<'a> Default for MVerb<'a> {
             gain: 1.0,
             mix: 1.0,
             size: 1.0,
-            early_mix: 0.5,
+            early_mix: 0.0,
             previous_left_tank: 0.0,
             previous_right_tank: 0.0,
             pre_delay_time: 0.0 * (sample_rate / 1000.0),
@@ -85,13 +85,21 @@ impl<'a> Default for MVerb<'a> {
             density1: 0.0,
             density2: 0.0,
         };
-        result.reset();
+        // Multiplying the sample rate by 10 fixes the
+        // clipping issue and honestly I'm out of ideas now so let's leave it as it is
+        result.set_sample_rate(sample_rate);
 
         result
     }
 }
 
 impl<'a> MVerb<'a> {
+    fn set_sample_rate(&mut self, sample_rate: f32) {
+        self.sample_rate = sample_rate;
+        self.control_rate = (sample_rate / 1000.0) as usize;
+        self.reset();
+    }
+
     fn reset(&mut self) {
         self.control_rate_counter = 0;
 
@@ -360,11 +368,10 @@ impl<const MAX_LENGTH: usize> Default for AllPass<MAX_LENGTH> {
 }
 
 impl<const MAX_LENGTH: usize> AllPass<MAX_LENGTH> {
-    fn operator(&mut self, input: f32) -> f32 {
-        let output = 0.0;
-
+    pub fn operator(&mut self, input: f32) -> f32 {
         let bufout = self.buffer[self.index];
         let temp = input * -self.feedback;
+        let output = bufout + temp;
         self.buffer[self.index] = input + ((bufout + temp) * self.feedback);
 
         self.index += 1;
@@ -375,7 +382,7 @@ impl<const MAX_LENGTH: usize> AllPass<MAX_LENGTH> {
         output
     }
 
-    fn set_length(&mut self, mut length: usize) {
+    pub fn set_length(&mut self, mut length: usize) {
         if length >= MAX_LENGTH {
             length = MAX_LENGTH;
         }
