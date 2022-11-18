@@ -1,6 +1,7 @@
 //! Responsible for sample playback.
 use rodio::Source;
 
+use crate::ladder_filter;
 use crate::mverb;
 use crate::sample_provider::{SampleData, SampleProvider};
 use crate::sequencer::{Parameter, Sequencer};
@@ -68,6 +69,8 @@ pub struct Voice<'a> {
     pub delay_send: f32,
     pub reverb_send: f32,
 
+    pub ladder_filter: ladder_filter::LadderFilter,
+
     pub b0: f32,
     pub b1: f32,
     pub b2: f32,
@@ -106,6 +109,18 @@ impl<'a> Voice<'a> {
         self.delay
             .set_length(parameters[Parameter::DelayTime as usize] as usize * 1000);
 
+        self.ladder_filter.params.set_cutoff(
+            self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0,
+        );
+
+        self.ladder_filter.params.set_cutoff(
+            self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0,
+        );
+        self.ladder_filter.params.res =
+            self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0
+                * 2.0;
+        // * 0.4;
+
         self.reset();
     }
 
@@ -120,6 +135,10 @@ impl<'a> Voice<'a> {
         let mut parameters = PlaybackParameters::default();
         parameters.parameters[Parameter::Sample as usize] = 126;
 
+        let mut ladder_filter = ladder_filter::LadderFilter::new();
+        ladder_filter.params.sample_rate = constants::SAMPLE_RATE as f32;
+        // ladder_filter.params.set_cutoff(20000.0);
+
         Voice {
             sample_provider: provider.clone(),
             play_position: 0.0,
@@ -129,6 +148,7 @@ impl<'a> Voice<'a> {
             mverb: mverb::MVerb::default(),
             delay: mverb::AllPass::default(),
             playback_parameters: parameters,
+            ladder_filter,
 
             reverb_send: 0.0,
             delay_send: 0.0,
@@ -140,6 +160,8 @@ impl<'a> Voice<'a> {
             filter_delay: [0.0; 4],
         }
     }
+
+    // ladder_filter.params.s;
 
     /// TLDR linear interpolation for sample playback,
     /// allowing for speeding up and slowing down samples:
@@ -187,14 +209,22 @@ impl<'a> Voice<'a> {
             self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 * 200.0;
         let resonance =
             self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0;
-        let (sample_filtered, _band, _high) = process_simper_svf(
-            sample_raw,
-            freq,
-            resonance,
-            1.0 / constants::SAMPLE_RATE as f32,
-            &mut self.b0,
-            &mut self.b1,
-        );
+        // let (sample_filtered, _band, _high) = process_simper_svf(
+        //     sample_raw,
+        //     freq,
+        //     resonance,
+        //     1.0 / constants::SAMPLE_RATE as f32,
+        //     &mut self.b0,
+        //     &mut self.b1,
+        // );
+
+        let sample_filtered = self.ladder_filter.process(sample_raw);
+
+        // if sample_filtered != 0.0 {
+        //     println!("{sample_filtered}");
+        // }
+
+        // let sample_filtered = sample_raw;
 
         let delay_effect = self.delay.operator(sample_filtered * self.delay_send);
 
