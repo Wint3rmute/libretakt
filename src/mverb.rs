@@ -12,13 +12,12 @@ pub enum MVerbParam {
 }
 
 const BUFFER_SIZE: usize = 96_000;
-// const BUFFER_SIZE: usize = 20_000;
 
-pub struct MVerb<'a> {
+pub struct MVerb {
     all_pass: [AllPass<BUFFER_SIZE>; 4],
     all_pass_four_tap: [StaticAllPassFourTap<BUFFER_SIZE>; 4],
-    bandwidth_filter: [StateVariable<'a, 4>; 2],
-    damping: [StateVariable<'a, 4>; 2],
+    bandwidth_filter: [LowPassFilter<4>; 2],
+    damping: [LowPassFilter<4>; 2],
     predelay: StaticDelayLine<BUFFER_SIZE>,
     static_delay_line: [StaticDelayLineFourTap<BUFFER_SIZE>; 4],
     early_reflections_delay_line: [StaticDelayLineEightTap<BUFFER_SIZE>; 2],
@@ -47,7 +46,7 @@ pub struct MVerb<'a> {
     control_rate_counter: usize,
 }
 
-impl<'a> Default for MVerb<'a> {
+impl Default for MVerb {
     fn default() -> Self {
         let sample_rate = 44100.0;
 
@@ -93,7 +92,7 @@ impl<'a> Default for MVerb<'a> {
     }
 }
 
-impl<'a> MVerb<'a> {
+impl MVerb {
     fn set_sample_rate(&mut self, sample_rate: f32) {
         self.sample_rate = sample_rate;
         self.control_rate = (sample_rate / 1000.0) as usize;
@@ -772,7 +771,7 @@ enum FilterType {
     FilterTypeCount,
 }
 
-pub struct StateVariable<'a, const OVER_SAMPLE_COUNT: usize> {
+pub struct LowPassFilter<const OVER_SAMPLE_COUNT: usize> {
     sample_rate: f32,
     frequency: f32,
     q: f32,
@@ -781,11 +780,9 @@ pub struct StateVariable<'a, const OVER_SAMPLE_COUNT: usize> {
     high: f32,
     band: f32,
     notch: f32,
-    out: &'a f32,
-    // out TODO: defined as T *out; in src
 }
 
-impl<'a, const OVER_SAMPLE_COUNT: usize> Default for StateVariable<'a, OVER_SAMPLE_COUNT> {
+impl<const OVER_SAMPLE_COUNT: usize> Default for LowPassFilter<OVER_SAMPLE_COUNT> {
     fn default() -> Self {
         let mut result = Self {
             sample_rate: 44100.0,
@@ -796,10 +793,8 @@ impl<'a, const OVER_SAMPLE_COUNT: usize> Default for StateVariable<'a, OVER_SAMP
             high: 0.0,
             band: 0.0,
             notch: 0.0,
-            out: &0.0,
         };
 
-        // result.set_type(FilterType::LowPass);
         result.set_frequency(1000.0);
         result.set_resonance(0.0);
         result.reset();
@@ -807,7 +802,7 @@ impl<'a, const OVER_SAMPLE_COUNT: usize> Default for StateVariable<'a, OVER_SAMP
     }
 }
 
-impl<'a, const OVER_SAMPLE_COUNT: usize> StateVariable<'a, OVER_SAMPLE_COUNT> {
+impl<const OVER_SAMPLE_COUNT: usize> LowPassFilter<OVER_SAMPLE_COUNT> {
     pub fn operator(&mut self, input: f32) -> f32 {
         for _ in 0..OVER_SAMPLE_COUNT {
             self.low += self.f * self.band + 1e-25;
@@ -816,7 +811,6 @@ impl<'a, const OVER_SAMPLE_COUNT: usize> StateVariable<'a, OVER_SAMPLE_COUNT> {
             self.notch = self.low + self.high;
         }
 
-        // *self.out
         self.low
     }
 
@@ -841,29 +835,6 @@ impl<'a, const OVER_SAMPLE_COUNT: usize> StateVariable<'a, OVER_SAMPLE_COUNT> {
         self.q = 2.0 - 2.0 * resonance;
     }
 
-    fn set_type(&'a mut self, new_type: FilterType) {
-        match new_type {
-            FilterType::LowPass => {
-                self.out = &self.low;
-            }
-            FilterType::HighPass => {
-                self.out = &self.low;
-            }
-
-            FilterType::BandPass => {
-                self.out = &self.band;
-            }
-
-            FilterType::Notch => {
-                self.out = &self.notch;
-            }
-
-            _ => {
-                self.out = &self.low;
-            }
-        };
-    }
-
     fn update_coefficient(&mut self) {
         self.f = 2. * (std::f32::consts::PI * self.frequency / self.sample_rate).sin();
     }
@@ -874,8 +845,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn filter_construct_and_process<'a>() {
-        let mut filter: StateVariable<'a, 4> = Default::default();
+    fn filter_construct_and_process() {
+        let mut filter: LowPassFilter<4> = Default::default();
         filter.operator(1.0);
     }
 
@@ -915,16 +886,6 @@ mod tests {
     }
 
     #[test]
-    fn taps_can_be_constructed() {
-        // This does not blow up
-
-        let _tap1: StaticDelayLineEightTap<96000> = Default::default();
-        let _tap2: StaticDelayLineEightTap<96000> = Default::default();
-        let _tap3: StaticDelayLineEightTap<96000> = Default::default();
-        let _tap4: StaticDelayLineEightTap<96000> = Default::default();
-    }
-
-    #[test]
     fn taps_array_can_be_constructed() {
         let tap1: StaticDelayLineEightTap<96000> = Default::default();
         let tap2: StaticDelayLineEightTap<96000> = Default::default();
@@ -933,5 +894,11 @@ mod tests {
 
         // This part blows up!
         let _taps_array = [tap1, tap2, tap3, tap4];
+    }
+
+    #[test]
+    fn mverb_can_be_constructed() {
+        let mut reverb = MVerb::default();
+        reverb.process((0.7, 0.6));
     }
 }

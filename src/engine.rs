@@ -14,12 +14,12 @@ use synfx_dsp::*;
 /// 1. Acts as a final [Source](rodio::Source) for the sampler.
 /// 2. Owns all the [Voices](Voice) and takes care of sound generation.
 /// 3. Acts as a mixer for all [Voices](Voice).
-pub struct Engine<'a> {
-    pub voices: Vec<Voice<'a>>,
+pub struct Engine {
+    pub voices: Vec<Voice>,
     pub sequencer: Sequencer,
 }
 
-impl<'a> Source for Engine<'a> {
+impl Source for Engine {
     fn current_frame_len(&self) -> Option<usize> {
         None
     }
@@ -37,7 +37,7 @@ impl<'a> Source for Engine<'a> {
     }
 }
 
-impl<'a> Iterator for Engine<'a> {
+impl Iterator for Engine {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -54,7 +54,7 @@ impl<'a> Iterator for Engine<'a> {
 /// Applies various playback modifiers and effects to the played sound,
 /// depending on the [Step](crate::sequencer::Step) data received and default
 /// [Track](crate::sequencer::Track) settings.
-pub struct Voice<'a> {
+pub struct Voice {
     // sample_provider: Arc<RwLock<SampleProvider>>,
     // pub sample_provider: &'a SampleProvider,
     pub sample_provider: Arc<SampleProvider>,
@@ -63,7 +63,7 @@ pub struct Voice<'a> {
     pub sample_played: usize,
     pub playback_speed: f32,
     // pub reverb: reverb::DattorroReverbF32,
-    pub mverb: mverb::MVerb<'a>,
+    pub mverb: mverb::MVerb,
     pub delay: mverb::AllPass<44100>,
 
     pub delay_send: f32,
@@ -78,7 +78,7 @@ pub struct Voice<'a> {
     pub filter_delay: [f32; 4],
 }
 
-impl<'a> Voice<'a> {
+impl Voice {
     fn get_at_index(&self, sample: &SampleData, sample_position: f32) -> f32 {
         let left_sample = sample_position.floor();
         let right_sample = left_sample + 1.0;
