@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 
 use flume::bounded;
 
-use strum::IntoEnumIterator; // 0.17.1
+// 0.17.1
 use strum_macros::EnumIter; // 0.17.1
 
 /// Allows lock-free synchronisation between multiple [Sequencer] instances,
@@ -47,8 +47,8 @@ pub fn serialize_example() {
         senders: Vec::new(),
     };
     let vec = sc.serialize(m);
-    let mut slice = vec.as_slice();
-    let m2 = sc.deserialize(&mut slice);
+    let slice = vec.as_slice();
+    let m2 = sc.deserialize(slice);
 
     println!("{:?}", m2);
 }
@@ -58,7 +58,7 @@ impl SynchronisationController {
     pub fn serialize(&mut self, mutation: SequencerMutation) -> Vec<u8> {
         let mut serializer = flexbuffers::FlexbufferSerializer::new();
         mutation.serialize(&mut serializer).unwrap();
-        return serializer.take_buffer();
+        serializer.take_buffer()
     }
 
     /// Returns mutation from serialized object
@@ -89,7 +89,7 @@ type StepNum = usize;
 type ParamValue = u8;
 
 /// Represents a single change applied to the [Sequencer] structure
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SequencerMutation {
     CreateStep(TrackNum, PatternNum, StepNum),
     RemoveStep(TrackNum, PatternNum, StepNum),
@@ -169,7 +169,7 @@ impl Sequencer {
         // Dividing by 4 in the end to use eight-notes as default step length,
         // it will feel more intuitive to the user this way (trust me)
         if self.time_counter as f32
-            >= 60.0 / self.beats_per_minute as f32 * constants::SAMPLE_RATE as f32 / 8.0
+            >= 60.0 / self.beats_per_minute as f32 * constants::SAMPLE_RATE as f32 / 4.0
         {
             self.time_counter = 0;
             self.play_step(voices);
@@ -310,7 +310,7 @@ impl Track {
 /// 6. Pan
 /// 7. Reverb dry/wet
 /// 8. Delay dry/wet
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromPrimitive, EnumIter)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromPrimitive, EnumIter)]
 #[repr(u8)]
 pub enum Parameter {
     // Page 1: playback
@@ -389,6 +389,7 @@ impl Default for PlaybackParameters {
         parameters[Parameter::Note as usize] = 64u8;
         parameters[Parameter::PitchShift as usize] = 20u8;
         parameters[Parameter::Sample as usize] = 0u8;
+        parameters[Parameter::FilterCutoff as usize] = 100u8;
 
         PlaybackParameters { parameters }
     }

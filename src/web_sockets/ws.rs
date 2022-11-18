@@ -5,7 +5,7 @@ use actix::{Actor, Addr, Running, StreamHandler};
 use actix::{AsyncContext, Handler};
 use actix_web_actors::ws;
 use actix_web_actors::ws::Message::Text;
-use log::{debug, error, info, log_enabled, Level};
+use log::debug;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
