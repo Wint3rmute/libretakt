@@ -28,7 +28,7 @@ pub struct MVerb {
     bandwidth_frequency: f32,
     pre_delay_time: f32,
     pub decay: f32,
-    gain: f32,
+    // gain: f32,  // Todo: should be removed?
     pub mix: f32,
     early_mix: f32,
     size: f32,
@@ -63,7 +63,7 @@ impl Default for MVerb {
             bandwidth_frequency: 0.9,
             sample_rate: 44100.0,
             decay: 1.0,
-            gain: 1.0,
+            // gain: 1.0,
             mix: 1.0,
             size: 1.0,
             early_mix: 0.5,
@@ -402,10 +402,6 @@ impl<const MAX_LENGTH: usize> AllPass<MAX_LENGTH> {
         self.buffer.fill(0.0);
         self.index = 0;
     }
-
-    fn get_length(&self) -> usize {
-        self.length
-    }
 }
 
 struct StaticAllPassFourTap<const MAX_LENGTH: usize> {
@@ -495,17 +491,12 @@ impl<const MAX_LENGTH: usize> StaticAllPassFourTap<MAX_LENGTH> {
     fn set_feedback(&mut self, feedback: f32) {
         self.feedback = feedback;
     }
-
-    fn get_length(&self) -> usize {
-        self.length
-    }
 }
 
 struct StaticDelayLine<const MAX_LENGTH: usize> {
     buffer: Vec<f32>,
     index: usize,
     length: usize,
-    feedback: f32,
 }
 
 impl<const MAX_LENGTH: usize> Default for StaticDelayLine<MAX_LENGTH> {
@@ -513,7 +504,6 @@ impl<const MAX_LENGTH: usize> Default for StaticDelayLine<MAX_LENGTH> {
         Self {
             buffer: vec![0.0; MAX_LENGTH],
             index: 0,
-            feedback: 0.5,
             length: MAX_LENGTH - 1,
         }
     }
@@ -545,10 +535,6 @@ impl<const MAX_LENGTH: usize> StaticDelayLine<MAX_LENGTH> {
         self.buffer.fill(0.0);
         self.index = 0;
     }
-
-    fn get_length(&self) -> usize {
-        self.length
-    }
 }
 
 struct StaticDelayLineFourTap<const MAX_LENGTH: usize> {
@@ -559,7 +545,6 @@ struct StaticDelayLineFourTap<const MAX_LENGTH: usize> {
     index4: usize,
 
     length: usize,
-    feedback: f32,
 }
 
 impl<const MAX_LENGTH: usize> Default for StaticDelayLineFourTap<MAX_LENGTH> {
@@ -571,7 +556,6 @@ impl<const MAX_LENGTH: usize> Default for StaticDelayLineFourTap<MAX_LENGTH> {
             index3: 0,
             index4: 0,
             length: MAX_LENGTH - 1,
-            feedback: 0.0,
         }
     }
 }
@@ -637,10 +621,6 @@ impl<const MAX_LENGTH: usize> StaticDelayLineFourTap<MAX_LENGTH> {
         self.index3 = 0;
         self.index4 = 0;
     }
-
-    fn get_length(&self) -> usize {
-        self.length
-    }
 }
 
 struct StaticDelayLineEightTap<const MAX_LENGTH: usize> {
@@ -654,7 +634,6 @@ struct StaticDelayLineEightTap<const MAX_LENGTH: usize> {
     index7: usize,
     index8: usize,
     length: usize,
-    feedback: f32,
 }
 
 impl<const MAX_LENGTH: usize> Default for StaticDelayLineEightTap<MAX_LENGTH> {
@@ -670,7 +649,6 @@ impl<const MAX_LENGTH: usize> Default for StaticDelayLineEightTap<MAX_LENGTH> {
             index7: 0,
             index8: 0,
             length: MAX_LENGTH - 1,
-            feedback: 0.0,
         }
     }
 }
@@ -700,6 +678,7 @@ impl<const MAX_LENGTH: usize> StaticDelayLineEightTap<MAX_LENGTH> {
         output
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn set_index(
         &mut self,
         index1: usize,
@@ -740,10 +719,6 @@ impl<const MAX_LENGTH: usize> StaticDelayLineEightTap<MAX_LENGTH> {
             length = MAX_LENGTH;
         }
 
-        // if length < 0 {
-        //     length = 0
-        // }
-
         self.length = length;
     }
 
@@ -757,18 +732,6 @@ impl<const MAX_LENGTH: usize> StaticDelayLineEightTap<MAX_LENGTH> {
         self.index6 = 0;
         self.index7 = 0;
     }
-
-    fn get_length(&self) -> usize {
-        self.length
-    }
-}
-
-enum FilterType {
-    LowPass,
-    HighPass,
-    BandPass,
-    Notch,
-    FilterTypeCount,
 }
 
 pub struct LowPassFilter<const OVER_SAMPLE_COUNT: usize> {

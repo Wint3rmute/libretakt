@@ -34,7 +34,6 @@
 //! Feedback is clipped independently of the input, so it doesn't disappear at high gains.
 
 use std::f32::consts::PI;
-use std::sync::atomic::Ordering;
 
 // this is a 4-pole filter with resonance, which is why there's 4 states and vouts
 #[derive(Clone)]
@@ -64,6 +63,12 @@ impl LadderFilter {
     }
 }
 
+impl Default for LadderFilter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Clone)]
 pub struct LadderParameters {
     // the "cutoff" parameter. Determines how heavy filtering is
@@ -78,6 +83,7 @@ pub struct LadderParameters {
     // pole_value is just to be able to use get_parameter on poles
     pole_value: f32,
     // a drive parameter. Just used to increase the volume, which results in heavier distortion
+    #[allow(dead_code)] // TODO: add a filter drive param
     drive: f32,
 }
 
@@ -194,99 +200,3 @@ impl LadderParameters {
         self.poles = (value * 3.).round() as usize;
     }
 }
-
-// impl PluginParameters for LadderParameters {
-//     // get_parameter has to return the value used in set_parameter
-//     fn get_parameter(&self, index: i32) -> f32 {
-//         match index {
-//             0 => self.get_cutoff(),
-//             1 => self.res.get() / 4.,
-//             2 => self.pole_value.get(),
-//             3 => self.drive.get() / 5.,
-//             _ => 0.0,
-//         }
-//     }
-
-//     fn set_parameter(&self, index: i32, value: f32) {
-//         match index {
-//             0 => self.set_cutoff(value),
-//             1 => self.res.set(value * 4.),
-//             2 => self.set_poles(value),
-//             3 => self.drive.set(value * 5.),
-//             _ => (),
-//         }
-//     }
-
-//     fn get_parameter_name(&self, index: i32) -> String {
-//         match index {
-//             0 => "cutoff".to_string(),
-//             1 => "resonance".to_string(),
-//             2 => "filter order".to_string(),
-//             3 => "drive".to_string(),
-//             _ => "".to_string(),
-//         }
-//     }
-
-//     fn get_parameter_label(&self, index: i32) -> String {
-//         match index {
-//             0 => "Hz".to_string(),
-//             1 => "%".to_string(),
-//             2 => "poles".to_string(),
-//             3 => "%".to_string(),
-//             _ => "".to_string(),
-//         }
-//     }
-//     // This is what will display underneath our control.  We can
-//     // format it into a string that makes the most sense.
-//     fn get_parameter_text(&self, index: i32) -> String {
-//         match index {
-//             0 => format!("{:.0}", self.cutoff.get()),
-//             1 => format!("{:.3}", self.res.get()),
-//             2 => format!("{}", self.poles.load(Ordering::Relaxed) + 1),
-//             3 => format!("{:.3}", self.drive.get()),
-//             _ => format!(""),
-//         }
-//     }
-// }
-
-// impl Plugin for LadderFilter {
-//     fn new(_host: HostCallback) -> Self {
-//         LadderFilter {
-//             vout: [0f32; 4],
-//             s: [0f32; 4],
-//             params: Arc::new(LadderParameters::default()),
-//         }
-//     }
-
-//     fn set_sample_rate(&mut self, rate: f32) {
-//         self.params.sample_rate.set(rate);
-//     }
-
-//     fn get_info(&self) -> Info {
-//         Info {
-//             name: "LadderFilter".to_string(),
-//             unique_id: 9263,
-//             inputs: 1,
-//             outputs: 1,
-//             category: Category::Effect,
-//             parameters: 4,
-//             ..Default::default()
-//         }
-//     }
-
-//     fn process(&mut self, buffer: &mut AudioBuffer<f32>) {
-//         for (input_buffer, output_buffer) in buffer.zip() {
-//             for (input_sample, output_sample) in input_buffer.iter().zip(output_buffer) {
-//                 self.tick_pivotal(*input_sample);
-//                 // the poles parameter chooses which filter stage we take our output from.
-//                 *output_sample = self.vout[self.params.poles.load(Ordering::Relaxed)];
-//             }
-//         }
-//     }
-
-//     fn get_parameter_object(&mut self) -> Arc<dyn PluginParameters> {
-//         Arc::clone(&self.params) as Arc<dyn PluginParameters>
-//     }
-// }
-
-// plugin_main!(LadderFilter);
