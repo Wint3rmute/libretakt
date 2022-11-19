@@ -336,8 +336,9 @@ pub enum Parameter {
     // Page 3: effects
     ReverbSize,
     ReverbSend,
-    ReverbParamIdkWhatYet1,
-    ReverbParamIdkWhatYet2,
+    ReverbDecay,
+    ReverbEarlyMix,
+
     DelayTime,
     DelayFeedback,
     DelaySend,
