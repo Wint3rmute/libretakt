@@ -99,9 +99,9 @@ impl Voice {
         self.playback_parameters = parameters;
         let ref parameters = self.playback_parameters.parameters;
 
-        self.mverb.mix = parameters[Parameter::ReverbParamIdkWhatYet1 as usize] as f32 / 64.0;
-
-        self.mverb.decay = parameters[Parameter::ReverbParamIdkWhatYet2 as usize] as f32 / 64.0;
+        self.mverb.size = parameters[Parameter::ReverbSize as usize] as f32 / 64.0;
+        self.mverb.decay = parameters[Parameter::ReverbDecay as usize] as f32 / 64.0;
+        self.mverb.early_mix = parameters[Parameter::ReverbEarlyMix as usize] as f32 / 64.0;
 
         self.delay_send = parameters[Parameter::DelaySend as usize] as f32 / 64.0;
         self.reverb_send = parameters[Parameter::ReverbSend as usize] as f32 / 64.0;
