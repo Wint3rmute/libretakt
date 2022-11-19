@@ -1,3 +1,5 @@
+//! Multimode resonant ladder filter emulation.
+//!
 //! Copied from https://github.com/RustAudio/vst-rs
 //!
 //! The MIT License (MIT)
