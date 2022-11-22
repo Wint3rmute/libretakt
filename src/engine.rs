@@ -8,6 +8,7 @@ use crate::sequencer::{Parameter, Sequencer};
 use crate::{constants, sequencer::PlaybackParameters};
 use std::sync::Arc;
 use synfx_dsp::*;
+use crate::adsr;
 
 /// Top-level component of the DSP pipeline.
 ///
@@ -66,6 +67,10 @@ pub struct Voice {
     pub mverb: mverb::MVerb,
     pub delay: mverb::AllPass<44100>,
 
+    pub filter_freq: f32,
+    pub filter_adsr: adsr::Adsr,
+    pub filter_envelope: f32,
+
     pub delay_send: f32,
     pub reverb_send: f32,
 
@@ -109,18 +114,22 @@ impl Voice {
         self.delay
             .set_length(parameters[Parameter::DelayTime as usize] as usize * 1000);
 
-        self.ladder_filter.params.set_cutoff(
-            self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0,
-        );
+        self.filter_freq = self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0;
+        // self.filter_adsr.attack = parameters[Parameter::FilterAttack as usize] as f32 / 10000.0;
+        // self.filter_adsr.decay = parameters[Parameter::FilterDecay as usize] as f32 / 10000.0;
+        // self.filter_adsr.sustain = parameters[Parameter::FilterSustain as usize] as f32 / 64.0;
+        // self.filter_adsr.release = parameters[Parameter::FilterRelease as usize] as f32 / 10000.0;
+        self.filter_envelope = parameters[Parameter::FilterEnvelope as usize] as f32 / 64.0 * 2000.0;
 
-        self.ladder_filter.params.set_cutoff(
-            self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0,
-        );
+        // self.ladder_filter.params.set_cutoff(
+        //     self.filter_freq
+        // );
+
         self.ladder_filter.params.res =
             self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0
                 * 2.0;
-        // * 0.4;
 
+        self.filter_adsr.reset();
         self.reset();
     }
 
@@ -137,7 +146,6 @@ impl Voice {
 
         let mut ladder_filter = ladder_filter::LadderFilter::new();
         ladder_filter.params.sample_rate = constants::SAMPLE_RATE as f32;
-        // ladder_filter.params.set_cutoff(20000.0);
 
         Voice {
             sample_provider: provider.clone(),
@@ -152,6 +160,10 @@ impl Voice {
 
             reverb_send: 0.0,
             delay_send: 0.0,
+
+            filter_freq: 2000.0,
+            filter_adsr: adsr::Adsr::default(),
+            filter_envelope: 0.0,
 
             b0: 0.0,
             b1: 0.0,
@@ -205,10 +217,10 @@ impl Voice {
     fn tick(&mut self) -> f32 {
         let sample_raw = self.get_next_raw_sample_and_progress();
 
-        let freq =
-            self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 * 200.0;
-        let resonance =
-            self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0;
+        // let freq =
+        //     self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 * 200.0;
+        // let resonance =
+        //     self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0;
         // let (sample_filtered, _band, _high) = process_simper_svf(
         //     sample_raw,
         //     freq,
@@ -218,6 +230,9 @@ impl Voice {
         //     &mut self.b1,
         // );
 
+        if self.filter_envelope > 0.001 {
+            self.ladder_filter.params.set_cutoff(self.filter_freq * self.filter_adsr.tick(true) * 100.0); // * self.filter_envelope);
+        }
         let sample_filtered = self.ladder_filter.process(sample_raw);
 
         // if sample_filtered != 0.0 {

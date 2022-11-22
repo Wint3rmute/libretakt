@@ -9,10 +9,10 @@ pub enum Phase {
 pub struct Adsr {
     phase: Phase,
     state: f32,
-    attack: f32,
-    decay: f32,
-    sustain: f32,
-    release: f32,
+    pub attack: f32,
+    pub decay: f32,
+    pub sustain: f32,
+    pub release: f32,
 }
 
 impl Default for Adsr {
@@ -20,8 +20,8 @@ impl Default for Adsr {
         Self {
             phase: Phase::Finished,
             state: 0.0,
-            attack: 0.001,
-            decay: 0.1,
+            attack: 0.0001,
+            decay: 0.0001,
             sustain: 0.9,
             release: 0.001,
         }
