@@ -1,6 +1,7 @@
 //! Responsible for sample playback.
 use rodio::Source;
 
+use crate::adsr;
 use crate::ladder_filter;
 use crate::mverb;
 use crate::sample_provider::{SampleData, SampleProvider};
@@ -66,6 +67,10 @@ pub struct Voice {
     pub mverb: mverb::MVerb,
     pub delay: mverb::AllPass<44100>,
 
+    pub filter_freq: f32,
+    pub filter_adsr: adsr::Adsr,
+    pub filter_envelope: f32,
+
     pub delay_send: f32,
     pub reverb_send: f32,
 
@@ -109,18 +114,21 @@ impl Voice {
         self.delay
             .set_length(parameters[Parameter::DelayTime as usize] as usize * 1000);
 
-        self.ladder_filter.params.set_cutoff(
-            self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0,
-        );
+        self.filter_freq =
+            self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0;
+        self.filter_adsr.attack =
+            -(parameters[Parameter::FilterAttack as usize] as f32 / 64.0) + 1.0 + 0.0001;
+        self.filter_adsr.decay =
+            -(parameters[Parameter::FilterDecay as usize] as f32 / 64.0) + 1.0 + 0.0001;
+        self.filter_adsr.sustain = parameters[Parameter::FilterSustain as usize] as f32 / 64.0;
+        self.filter_adsr.release = parameters[Parameter::FilterRelease as usize] as f32 / 1000.0;
+        self.filter_envelope = parameters[Parameter::FilterEnvelope as usize] as f32 / 64.0;
 
-        self.ladder_filter.params.set_cutoff(
-            self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0,
-        );
         self.ladder_filter.params.res =
             self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0
                 * 2.0;
-        // * 0.4;
 
+        self.filter_adsr.reset();
         self.reset();
     }
 
@@ -137,7 +145,6 @@ impl Voice {
 
         let mut ladder_filter = ladder_filter::LadderFilter::new();
         ladder_filter.params.sample_rate = constants::SAMPLE_RATE as f32;
-        // ladder_filter.params.set_cutoff(20000.0);
 
         Voice {
             sample_provider: provider.clone(),
@@ -152,6 +159,10 @@ impl Voice {
 
             reverb_send: 0.0,
             delay_send: 0.0,
+
+            filter_freq: 2000.0,
+            filter_adsr: adsr::Adsr::default(),
+            filter_envelope: 0.0,
 
             b0: 0.0,
             b1: 0.0,
@@ -205,26 +216,14 @@ impl Voice {
     fn tick(&mut self) -> f32 {
         let sample_raw = self.get_next_raw_sample_and_progress();
 
-        let freq =
-            self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 * 200.0;
-        let resonance =
-            self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0;
-        // let (sample_filtered, _band, _high) = process_simper_svf(
-        //     sample_raw,
-        //     freq,
-        //     resonance,
-        //     1.0 / constants::SAMPLE_RATE as f32,
-        //     &mut self.b0,
-        //     &mut self.b1,
-        // );
+        let mut cutoff =
+            self.filter_freq + self.filter_adsr.tick(true) * self.filter_envelope * 2.0;
 
+        if cutoff > 1.0 {
+            cutoff = 1.0;
+        }
+        self.ladder_filter.params.set_cutoff(cutoff); // * self.filter_envelope);
         let sample_filtered = self.ladder_filter.process(sample_raw);
-
-        // if sample_filtered != 0.0 {
-        //     println!("{sample_filtered}");
-        // }
-
-        // let sample_filtered = sample_raw;
 
         let delay_effect = self.delay.operator(sample_filtered * self.delay_send);
 
@@ -232,9 +231,5 @@ impl Voice {
         let reverb_effect = self.mverb.process((reverb_in, reverb_in));
 
         sample_filtered + delay_effect + reverb_effect.0
-        //
-        // let reverb_effect = self.mverb.process((sample_filtered, sample_filtered));
-
-        // reverb_effect.0
     }
 }
