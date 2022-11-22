@@ -20,9 +20,9 @@ impl Default for Adsr {
         Self {
             phase: Phase::Finished,
             state: 0.0,
-            attack: 0.0001,
-            decay: 0.0001,
-            sustain: 0.9,
+            attack: 1.0 / 41000.0 / 2.0,
+            decay: 1.0 / 41000.0 / 2.0,
+            sustain: 0.5,
             release: 0.001,
         }
     }
