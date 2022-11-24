@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 
 use flume::bounded;
 
-// 0.17.1
+use strum::IntoEnumIterator; // 0.17.1
 use strum_macros::EnumIter; // 0.17.1
 
 /// Allows lock-free synchronisation between multiple [Sequencer] instances,
@@ -87,6 +87,7 @@ type TrackNum = usize;
 type PatternNum = usize;
 type StepNum = usize;
 type ParamValue = u8;
+type ParamNum = usize;
 
 /// Represents a single change applied to the [Sequencer] structure
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -95,6 +96,7 @@ pub enum SequencerMutation {
     RemoveStep(TrackNum, PatternNum, StepNum),
     SetParam(TrackNum, PatternNum, StepNum, Parameter, ParamValue),
     RemoveParam(TrackNum, PatternNum, StepNum, Parameter),
+    UpdateTrackParam(TrackNum, ParamNum, ParamValue),
 }
 
 pub type CurrentStepData = [usize; 8];
@@ -156,6 +158,9 @@ impl Sequencer {
                         .as_mut()
                         .unwrap()
                         .parameters[parameter as usize] = None;
+                }
+                SequencerMutation::UpdateTrackParam(track, index, value) => {
+                    self.tracks[track].default_parameters.parameters[index] = value;
                 }
             }
         }
@@ -310,6 +315,7 @@ impl Track {
 /// 6. Pan
 /// 7. Reverb dry/wet
 /// 8. Delay dry/wet
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromPrimitive, EnumIter)]
 #[repr(u8)]
 pub enum Parameter {
