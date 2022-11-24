@@ -1,7 +1,7 @@
 //! Reads sample data from files and and provides it to other components.
 use std::path::Path;
 
-use log::{debug, error};
+use log::info;
 use rodio::decoder::Decoder;
 
 /// Reads samples from files and provides an interface to access them.
@@ -25,7 +25,7 @@ impl Default for SampleProvider {
                 continue;
             }
             let path_display = path.display();
-            debug!("Loading {path_display}");
+            info!("Loading {path_display}");
 
             samples.push(SampleData::from_file(path.as_path()));
         }

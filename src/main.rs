@@ -2,6 +2,7 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
+use libretakt::constants::NUM_OF_VOICES;
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
 use libretakt::sequencer::{
@@ -9,15 +10,15 @@ use libretakt::sequencer::{
     NUM_OF_PARAMETERS,
 };
 use macroquad::prelude::*;
-use num_derive::FromPrimitive;
 
 use flume::{bounded, Receiver};
-use log::{debug, error, info, log_enabled, Level};
+
 use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
 use rodio::{OutputStream, Sink};
 use std::sync::Arc;
 
 use strum::IntoEnumIterator; // 0.17.1
+
 use strum_macros::EnumIter; // 0.17.1
 
 pub struct Context {
@@ -59,39 +60,38 @@ impl Context {
 
 pub fn param_of_idx(i: usize) -> Parameter {
     let mut iterator = 0;
-    for param in Parameter::iter(){
-        if i == iterator{
+    for param in Parameter::iter() {
+        if i == iterator {
             return param;
         }
-        iterator = iterator + 1;
-    } 
+        iterator += 1;
+    }
 
-    return Parameter::Sample;
+    Parameter::Sample
 }
 
 pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
-   
     let mut sliders_before_count = 0;
     let mut current_iter_group = 0;
-    
+
     let sliders_group_iter = context.slider_group_sizes.iter();
-    
-    for val in sliders_group_iter{
-        if context.current_slider_group == current_iter_group{
-            if i + 1 <= sliders_before_count{
+
+    for val in sliders_group_iter {
+        if context.current_slider_group == current_iter_group {
+            if i < sliders_before_count {
                 return false;
             }
-            if i + 1 > sliders_before_count + val{
+            if i + 1 > sliders_before_count + val {
                 return false;
             }
             return true;
         }
 
-        sliders_before_count = sliders_before_count + val;
-        current_iter_group = current_iter_group + 1;
+        sliders_before_count += val;
+        current_iter_group += 1;
     }
-
-    return false;
+    
+    false
 }
 
 pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_index: usize) {
@@ -114,8 +114,8 @@ pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_
         None => {}
     }
 
-    if is_param == false {
-        context.parameter_vals_float[param_index] = 7 as f32;
+    if !is_param {
+        context.parameter_vals_float[param_index] = 7_f32;
         return;
     }
 
@@ -231,13 +231,13 @@ async fn main() {
 
     let (current_step_tx, current_step_rx) = bounded::<CurrentStepData>(64);
 
-    let voice = Voice::new(&provider);
+    let _voice = Voice::new(&provider);
     let engine = Engine {
         sequencer: Sequencer::new(
             synchronisation_controller.register_new(),
             current_step_tx.clone(),
         ),
-        voices: vec![Voice::new(&provider), Voice::new(&provider)],
+        voices: (0..NUM_OF_VOICES).map(|_| Voice::new(&provider)).collect(),
     };
 
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
@@ -413,7 +413,7 @@ async fn ui_main(
         parameter_vals_float: [0f32; NUM_OF_PARAMETERS],
 
         current_slider_group: 0,
-        slider_group_sizes: vec![8,8,8],
+        slider_group_sizes: vec![8, 8, 8],
 
         is_edit_note_pressed: false,
     };
@@ -524,7 +524,7 @@ async fn ui_main(
                                     {
                                         //EDIT MODE:
                                         if context.is_edit_note_pressed {
-                                            select_step(&sequencer, &mut context, i as i32);
+                                            select_step(sequencer, &mut context, i as i32);
                                         } else {
                                             synchronisation_controller.mutate(
                                                 SequencerMutation::RemoveStep(
@@ -610,10 +610,12 @@ async fn ui_main(
 
                         //Context Slide Group
                         //Is responsible for showing deciding which slider panels to show
+
                         Group::new(hash!("Slider Group Selector Box"), Vec2::new(700., 45.)).ui(
                             ui,
                             |ui| {
                                 //ui.label(Vec2::new(0., 0.), "SLIDER GROUPS SELECTOR");
+
                                 for button_i in 0..3{
                                     Group::new(hash!("ASGADGXXZXCZSSCBHRAZEEHSEH", button_i), Vec2::new(40., 40.)).ui(
                                         ui,

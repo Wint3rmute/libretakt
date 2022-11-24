@@ -20,7 +20,7 @@ use num_derive::FromPrimitive;
 extern crate serde;
 extern crate serde_derive;
 
-use crate::constants;
+use crate::constants::{self, NUM_OF_VOICES};
 use crate::engine::Voice;
 use flume::{Receiver, Sender};
 use log::{debug, error};
@@ -47,8 +47,8 @@ pub fn serialize_example() {
         senders: Vec::new(),
     };
     let vec = sc.serialize(m);
-    let mut slice = vec.as_slice();
-    let m2 = sc.deserialize(&mut slice);
+    let slice = vec.as_slice();
+    let m2 = sc.deserialize(slice);
 
     println!("{:?}", m2);
 }
@@ -58,7 +58,7 @@ impl SynchronisationController {
     pub fn serialize(&mut self, mutation: SequencerMutation) -> Vec<u8> {
         let mut serializer = flexbuffers::FlexbufferSerializer::new();
         mutation.serialize(&mut serializer).unwrap();
-        return serializer.take_buffer();
+        serializer.take_buffer()
     }
 
     /// Returns mutation from serialized object
@@ -90,7 +90,7 @@ type ParamValue = u8;
 type ParamNum = usize;
 
 /// Represents a single change applied to the [Sequencer] structure
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SequencerMutation {
     CreateStep(TrackNum, PatternNum, StepNum),
     RemoveStep(TrackNum, PatternNum, StepNum),
@@ -119,7 +119,7 @@ impl Sequencer {
         current_step_sender: Sender<CurrentStepData>,
     ) -> Self {
         Sequencer {
-            tracks: vec![Track::new(), Track::new()],
+            tracks: (0..NUM_OF_VOICES).map(|_| Track::new()).collect(),
             beats_per_minute: 120,
             time_counter: 0,
             mutations_queue,
@@ -174,7 +174,7 @@ impl Sequencer {
         // Dividing by 4 in the end to use eight-notes as default step length,
         // it will feel more intuitive to the user this way (trust me)
         if self.time_counter as f32
-            >= 60.0 / self.beats_per_minute as f32 * constants::SAMPLE_RATE as f32 / 8.0
+            >= 60.0 / self.beats_per_minute as f32 * constants::SAMPLE_RATE as f32 / 4.0
         {
             self.time_counter = 0;
             self.play_step(voices);
@@ -315,7 +315,8 @@ impl Track {
 /// 6. Pan
 /// 7. Reverb dry/wet
 /// 8. Delay dry/wet
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromPrimitive, EnumIter)]
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, FromPrimitive, EnumIter)]
 #[repr(u8)]
 pub enum Parameter {
     // Page 1: playback
@@ -341,8 +342,9 @@ pub enum Parameter {
     // Page 3: effects
     ReverbSize,
     ReverbSend,
-    ReverbParamIdkWhatYet1,
-    ReverbParamIdkWhatYet2,
+    ReverbDecay,
+    ReverbEarlyMix,
+
     DelayTime,
     DelayFeedback,
     DelaySend,
@@ -394,6 +396,7 @@ impl Default for PlaybackParameters {
         parameters[Parameter::Note as usize] = 64u8;
         parameters[Parameter::PitchShift as usize] = 20u8;
         parameters[Parameter::Sample as usize] = 0u8;
+        parameters[Parameter::FilterCutoff as usize] = 100u8;
 
         PlaybackParameters { parameters }
     }

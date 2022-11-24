@@ -2,6 +2,14 @@ name: Rust CI
 on: [push]
 
 jobs:
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: |
+          cargo fmt --check
+
   build:
     runs-on: ubuntu-latest
     steps:
