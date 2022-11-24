@@ -1,9 +1,9 @@
 use crate::messages::{ClientActorMessage, Connect, Disconnect, WsMessage};
 use actix::prelude::{Actor, Context, Handler, Recipient};
 use log::error;
+use log::info;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
-use log::info;
 
 type Socket = Recipient<WsMessage>;
 
