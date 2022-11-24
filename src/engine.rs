@@ -71,6 +71,8 @@ pub struct Voice {
     pub filter_adsr: adsr::Adsr,
     pub filter_envelope: f32,
 
+    pub amp_adsr: adsr::Adsr,
+
     pub delay_send: f32,
     pub reverb_send: f32,
 
@@ -116,19 +118,28 @@ impl Voice {
 
         self.filter_freq =
             self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0;
+        self.filter_envelope = parameters[Parameter::FilterEnvelope as usize] as f32 / 64.0;
+
         self.filter_adsr.attack =
             -(parameters[Parameter::FilterAttack as usize] as f32 / 64.0) + 1.0 + 0.0001;
         self.filter_adsr.decay =
             -(parameters[Parameter::FilterDecay as usize] as f32 / 64.0) + 1.0 + 0.0001;
         self.filter_adsr.sustain = parameters[Parameter::FilterSustain as usize] as f32 / 64.0;
         self.filter_adsr.release = parameters[Parameter::FilterRelease as usize] as f32 / 1000.0;
-        self.filter_envelope = parameters[Parameter::FilterEnvelope as usize] as f32 / 64.0;
+
+        // Todo: add parameters
+        self.amp_adsr.attack =
+            -(parameters[Parameter::PlayMode as usize] as f32 / 64.0) + 1.0 + 0.0001;
+        self.amp_adsr.decay =
+            -(parameters[Parameter::NoteLength as usize] as f32 / 64.0) + 1.0 + 0.0001;
+        self.amp_adsr.sustain = parameters[Parameter::NoteVelocity as usize] as f32 / 64.0;
 
         self.ladder_filter.params.res =
             self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0
                 * 2.0;
 
         self.filter_adsr.reset();
+        self.amp_adsr.reset();
         self.reset();
     }
 
@@ -163,6 +174,8 @@ impl Voice {
             filter_freq: 2000.0,
             filter_adsr: adsr::Adsr::default(),
             filter_envelope: 0.0,
+
+            amp_adsr: adsr::Adsr::default(),
 
             b0: 0.0,
             b1: 0.0,
@@ -214,7 +227,7 @@ impl Voice {
     }
 
     fn tick(&mut self) -> f32 {
-        let sample_raw = self.get_next_raw_sample_and_progress();
+        let sample_raw = self.get_next_raw_sample_and_progress() * self.amp_adsr.tick(true);
 
         let mut cutoff =
             self.filter_freq + self.filter_adsr.tick(true) * self.filter_envelope * 2.0;
