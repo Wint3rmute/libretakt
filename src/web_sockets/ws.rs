@@ -6,6 +6,7 @@ use actix::{AsyncContext, Handler};
 use actix_web_actors::ws;
 use actix_web_actors::ws::Message::Text;
 use log::debug;
+use log::info;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 

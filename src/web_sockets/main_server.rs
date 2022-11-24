@@ -15,7 +15,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .service(start_connection_route) //register our route. rename with "as" import or naming conflict
-            .data(chat_server.clone()) //register the lobby
+            .app_data(chat_server.clone()) //register the lobby
     })
     .bind("127.0.0.1:8081")?
     .run()

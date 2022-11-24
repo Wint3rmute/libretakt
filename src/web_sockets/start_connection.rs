@@ -13,7 +13,7 @@ pub async fn start_connection(
     srv: Data<Addr<Lobby>>,
 ) -> Result<HttpResponse, Error> {
     let ws = WsConn::new(group_id, srv.get_ref().clone());
-    info!("Server started group_id {}", group_id);
+    println!("Server started group_id {}", group_id);
     let resp = ws::start(ws, &req, stream)?;
     Ok(resp)
 }
