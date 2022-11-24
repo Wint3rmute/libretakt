@@ -122,6 +122,14 @@ pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_
     context.parameter_vals_float[param_index] = param_val as f32;
 }
 
+pub fn assign_context_track_params(sequencer: &Sequencer, context: &mut Context){
+    let track_params = sequencer.tracks[context.current_track as usize].default_parameters.parameters;
+
+    for i in 0..NUM_OF_PARAMETERS{
+        context.parameter_vals_float[i as usize] = track_params[i as usize] as f32;
+    }
+}
+
 pub fn compare_params_floats_with_original(
     synchronisation_controller: &mut SynchronisationController,
     sequencer: &Sequencer,
@@ -172,6 +180,30 @@ pub fn compare_params_floats_with_original(
     }
 }
 
+pub fn compare_floats_with_original_track(
+    synchronisation_controller: &mut SynchronisationController,
+    sequencer: &Sequencer,
+    context: &mut Context,
+){
+    //Przejdź po wszystkich parametrach tracku/aż nie znajdziemy mutacji
+    for i in 0..NUM_OF_PARAMETERS {
+        let mut param_val = sequencer.tracks[context.current_track as usize].default_parameters.parameters[i as usize];
+
+        let eps = 1.0;
+        if (context.parameter_vals_float[i] < param_val as f32 - eps)
+            || (context.parameter_vals_float[i] > param_val as f32 + eps)
+        {
+            synchronisation_controller.mutate(SequencerMutation::UpdateTrackParam(
+                context.current_track as usize, 
+                i as usize, 
+                (context.parameter_vals_float[i] as usize)
+                    .try_into()
+                    .unwrap(),
+            ));
+        }
+    }
+}
+
 pub fn select_step(sequencer: &Sequencer, context: &mut Context, step_index: i32) {
     context.selected_step = step_index;
 
@@ -179,6 +211,12 @@ pub fn select_step(sequencer: &Sequencer, context: &mut Context, step_index: i32
     for i in 0..NUM_OF_PARAMETERS {
         assing_context_param(sequencer, context, i as usize);
     }
+}
+
+pub fn deselect_step(sequencer: &Sequencer, context: &mut Context){
+    context.selected_step = -1;
+
+    assign_context_track_params(sequencer, context);
 }
 
 #[macroquad::main("LibreTakt")]
@@ -380,6 +418,8 @@ async fn ui_main(
         is_edit_note_pressed: false,
     };
 
+    deselect_step(&sequencer, &mut context);
+
     loop {
         clear_background(WHITE);
 
@@ -405,11 +445,19 @@ async fn ui_main(
             context.check_user_input();
 
             //Jakiś extra space na logike kodu
-            compare_params_floats_with_original(
-                &mut synchronisation_controller,
-                &sequencer,
-                &mut context,
-            );
+            if context.selected_step != -1{
+                compare_params_floats_with_original(
+                    &mut synchronisation_controller,
+                    &sequencer,
+                    &mut context,
+                );
+            }else{
+                compare_floats_with_original_track(
+                    &mut synchronisation_controller,
+                    &sequencer,
+                    &mut context,
+                );
+            }
 
             //***DRAWING UI PANELS***
             //***TITLE PANEL***
@@ -469,7 +517,7 @@ async fn ui_main(
                                 if ui.button(Vec2::new(0., 0.), "....") {
                                     //im not sure if this kind of if/else chain is valid
                                     //i would use some "returns" and tide it up a bit but i think i cant coz its not a method
-                                    context.selected_step = -1;
+                                    deselect_step(&sequencer, &mut context);
                                     if sequencer.tracks[context.current_track as usize].patterns[0]
                                         .steps[i]
                                         .is_some()
@@ -524,7 +572,7 @@ async fn ui_main(
                             if ui.button(Vec2::new(30., 0.), (i + 1).to_string()) {
                                 //TODO - dodać warunek że track nie jest zalockowany przez innego uzytkownika!!!
                                 context.current_track = i as i32;
-                                context.selected_step = -1; // Todo use Option<usize>
+                                deselect_step(&sequencer, &mut context);
                             }
                         });
                     }
@@ -557,20 +605,11 @@ async fn ui_main(
                     screen_height() - context.title_banner_h - context.track_panel_h,
                 ),
                 |ui| {
-                    //Jeżeli jest wybrany step w trybie edycji zrób całą magię
-                    if context.selected_step == -1 {
-                        //UI Lable in top left
-                        ui.label(Vec2::new(0., 0.), "NO STEP SELECTED!");
-                    }
 
                     //Option BOX
 
-                    if context.selected_step != -1
-                        && sequencer.tracks[context.current_track as usize].patterns[0].steps
-                            [context.selected_step as usize]
-                            .as_ref()
-                            .is_some()
-                    {
+                        //Context Slide Group
+                        //Is responsible for showing deciding which slider panels to show
                         Group::new(hash!("Slider Group Selector Box"), Vec2::new(700., 45.)).ui(
                             ui,
                             |ui| {
@@ -591,140 +630,156 @@ async fn ui_main(
                             }
                         );
 
+                        //STEPS LOGIC!!!
                         //Utwórz  slidery do edycji parametrów:
-                        for i in 0..sequencer.tracks[context.current_track as usize].patterns[0]
-                            .steps[context.selected_step as usize]
-                            .as_ref()
-                            .unwrap()
-                            .parameters
-                            .len()
-                        {
-                            //Sprawdź czy jest to current slider group
-                            //if not current slider group => continue
-                            if !is_in_current_slided_group(&context, i as i32 ){
-                                continue;
-                            }
-
-                            //Pobranie pojedyńczego parametru
-                            let _temp = sequencer.tracks[context.current_track as usize].patterns
-                                [0]
-                            .steps[context.selected_step as usize]
+                        if(context.selected_step != -1){
+                            for i in 0..sequencer.tracks[context.current_track as usize].patterns[0]
+                                .steps[context.selected_step as usize]
                                 .as_ref()
                                 .unwrap()
-                                .parameters[i];
-
-                            let mut is_param = false;
-                            let mut param_val = 0;
-
-                            match _temp {
-                                Some(x) => {
-                                    is_param = true;
-                                    param_val = x;
+                                .parameters
+                                .len()
+                            {
+                                //Sprawdź czy jest to current slider group
+                                //if not current slider group => continue
+                                if !is_in_current_slided_group(&context, i as i32 ){
+                                    continue;
                                 }
 
-                                None => {}
-                            }
+                                //Pobranie pojedyńczego parametru
+                                let _temp = sequencer.tracks[context.current_track as usize].patterns
+                                    [0]
+                                .steps[context.selected_step as usize]
+                                    .as_ref()
+                                    .unwrap()
+                                    .parameters[i];
 
-                            Group::new(hash!("PanelSettings", i), Vec2::new(700., 70.)).ui(
-                                ui,
-                                |ui| {
-                                    Group::new(hash!("Group LAbel", i), Vec2::new(680., 20.)).ui(
-                                        ui,
-                                        |ui| {
-                                            let parameter: Parameter =
-                                                num::FromPrimitive::from_usize(i).unwrap();
+                                let mut is_param = false;
+                                let mut param_val = 0;
 
-                                            ui.label(Vec2::new(0., 0.), &parameter.to_string());
-                                        },
-                                    );
+                                match _temp {
+                                    Some(x) => {
+                                        is_param = true;
+                                        param_val = x;
+                                    }
 
-                                    Group::new(hash!("Group Button", i), Vec2::new(40., 38.)).ui(
-                                        ui,
-                                        |ui| {
-                                            if ui.button(
-                                                Vec2::new(0., 0.),
-                                                if is_param { "X" } else { "." },
-                                            ) {
-                                                if is_param {
-                                                    //switch is_param
-                                                    is_param = false;
+                                    None => {}
+                                }
 
-                                                    //Delete parameter
-                                                    synchronisation_controller.mutate(
-                                                        SequencerMutation::RemoveParam(
-                                                            context.current_track as usize,
-                                                            0,
-                                                            context.selected_step as usize,
-                                                            param_of_idx(i),
-                                                        ),
-                                                    );
-                                                } else {
-                                                    //switch is_param
-                                                    is_param = true;
-                                                    //Add parameter
-                                                    let default_param = 0.0;
-                                                    context.parameter_vals_float[i] = default_param;
-                                                    synchronisation_controller.mutate(
-                                                        SequencerMutation::SetParam(
-                                                            context.current_track as usize,
-                                                            0,
-                                                            context.selected_step as usize,
-                                                            param_of_idx(i),
-                                                            (default_param as usize)
-                                                                .try_into()
-                                                                .unwrap(),
-                                                        ),
+                                Group::new(hash!("PanelSettings", i), Vec2::new(700., 70.)).ui(
+                                    ui,
+                                    |ui| {
+                                        Group::new(hash!("Group LAbel", i), Vec2::new(680., 20.)).ui(
+                                            ui,
+                                            |ui| {
+                                                let parameter: Parameter =
+                                                    num::FromPrimitive::from_usize(i).unwrap();
+
+                                                ui.label(Vec2::new(0., 0.), &parameter.to_string());
+                                            },
+                                        );
+
+                                        Group::new(hash!("Group Button", i), Vec2::new(40., 38.)).ui(
+                                            ui,
+                                            |ui| {
+                                                if ui.button(
+                                                    Vec2::new(0., 0.),
+                                                    if is_param { "X" } else { "." },
+                                                ) {
+                                                    if is_param {
+                                                        //switch is_param
+                                                        is_param = false;
+
+                                                        //Delete parameter
+                                                        synchronisation_controller.mutate(
+                                                            SequencerMutation::RemoveParam(
+                                                                context.current_track as usize,
+                                                                0,
+                                                                context.selected_step as usize,
+                                                                param_of_idx(i),
+                                                            ),
+                                                        );
+                                                    } else {
+                                                        //switch is_param
+                                                        is_param = true;
+                                                        //Add parameter
+                                                        let default_param = 0.0;
+                                                        context.parameter_vals_float[i] = default_param;
+                                                        synchronisation_controller.mutate(
+                                                            SequencerMutation::SetParam(
+                                                                context.current_track as usize,
+                                                                0,
+                                                                context.selected_step as usize,
+                                                                param_of_idx(i),
+                                                                (default_param as usize)
+                                                                    .try_into()
+                                                                    .unwrap(),
+                                                            ),
+                                                        );
+                                                    }
+                                                }
+                                            },
+                                        );
+
+                                        Group::new(hash!("Group Slider", i), Vec2::new(500., 38.)).ui(
+                                            ui,
+                                            |ui| {
+                                                if is_param == true {
+
+                                                    ui.slider(
+                                                        hash!("param slider", i),
+                                                        "",
+                                                        0f32..64f32,
+                                                        &mut context.parameter_vals_float[i],
                                                     );
                                                 }
-                                            }
-                                        },
-                                    );
+                                            },
+                                        );
+                                    },
+                                );
+                            }
+                        }else{
+                            let track_params = sequencer.tracks[context.current_track as usize].default_parameters
+                            .parameters;
 
-                                    Group::new(hash!("Group Slider", i), Vec2::new(500., 38.)).ui(
-                                        ui,
-                                        |ui| {
-                                            if is_param == true {
+                            for i in 0..track_params.len(){
 
+                                if !is_in_current_slided_group(&context, i as i32 ){
+                                    continue;
+                                }
+
+                                Group::new(hash!("PanelSettings asf", i), Vec2::new(700., 70.)).ui(
+                                    ui,
+                                    |ui| {
+                                        
+                                        Group::new(hash!("Group LAbel asfasf", i), Vec2::new(680., 20.)).ui(
+                                            ui,
+                                            |ui| {
+                                                let parameter: Parameter =
+                                                    num::FromPrimitive::from_usize(i).unwrap();
+
+                                                ui.label(Vec2::new(0., 0.), &parameter.to_string());
+                                            },
+                                        );
+
+                                        Group::new(hash!("Group Slider asdasfa", i), Vec2::new(500., 38.)).ui(
+                                            ui,
+                                            |ui| {
                                                 ui.slider(
-                                                    hash!("param slider", i),
+                                                    hash!("param slider ...", i),
                                                     "",
                                                     0f32..64f32,
                                                     &mut context.parameter_vals_float[i],
                                                 );
-                                            }
-                                        },
-                                    );
-                                },
-                            );
+                                            },
+                                        );
+                                    },
+                                );
+
+                            }
                         }
-                    }
                 },
             );
-
-            //Some leftover code that i decided to comment if i ever need to quickly look how to make sliders.
-            //WILL BE DELETED LATER!!!
-
-            // main_window.draw();
-            // context.check_all_bounds();
-            /*
-                for i in 0..num_of_steps {
-                    root_ui().slider(hash!(), "[-10 .. 10]", 0f32..10f32, &mut sample);
-                    if root_ui().button(
-                        None,
-                        if sequencer.tracks[0].steps[i].is_some() {
-                            "X"
-                        } else {
-                            " "
-                        },
-                    ) {
-                        if sequencer.tracks[0].steps[i].is_some() {
-                            sequencer.tracks[0].steps[i] = None;
-                        } else {
-                            sequencer.tracks[0].steps[i] = Some(sequencer::Step::default());
-                        }
-                    }
-
-            */
         }
         sequencer.apply_mutations();
         next_frame().await;
