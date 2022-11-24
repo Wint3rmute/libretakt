@@ -29,6 +29,7 @@ num-derive = "0.3"
 num-traits = "0.2"
 strum = "0.24"
 strum_macros = "0.24"
+awc = "3.0.1"
 
 [[bin]]
 bench = false
@@ -37,5 +38,10 @@ name = "client"
 
 [[bin]]
 bench = false
-path = "src/web_sockets/main.rs"
-name = "ws"
+path = "src/web_sockets/main_server.rs"
+name = "ws_server"
+
+[[bin]]
+bench = false
+path = "src/web_sockets/main_client.rs"
+name = "ws_client"

@@ -6,6 +6,7 @@ use actix::{AsyncContext, Handler};
 use actix_web_actors::ws;
 use actix_web_actors::ws::Message::Text;
 use log::debug;
+use log::info;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
@@ -34,6 +35,7 @@ impl Actor for WsConn {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
+        println!("Ws starded");
         self.hb(ctx);
 
         let addr = ctx.address();
@@ -55,6 +57,7 @@ impl Actor for WsConn {
     }
 
     fn stopping(&mut self, _: &mut Self::Context) -> Running {
+        info!("Ws started");
         self.lobby_addr.do_send(Disconnect {
             id: self.id,
             room_id: self.room,
@@ -76,7 +79,7 @@ impl WsConn {
                 return;
             }
 
-            ctx.ping(b"hi");
+            ctx.ping(b"Ping");
         });
     }
 }
@@ -87,16 +90,23 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsConn {
             Ok(ws::Message::Ping(msg)) => {
                 self.hb = Instant::now();
                 ctx.pong(&msg);
+                println!("Ctx pong sended");
             }
             Ok(ws::Message::Pong(_)) => {
                 self.hb = Instant::now();
+                println!("Ctx pong received. Reseting hb");
             }
-            Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
+            Ok(ws::Message::Binary(bin)) => {
+                println!("Binary data received");
+                ctx.binary(bin)
+            }
             Ok(ws::Message::Close(reason)) => {
+                println!("Connection closed");
                 ctx.close(reason);
                 ctx.stop();
             }
             Ok(ws::Message::Continuation(_)) => {
+                println!("Chuj wie co to jest ale niech będzie");
                 ctx.stop();
             }
             Ok(ws::Message::Nop) => (),
@@ -115,6 +125,7 @@ impl Handler<WsMessage> for WsConn {
     type Result = ();
 
     fn handle(&mut self, msg: WsMessage, ctx: &mut Self::Context) {
+        println!("Handling ws message");
         ctx.text(msg.0);
     }
 }
