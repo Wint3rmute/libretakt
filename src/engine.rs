@@ -72,6 +72,7 @@ pub struct Voice {
     pub filter_envelope: f32,
 
     pub amp_adsr: adsr::Adsr,
+    pub amp: f32,
 
     pub delay_send: f32,
     pub reverb_send: f32,
@@ -138,6 +139,8 @@ impl Voice {
             self.playback_parameters.parameters[Parameter::FilterResonance as usize] as f32 / 64.0
                 * 2.0;
 
+        self.amp = parameters[Parameter::SampleEnd as usize] as f32 / 64.0;
+
         self.filter_adsr.reset();
         self.amp_adsr.reset();
         self.reset();
@@ -176,6 +179,7 @@ impl Voice {
             filter_envelope: 0.0,
 
             amp_adsr: adsr::Adsr::default(),
+            amp: 1.0,
 
             b0: 0.0,
             b1: 0.0,
@@ -227,7 +231,8 @@ impl Voice {
     }
 
     fn tick(&mut self) -> f32 {
-        let sample_raw = self.get_next_raw_sample_and_progress() * self.amp_adsr.tick(true);
+        let sample_raw =
+            self.get_next_raw_sample_and_progress() * self.amp_adsr.tick(true) * self.amp;
 
         let mut cutoff =
             self.filter_freq + self.filter_adsr.tick(true) * self.filter_envelope * 2.0;

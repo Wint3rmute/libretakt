@@ -9,6 +9,9 @@ use libretakt::sequencer::{
     CurrentStepData, Parameter, Sequencer, SequencerMutation, SynchronisationController,
     NUM_OF_PARAMETERS,
 };
+use crate::ui_skins::*;
+mod ui_skins;
+
 use macroquad::prelude::*;
 
 use flume::{bounded, Receiver};
@@ -229,7 +232,7 @@ async fn main() {
     env_logger::init();
 
     //To be honest i haven't been looking at this code yet but Bączek wrote it
-    //so i guess its something important and i trust him.
+    //so i guess its something important and i trust him 👉👈.
     let provider = Arc::new(SampleProvider::default());
     let mut synchronisation_controller = SynchronisationController::default();
 
@@ -262,144 +265,20 @@ async fn ui_main(
 ) {
     let _sample = 0.0;
 
-    //***UI Skins***
-    //There is probably way to edit ui elements properties more efficiently but
-    //im too stupid to figure it out from documentation and i found examples
-    //of doing it so this way uwu
-    let titlebanner_skin = {
-        let label_style = root_ui()
-            .style_builder()
-            .font(include_bytes!("../fff-forward/MinimalPixel v2.ttf"))
-            .unwrap()
-            .text_color(BLACK)
-            .font_size(50)
-            .build();
-
-        Skin {
-            label_style,
-            ..root_ui().default_skin()
-        }
-    };
-
-    let empty_note_skin = {
-        let button_style = root_ui()
-            .style_builder()
-            .background(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_background_0.png"),
-                None,
-            ))
-            .background_margin(RectOffset::new(8.0, 8.0, 8.0, 8.0))
-            .background_hovered(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_hovered_background_0.png"),
-                None,
-            ))
-            .background_clicked(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_clicked_background_0.png"),
-                None,
-            ))
-            .font(include_bytes!("../fff-forward/MinimalPixel v2.ttf"))
-            .unwrap()
-            .text_color(Color::from_rgba(180, 180, 100, 0))
-            .font_size(40)
-            .build();
-
-        Skin {
-            button_style,
-            ..root_ui().default_skin()
-        }
-    };
-
-    let note_placed_skin = {
-        let button_style = root_ui()
-            .style_builder()
-            .background(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_background_1.png"),
-                None,
-            ))
-            .background_margin(RectOffset::new(8.0, 8.0, 8.0, 8.0))
-            .background_hovered(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_background_1.png"),
-                None,
-            ))
-            .background_clicked(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_clicked_background_1.png"),
-                None,
-            ))
-            .font(include_bytes!("../fff-forward/MinimalPixel v2.ttf"))
-            .unwrap()
-            .text_color(Color::from_rgba(180, 180, 100, 0))
-            .font_size(40)
-            .build();
-
-        Skin {
-            button_style,
-            ..root_ui().default_skin()
-        }
-    };
-
-    let note_playing_skin = {
-        let button_style = root_ui()
-            .style_builder()
-            .background(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_background_2.png"),
-                None,
-            ))
-            .background_margin(RectOffset::new(8.0, 8.0, 8.0, 8.0))
-            .background_hovered(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_background_2.png"),
-                None,
-            ))
-            .background_clicked(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_clicked_background_0.png"),
-                None,
-            ))
-            .font(include_bytes!("../fff-forward/MinimalPixel v2.ttf"))
-            .unwrap()
-            .text_color(Color::from_rgba(180, 180, 100, 0))
-            .font_size(40)
-            .build();
-
-        Skin {
-            button_style,
-            ..root_ui().default_skin()
-        }
-    };
-
-    let note_selected_skin = {
-        let button_style = root_ui()
-            .style_builder()
-            .background(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_background_3.png"),
-                None,
-            ))
-            .background_margin(RectOffset::new(8.0, 8.0, 8.0, 8.0))
-            .background_hovered(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_background_3.png"),
-                None,
-            ))
-            .background_clicked(Image::from_file_with_format(
-                include_bytes!("../uigraphics/note_clicked_background_0.png"),
-                None,
-            ))
-            .font(include_bytes!("../fff-forward/MinimalPixel v2.ttf"))
-            .unwrap()
-            .text_color(Color::from_rgba(180, 180, 100, 0))
-            .font_size(40)
-            .build();
-
-        Skin {
-            button_style,
-            ..root_ui().default_skin()
-        }
-    };
+    //Loading UI Skins from ui_skins.rs to not clutter main.rs with code that does not belong in here
+    let titlebanner_struct = TitleBannerSkin::new();
+    let empty_note_struct = EmptyNoteSkin::new();
+    let note_placed_struct = NotePlacedSkin::new();
+    let note_playing_struct = NotePlayingSkin::new();
+    let note_selected_struct = NoteSelectedSkin::new();
 
     //UI Skins Load
     let _default_skin = root_ui().default_skin().clone();
-    let titlebanner_skin_clone = titlebanner_skin.clone();
-    let note_empty_skin_clone = empty_note_skin.clone();
-    let note_placed_skin_clone = note_placed_skin.clone();
-    let note_playing_skin_clone = note_playing_skin.clone();
-    let note_selected_skin_clone = note_selected_skin.clone();
+    let titlebanner_skin_clone = titlebanner_struct.titlebanner_skin.clone();
+    let note_empty_skin_clone = empty_note_struct.empty_note_skin.clone();
+    let note_placed_skin_clone = note_placed_struct.note_placed_skin.clone();
+    let note_playing_skin_clone = note_playing_struct.note_playing_skin.clone();
+    let note_selected_skin_clone = note_selected_struct.note_selected_skin.clone();
 
     //Building Context
     //This struck will change but im too lazy to fix it right now
