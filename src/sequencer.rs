@@ -396,7 +396,8 @@ impl Default for PlaybackParameters {
         parameters[Parameter::Note as usize] = 64u8;
         parameters[Parameter::PitchShift as usize] = 20u8;
         parameters[Parameter::Sample as usize] = 0u8;
-        parameters[Parameter::FilterCutoff as usize] = 100u8;
+        parameters[Parameter::FilterCutoff as usize] = 63u8;
+        parameters[Parameter::NoteVelocity as usize] = 63u8;
 
         PlaybackParameters { parameters }
     }
