@@ -119,9 +119,10 @@ impl Sequencer {
     pub fn new(
         mutations_queue: Receiver<SequencerMutation>,
         current_step_sender: Sender<CurrentStepData>,
+        tracks: Vec<Track>,
     ) -> Self {
         Sequencer {
-            tracks: (0..NUM_OF_VOICES).map(|_| Track::new()).collect(),
+            tracks: tracks,
             beats_per_minute: 120,
             time_counter: 0,
             mutations_queue,
@@ -212,7 +213,7 @@ impl Sequencer {
 ///
 /// Each [Track](Track) has a default value for all [PlaybackParameters](PlaybackParameters),
 /// but each [Step](Step) can override them using *parameter locks*.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Track {
     pub default_parameters: PlaybackParameters,
     pub patterns: Vec<Pattern>,
@@ -222,7 +223,7 @@ pub struct Track {
 }
 
 /// Variation of a melody played within a [Track].
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Pattern {
     pub steps: Vec<Option<Step>>,
 }
@@ -239,7 +240,7 @@ impl Pattern {
 }
 
 impl Track {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Track {
             default_parameters: PlaybackParameters::default(),
             patterns: vec![Pattern::new()],
@@ -381,7 +382,7 @@ impl std::fmt::Display for Parameter {
 ///
 /// Contains possible overrides for playback parameters.
 /// May also be reffered to as "*note on*" event in other samplers/sequencers.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Step {
     #[allow(dead_code)] // TODO: remove after parameter locks are added
     pub parameters: [Option<u8>; NUM_OF_PARAMETERS],
