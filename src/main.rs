@@ -55,6 +55,8 @@ pub struct Context {
     pub is_tab_pressed: bool,
     pub is_escape_pressed: bool,
     pub mapped_note_key_idx: i32,
+    pub pressed_number: i32,
+    pub is_mute_pressed: bool,
 
     //Arrow Operations
     pub vertical_move_button: i32,
@@ -125,6 +127,53 @@ impl Context {
         } else if is_key_down(KeyCode::K) {
             self.mapped_note_key_idx = 15i32;
         }
+
+        if is_key_pressed(KeyCode::Key1) {
+            self.pressed_number = 0i32;
+        } else if is_key_pressed(KeyCode::Key2) {
+            self.pressed_number = 1i32;
+        } else if is_key_pressed(KeyCode::Key3) {
+            self.pressed_number = 2i32;
+        } else if is_key_pressed(KeyCode::Key4) {
+            self.pressed_number = 3i32;
+        } else if is_key_pressed(KeyCode::Key5) {
+            self.pressed_number = 4i32;
+        } else if is_key_pressed(KeyCode::Key6) {
+            self.pressed_number = 5i32;
+        } else if is_key_pressed(KeyCode::Key7) {
+            self.pressed_number = 6i32;
+        } else if is_key_pressed(KeyCode::Key8) {
+            self.pressed_number = 7i32;
+        } else if is_key_pressed(KeyCode::Key9) {
+            self.pressed_number = 8i32;
+        } 
+
+        if is_key_released(KeyCode::Key1) {
+            self.pressed_number = -1i32;
+        } else if is_key_released(KeyCode::Key2) {
+            self.pressed_number = -1i32;
+        } else if is_key_released(KeyCode::Key3) {
+            self.pressed_number = -1i32;
+        } else if is_key_released(KeyCode::Key4) {
+            self.pressed_number = -1i32;
+        } else if is_key_released(KeyCode::Key5) {
+            self.pressed_number = -1i32;
+        } else if is_key_released(KeyCode::Key6) {
+            self.pressed_number = -1i32;
+        } else if is_key_released(KeyCode::Key7) {
+            self.pressed_number = -1i32;
+        } else if is_key_released(KeyCode::Key8) {
+            self.pressed_number = -1i32;
+        } else if is_key_released(KeyCode::Key9) {
+            self.pressed_number = -1i32;
+        } 
+
+        if is_key_down(KeyCode::M){
+            self.is_mute_pressed = true;
+        }else{
+            self.is_mute_pressed = false;
+        }
+
 
         //Arrow move
         //Map keyboard note key
@@ -349,6 +398,22 @@ pub fn deselect_step(sequencer: &Sequencer, context: &mut Context) {
     assign_context_track_params(sequencer, context);
 }
 
+pub fn silence_track(sequencer: &Sequencer,
+    context: &mut Context,
+    synchronisation_controller: &mut SynchronisationController,
+    i: usize,
+){
+    synchronisation_controller.mutate(SequencerMutation::SilenceTrack(i));
+}
+
+pub fn unsilence_track(sequencer: &Sequencer,
+    context: &mut Context,
+    synchronisation_controller: &mut SynchronisationController,
+    i: usize,
+){
+    synchronisation_controller.mutate(SequencerMutation::UnSilenceTrack(i));
+}
+
 pub fn perform_keyboard_operations(
     sequencer: &Sequencer,
     context: &mut Context,
@@ -364,6 +429,28 @@ pub fn perform_keyboard_operations(
         context.is_shift_pressed = false;
         context.is_edit_note_pressed = false;
         deselect_step(sequencer, context);
+    }
+
+    println!("{}", context.pressed_number);
+    if context.is_tab_pressed && context.pressed_number > -1{
+        context.current_track = context.pressed_number;
+        println!("SMIANA");
+        context.is_tab_pressed = false;
+        context.pressed_number = -1;
+        return;
+    }
+
+    if context.is_mute_pressed && context.pressed_number > -1{
+        let i = context.pressed_number as usize;
+        let mut is_silenced = sequencer.tracks[i].silenced; 
+        if is_silenced{
+            unsilence_track(sequencer, context, synchronisation_controller, i);
+        }else{
+            silence_track(sequencer, context, synchronisation_controller, i);
+        }
+
+        context.pressed_number = -1;
+        return;
     }
 
     if context.is_tab_pressed {
@@ -674,6 +761,8 @@ async fn ui_main(
         is_tab_pressed: false,
         is_escape_pressed: false,
         mapped_note_key_idx: -1,
+        is_mute_pressed: false,
+        pressed_number: -1,
 
         main_tab: 0i32,
     };
@@ -867,19 +956,19 @@ async fn ui_main(
                                 deselect_step(&sequencer, &mut context);
                             }
 
-                            
                             let mut is_silenced = sequencer.tracks[i as usize].silenced; 
 
-                            if is_silenced{
-                                if ui.button(Vec2::new(30., 0.), "Unmute"){
-                                    synchronisation_controller.mutate(SequencerMutation::UnSilenceTrack(i as usize));
+                            if is_silenced {
+                                if ui.button(Vec2::new(30., 0.), "Unmute") {
+                                    synchronisation_controller
+                                        .mutate(SequencerMutation::UnSilenceTrack(i as usize));
                                 }
-                            }else{
-                                if ui.button(Vec2::new(30., 0.), "Mute"){
-                                    synchronisation_controller.mutate(SequencerMutation::SilenceTrack(i as usize));
+                            } else {
+                                if ui.button(Vec2::new(30., 0.), "Mute") {
+                                    synchronisation_controller
+                                        .mutate(SequencerMutation::SilenceTrack(i as usize));
                                 }
                             }
-                            
                         });
                     }
                 },
