@@ -97,6 +97,8 @@ pub enum SequencerMutation {
     SetParam(TrackNum, PatternNum, StepNum, Parameter, ParamValue),
     RemoveParam(TrackNum, PatternNum, StepNum, Parameter),
     UpdateTrackParam(TrackNum, ParamNum, ParamValue),
+    SilenceTrack(TrackNum),
+    UnSilenceTrack(TrackNum),
 }
 
 pub type CurrentStepData = [usize; 8];
@@ -162,6 +164,12 @@ impl Sequencer {
                 SequencerMutation::UpdateTrackParam(track, index, value) => {
                     self.tracks[track].default_parameters.parameters[index] = value;
                 }
+                SequencerMutation::SilenceTrack(track) => {
+                    self.tracks[track].silenced = true;
+                }
+                SequencerMutation::UnSilenceTrack(track) => {
+                    self.tracks[track].silenced = false;
+                }
             }
         }
     }
@@ -210,6 +218,7 @@ pub struct Track {
     pub patterns: Vec<Pattern>,
     pub current_pattern: usize,
     pub current_step: usize,
+    pub silenced: bool,
 }
 
 /// Variation of a melody played within a [Track].
@@ -234,6 +243,7 @@ impl Track {
         Track {
             default_parameters: PlaybackParameters::default(),
             patterns: vec![Pattern::new()],
+            silenced: false,
             current_step: 0,
             current_pattern: 0,
         }
@@ -247,6 +257,10 @@ impl Track {
 
         if self.current_step >= pattern.steps.len() {
             self.current_step = 0;
+        }
+
+        if self.silenced {
+            return None;
         }
 
         if let Some(step) = &pattern.steps[self.current_step] {
