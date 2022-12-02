@@ -5,41 +5,38 @@ use flume::{bounded, Receiver};
 
 use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
 
-pub struct TitleBannerSkin{
+pub struct TitleBannerSkin {
     pub titlebanner_skin: Skin,
 }
 
-pub struct EmptyNoteSkin{
+pub struct EmptyNoteSkin {
     pub empty_note_skin: Skin,
 }
 
-pub struct EmptyNoteHighlightedSkin{
+pub struct EmptyNoteHighlightedSkin {
     pub empty_note_highlighted_skin: Skin,
 }
 
-pub struct NotePlacedSkin{
+pub struct NotePlacedSkin {
     pub note_placed_skin: Skin,
 }
 
-pub struct NotePlacedHighlightedSkin{
+pub struct NotePlacedHighlightedSkin {
     pub note_placed_highlighted_skin: Skin,
 }
 
-pub struct NotePlayingSkin{
+pub struct NotePlayingSkin {
     pub note_playing_skin: Skin,
 }
 
-pub struct NoteSelectedSkin{
+pub struct NoteSelectedSkin {
     pub note_selected_skin: Skin,
 }
 
-impl TitleBannerSkin{
-
+impl TitleBannerSkin {
     pub fn new() -> TitleBannerSkin {
         TitleBannerSkin {
             titlebanner_skin: {
-
-                
                 let label_style = root_ui()
                     .style_builder()
                     .font(include_bytes!("../fff-forward/MinimalPixel v2.ttf"))
@@ -47,15 +44,15 @@ impl TitleBannerSkin{
                     .text_color(BLACK)
                     .font_size(50)
                     .build();
-                
-                    /*
-                    group_style: Style {
-                        color: Color::from_rgba(34, 34, 34, 68),
-                        color_hovered: Color::from_rgba(34, 153, 34, 68),
-                        color_selected: Color::from_rgba(34, 34, 255, 255),
-                        color_selected_hovered: Color::from_rgba(55, 55, 55, 68),
-                        ..Style::default(default_font.clone())
-                    },*/
+
+                /*
+                group_style: Style {
+                    color: Color::from_rgba(34, 34, 34, 68),
+                    color_hovered: Color::from_rgba(34, 153, 34, 68),
+                    color_selected: Color::from_rgba(34, 34, 255, 255),
+                    color_selected_hovered: Color::from_rgba(55, 55, 55, 68),
+                    ..Style::default(default_font.clone())
+                },*/
                 let window_style = root_ui()
                     .style_builder()
                     .background(Image::from_file_with_format(
@@ -65,19 +62,18 @@ impl TitleBannerSkin{
                     .background_margin(RectOffset::new(20.0, 20.0, 10.0, 10.0))
                     .margin(RectOffset::new(-20.0, -30.0, 0.0, 0.0))
                     .build();
-        
+
                 Skin {
                     label_style,
                     window_style,
                     ..root_ui().default_skin()
                 }
-            }
+            },
         }
     }
 }
 
-impl EmptyNoteSkin{
-
+impl EmptyNoteSkin {
     pub fn new() -> EmptyNoteSkin {
         EmptyNoteSkin {
             empty_note_skin: {
@@ -101,18 +97,17 @@ impl EmptyNoteSkin{
                     .text_color(Color::from_rgba(180, 180, 100, 0))
                     .font_size(40)
                     .build();
-        
+
                 Skin {
                     button_style,
                     ..root_ui().default_skin()
                 }
-            }
+            },
         }
     }
 }
 
-impl EmptyNoteHighlightedSkin{
-
+impl EmptyNoteHighlightedSkin {
     pub fn new() -> EmptyNoteHighlightedSkin {
         EmptyNoteHighlightedSkin {
             empty_note_highlighted_skin: {
@@ -136,18 +131,17 @@ impl EmptyNoteHighlightedSkin{
                     .text_color(Color::from_rgba(180, 180, 100, 0))
                     .font_size(30)
                     .build();
-        
+
                 Skin {
                     button_style,
                     ..root_ui().default_skin()
                 }
-            }
+            },
         }
     }
 }
 
-impl NotePlacedSkin{
-
+impl NotePlacedSkin {
     pub fn new() -> NotePlacedSkin {
         NotePlacedSkin {
             note_placed_skin: {
@@ -171,18 +165,17 @@ impl NotePlacedSkin{
                     .text_color(Color::from_rgba(180, 180, 100, 0))
                     .font_size(40)
                     .build();
-        
+
                 Skin {
                     button_style,
                     ..root_ui().default_skin()
                 }
-            }
+            },
         }
     }
 }
 
-impl NotePlacedHighlightedSkin{
-
+impl NotePlacedHighlightedSkin {
     pub fn new() -> NotePlacedHighlightedSkin {
         NotePlacedHighlightedSkin {
             note_placed_highlighted_skin: {
@@ -206,18 +199,17 @@ impl NotePlacedHighlightedSkin{
                     .text_color(Color::from_rgba(180, 180, 100, 0))
                     .font_size(30)
                     .build();
-        
+
                 Skin {
                     button_style,
                     ..root_ui().default_skin()
                 }
-            }
+            },
         }
     }
 }
 
-impl NotePlayingSkin{
-
+impl NotePlayingSkin {
     pub fn new() -> NotePlayingSkin {
         NotePlayingSkin {
             note_playing_skin: {
@@ -241,18 +233,17 @@ impl NotePlayingSkin{
                     .text_color(Color::from_rgba(180, 180, 100, 0))
                     .font_size(40)
                     .build();
-        
+
                 Skin {
                     button_style,
                     ..root_ui().default_skin()
                 }
-            }
+            },
         }
     }
 }
 
-impl NoteSelectedSkin{
-
+impl NoteSelectedSkin {
     pub fn new() -> NoteSelectedSkin {
         NoteSelectedSkin {
             note_selected_skin: {
@@ -276,12 +267,12 @@ impl NoteSelectedSkin{
                     .text_color(Color::from_rgba(180, 180, 100, 0))
                     .font_size(40)
                     .build();
-        
+
                 Skin {
                     button_style,
                     ..root_ui().default_skin()
                 }
-            }
+            },
         }
     }
 }

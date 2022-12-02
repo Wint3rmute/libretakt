@@ -2,6 +2,7 @@ extern crate num;
 #[macro_use]
 extern crate num_derive;
 
+use crate::ui_skins::*;
 use libretakt::constants::NUM_OF_VOICES;
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
@@ -9,15 +10,14 @@ use libretakt::sequencer::{
     CurrentStepData, Parameter, Sequencer, SequencerMutation, SynchronisationController,
     NUM_OF_PARAMETERS,
 };
-use crate::ui_skins::*;
 mod ui_skins;
 
 use macroquad::prelude::*;
 
 use flume::{bounded, Receiver};
 
-use macroquad::window::Conf;
 use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
+use macroquad::window::Conf;
 use rodio::{OutputStream, Sink};
 use std::sync::Arc;
 
@@ -77,107 +77,109 @@ impl Context {
             self.is_edit_note_pressed = true;
         }
 
-        if is_key_pressed(KeyCode::LeftShift){
+        if is_key_pressed(KeyCode::LeftShift) {
             self.is_shift_pressed = true;
         }
 
-        if is_key_down(KeyCode::Escape){
+        if is_key_down(KeyCode::Escape) {
             self.is_escape_pressed = true;
         }
 
-        if is_key_pressed(KeyCode::Tab){
+        if is_key_pressed(KeyCode::Tab) {
             self.is_tab_pressed = true;
         }
 
         //Map keyboard note key
-        if is_key_down(KeyCode::Q){
+        if is_key_down(KeyCode::Q) {
             self.mapped_note_key_idx = 0i32;
-        } else if is_key_down(KeyCode::W){
+        } else if is_key_down(KeyCode::W) {
             self.mapped_note_key_idx = 1i32;
-        } else if is_key_down(KeyCode::E){
+        } else if is_key_down(KeyCode::E) {
             self.mapped_note_key_idx = 2i32;
-        } else if is_key_down(KeyCode::R){
+        } else if is_key_down(KeyCode::R) {
             self.mapped_note_key_idx = 3i32;
-        } else if is_key_down(KeyCode::T){
+        } else if is_key_down(KeyCode::T) {
             self.mapped_note_key_idx = 4i32;
-        } else if is_key_down(KeyCode::Y){
+        } else if is_key_down(KeyCode::Y) {
             self.mapped_note_key_idx = 5i32;
-        } else if is_key_down(KeyCode::U){
+        } else if is_key_down(KeyCode::U) {
             self.mapped_note_key_idx = 6i32;
-        } else if is_key_down(KeyCode::I){
+        } else if is_key_down(KeyCode::I) {
             self.mapped_note_key_idx = 7i32;
-        } else if is_key_down(KeyCode::A){
+        } else if is_key_down(KeyCode::A) {
             self.mapped_note_key_idx = 8i32;
-        } else if is_key_down(KeyCode::S){
+        } else if is_key_down(KeyCode::S) {
             self.mapped_note_key_idx = 9i32;
-        } else if is_key_down(KeyCode::D){
+        } else if is_key_down(KeyCode::D) {
             self.mapped_note_key_idx = 10i32;
-        } else if is_key_down(KeyCode::F){
+        } else if is_key_down(KeyCode::F) {
             self.mapped_note_key_idx = 11i32;
-        } else if is_key_down(KeyCode::G){
+        } else if is_key_down(KeyCode::G) {
             self.mapped_note_key_idx = 12i32;
-        } else if is_key_down(KeyCode::H){
+        } else if is_key_down(KeyCode::H) {
             self.mapped_note_key_idx = 13i32;
-        } else if is_key_down(KeyCode::J){
+        } else if is_key_down(KeyCode::J) {
             self.mapped_note_key_idx = 14i32;
-        } else if is_key_down(KeyCode::K){
+        } else if is_key_down(KeyCode::K) {
             self.mapped_note_key_idx = 15i32;
-        } 
+        }
 
         //Arrow move
         //Map keyboard note key
-        if is_key_pressed(KeyCode::W){
+        if is_key_pressed(KeyCode::W) {
             self.vertical_move_button = -1i32;
-        }else if is_key_pressed(KeyCode::S){
+        } else if is_key_pressed(KeyCode::S) {
             self.vertical_move_button = 1i32;
         }
 
-        if is_key_pressed(KeyCode::D){
+        if is_key_pressed(KeyCode::D) {
             self.horizontal_move_button = 1i32;
-        }else if is_key_pressed(KeyCode::A){
+        } else if is_key_pressed(KeyCode::A) {
             self.horizontal_move_button = -1i32;
         }
 
-        if is_key_pressed(KeyCode::C){
+        if is_key_pressed(KeyCode::C) {
             self.super_horizontal_move_button = 1i32;
-        }else if is_key_pressed(KeyCode::Z){
+        } else if is_key_pressed(KeyCode::Z) {
             self.super_horizontal_move_button = -1i32;
         }
 
-        if is_key_pressed(KeyCode::E){
+        if is_key_pressed(KeyCode::E) {
             self.slider_group_switch_tab = 1i32;
-        }else if is_key_pressed(KeyCode::Q){
+        } else if is_key_pressed(KeyCode::Q) {
             self.slider_group_switch_tab = -1i32;
         }
     }
 }
 
-pub fn create_param(context: &mut Context, synchronisation_controller: &mut SynchronisationController, i: usize){
+pub fn create_param(
+    context: &mut Context,
+    synchronisation_controller: &mut SynchronisationController,
+    i: usize,
+) {
     let default_param = 0.0;
-                                                    context.parameter_vals_float[i] = default_param;
-                                                    synchronisation_controller.mutate(
-                                                        SequencerMutation::SetParam(
-                                                            context.current_track as usize,
-                                                            0,
-                                                            context.selected_step as usize,
-                                                            param_of_idx(i),
-                                                            (default_param as usize)
-                                                                .try_into()
-                                                                .unwrap(),
-                                                        ),
-                                                    );
+    context.parameter_vals_float[i] = default_param;
+    synchronisation_controller.mutate(SequencerMutation::SetParam(
+        context.current_track as usize,
+        0,
+        context.selected_step as usize,
+        param_of_idx(i),
+        (default_param as usize).try_into().unwrap(),
+    ));
 }
 
-pub fn delete_param(context: &mut Context, synchronisation_controller: &mut SynchronisationController, i: usize){
+pub fn delete_param(
+    context: &mut Context,
+    synchronisation_controller: &mut SynchronisationController,
+    i: usize,
+) {
     //Delete parameter
-    synchronisation_controller.mutate(
-        SequencerMutation::RemoveParam(
-            context.current_track as usize,
-            0,
-            context.selected_step as usize,
-            param_of_idx(i),
-        ),
-    );
+    synchronisation_controller.mutate(SequencerMutation::RemoveParam(
+        context.current_track as usize,
+        0,
+        context.selected_step as usize,
+        param_of_idx(i),
+    ));
 }
 
 pub fn param_of_idx(i: usize) -> Parameter {
@@ -345,20 +347,24 @@ pub fn deselect_step(sequencer: &Sequencer, context: &mut Context) {
     assign_context_track_params(sequencer, context);
 }
 
-pub fn perform_keyboard_operations(sequencer: &Sequencer, context: &mut Context, synchronisation_controller: &mut SynchronisationController){
+pub fn perform_keyboard_operations(
+    sequencer: &Sequencer,
+    context: &mut Context,
+    synchronisation_controller: &mut SynchronisationController,
+) {
     //update cooldown
     //context.current_cooldown-=1.0f32;
-    
+
     //Check if in notest TAB
 
-    if context.is_escape_pressed{
+    if context.is_escape_pressed {
         context.mapped_note_key_idx = -1;
         context.is_shift_pressed = false;
         context.is_edit_note_pressed = false;
         deselect_step(sequencer, context);
     }
 
-    if context.is_tab_pressed{
+    if context.is_tab_pressed {
         context.current_note_highlighted = -1;
         context.mapped_note_key_idx = -1;
         context.slider_group_switch_tab = 0;
@@ -369,96 +375,95 @@ pub fn perform_keyboard_operations(sequencer: &Sequencer, context: &mut Context,
         context.is_edit_note_pressed = false;
 
         context.main_tab += 1;
-        context.main_tab%= 2;
+        context.main_tab %= 2;
         context.is_tab_pressed = false;
     }
 
-    if context.main_tab == 0{
+    if context.main_tab == 0 {
         keyboard_operations_notes(sequencer, context, synchronisation_controller);
-    }else if context.main_tab == 1{
+    } else if context.main_tab == 1 {
         keyboard_operations_sliders(sequencer, context, synchronisation_controller);
     }
 
-
-    //Check if in Bars TAB 
+    //Check if in Bars TAB
 }
 
-pub fn keyboard_operations_notes(sequencer: &Sequencer, context: &mut Context, synchronisation_controller: &mut SynchronisationController){
+pub fn keyboard_operations_notes(
+    sequencer: &Sequencer,
+    context: &mut Context,
+    synchronisation_controller: &mut SynchronisationController,
+) {
     context.current_note_highlighted = context.mapped_note_key_idx;
 
-
-    
-    if context.is_shift_pressed && context.current_note_highlighted != -1{
+    if context.is_shift_pressed && context.current_note_highlighted != -1 {
         //Check cooldown?
         context.is_shift_pressed = false;
         //If there is not note - add note
-        if sequencer.tracks[context.current_track as usize].patterns[0]
-                                        .steps[context.current_note_highlighted as usize]
-                                        .is_some()
-                                    {
-                                        if context.selected_step == context.current_note_highlighted{
-                                            deselect_step(sequencer, context);
-                                        }
-                                        
-                                            synchronisation_controller.mutate(
-                                                SequencerMutation::RemoveStep(
-                                                    context.current_track as usize,
-                                                    0,
-                                                    context.current_note_highlighted as usize,
-                                                ),
-                                            )
-                                            // sequencer.tracks[0].patterns[0].steps[i] = None;
-                                        
-                                    } else {
-                                        synchronisation_controller.mutate(
-                                            SequencerMutation::CreateStep(
-                                                context.current_track as usize,
-                                                0,
-                                                context.current_note_highlighted as usize,
-                                            ),
-                                        )
-                                        // sequencer.tracks[0].patterns[0].steps[i] = Some(Step::default());
-                                    }
+        if sequencer.tracks[context.current_track as usize].patterns[0].steps
+            [context.current_note_highlighted as usize]
+            .is_some()
+        {
+            if context.selected_step == context.current_note_highlighted {
+                deselect_step(sequencer, context);
+            }
 
-    } 
+            synchronisation_controller.mutate(SequencerMutation::RemoveStep(
+                context.current_track as usize,
+                0,
+                context.current_note_highlighted as usize,
+            ))
+            // sequencer.tracks[0].patterns[0].steps[i] = None;
+        } else {
+            synchronisation_controller.mutate(SequencerMutation::CreateStep(
+                context.current_track as usize,
+                0,
+                context.current_note_highlighted as usize,
+            ))
+            // sequencer.tracks[0].patterns[0].steps[i] = Some(Step::default());
+        }
+    }
 
-    if context.is_edit_note_pressed && context.current_note_highlighted != -1{
+    if context.is_edit_note_pressed && context.current_note_highlighted != -1 {
         context.is_edit_note_pressed = false;
-                                    if context.selected_step == context.current_note_highlighted{
-                                        deselect_step(sequencer, context);
-                                    }
-                                    else if sequencer.tracks[context.current_track as usize].patterns[0]
-                                        .steps[context.current_note_highlighted as usize]
-                                        .is_some()
-                                    {
-                                        //EDIT MODE:
-                                        select_step(sequencer,context, context.current_note_highlighted);
-                                       
-                                    }
+        if context.selected_step == context.current_note_highlighted {
+            deselect_step(sequencer, context);
+        } else if sequencer.tracks[context.current_track as usize].patterns[0].steps
+            [context.current_note_highlighted as usize]
+            .is_some()
+        {
+            //EDIT MODE:
+            select_step(sequencer, context, context.current_note_highlighted);
+        }
     }
 }
 
-pub fn keyboard_operations_sliders(sequencer: &Sequencer, context: &mut Context, synchronisation_controller: &mut SynchronisationController){
-    if context.slider_group_switch_tab != 0{
+pub fn keyboard_operations_sliders(
+    sequencer: &Sequencer,
+    context: &mut Context,
+    synchronisation_controller: &mut SynchronisationController,
+) {
+    if context.slider_group_switch_tab != 0 {
         context.current_slider_group += context.slider_group_switch_tab + 3;
         context.current_slider_group %= 3;
         context.slider_group_switch_tab = 0;
     }
 
-    if context.vertical_move_button != 0{
+    if context.vertical_move_button != 0 {
         context.current_slider += context.vertical_move_button;
-        if context.current_slider < 0{
+        if context.current_slider < 0 {
             context.current_slider = 0;
         }
-        if context.current_slider > context.slider_group_sizes[context.current_slider_group as usize] - 1 {
-            context.current_slider = context.slider_group_sizes[context.current_slider_group as usize] - 1;
+        if context.current_slider
+            > context.slider_group_sizes[context.current_slider_group as usize] - 1
+        {
+            context.current_slider =
+                context.slider_group_sizes[context.current_slider_group as usize] - 1;
         }
 
         context.vertical_move_button = 0;
     }
 
-    if context.selected_step != -1{
-
+    if context.selected_step != -1 {
         let _temp = sequencer.tracks[context.current_track as usize].patterns[0].steps
             [context.selected_step as usize]
             .as_ref()
@@ -477,44 +482,62 @@ pub fn keyboard_operations_sliders(sequencer: &Sequencer, context: &mut Context,
             None => {}
         }
 
-        if context.is_shift_pressed{
-            if is_param{
-                delete_param(context, synchronisation_controller, (context.current_slider + context.current_slider_group * 8) as usize);
+        if context.is_shift_pressed {
+            if is_param {
+                delete_param(
+                    context,
+                    synchronisation_controller,
+                    (context.current_slider + context.current_slider_group * 8) as usize,
+                );
                 is_param = false;
-            }else{
-                create_param(context, synchronisation_controller, (context.current_slider + context.current_slider_group * 8) as usize);
+            } else {
+                create_param(
+                    context,
+                    synchronisation_controller,
+                    (context.current_slider + context.current_slider_group * 8) as usize,
+                );
                 is_param = true;
             }
 
             context.is_shift_pressed = false;
         }
         //if so:
-        if !is_param{
+        if !is_param {
             return;
-        }   
+        }
     }
 
-    if context.horizontal_move_button != 0{
-        context.parameter_vals_float[(context.current_slider + context.current_slider_group * 8) as usize] += context.horizontal_move_button as f32;
-        let float_value = context.parameter_vals_float[(context.current_slider + context.current_slider_group * 8) as usize];
-        if float_value < 0.0{
-            context.parameter_vals_float[(context.current_slider + context.current_slider_group * 8) as usize] = 0.0;
+    if context.horizontal_move_button != 0 {
+        context.parameter_vals_float
+            [(context.current_slider + context.current_slider_group * 8) as usize] +=
+            context.horizontal_move_button as f32;
+        let float_value = context.parameter_vals_float
+            [(context.current_slider + context.current_slider_group * 8) as usize];
+        if float_value < 0.0 {
+            context.parameter_vals_float
+                [(context.current_slider + context.current_slider_group * 8) as usize] = 0.0;
         }
         if float_value > 64.0 {
-            context.parameter_vals_float[(context.current_slider + context.current_slider_group * 8) as usize] = 64.0;
+            context.parameter_vals_float
+                [(context.current_slider + context.current_slider_group * 8) as usize] = 64.0;
         }
 
         context.horizontal_move_button = 0;
     }
 
-    if context.super_horizontal_move_button != 0{
-        context.parameter_vals_float[(context.current_slider + context.current_slider_group * 8) as usize] += context.super_horizontal_move_button as f32 * 10.0;
-        let float_value = context.parameter_vals_float[(context.current_slider + context.current_slider_group * 8) as usize];
-        if float_value < 0.0{
-            context.parameter_vals_float[(context.current_slider + context.current_slider_group * 8) as usize] = 0.0;
+    if context.super_horizontal_move_button != 0 {
+        context.parameter_vals_float
+            [(context.current_slider + context.current_slider_group * 8) as usize] +=
+            context.super_horizontal_move_button as f32 * 10.0;
+        let float_value = context.parameter_vals_float
+            [(context.current_slider + context.current_slider_group * 8) as usize];
+        if float_value < 0.0 {
+            context.parameter_vals_float
+                [(context.current_slider + context.current_slider_group * 8) as usize] = 0.0;
         }
         if float_value > 64.0 {
-            context.parameter_vals_float[(context.current_slider + context.current_slider_group * 8) as usize] = 64.0;
+            context.parameter_vals_float
+                [(context.current_slider + context.current_slider_group * 8) as usize] = 64.0;
         }
 
         context.super_horizontal_move_button = 0;
@@ -576,8 +599,12 @@ async fn ui_main(
     let note_placed_skin_clone = note_placed_struct.note_placed_skin.clone();
     let note_playing_skin_clone = note_playing_struct.note_playing_skin.clone();
     let note_selected_skin_clone = note_selected_struct.note_selected_skin.clone();
-    let empty_note_highlighted_skin_clone = empty_note_highlighted_struct.empty_note_highlighted_skin.clone();
-    let note_placed_highlighted_skin_clone = note_placed_highlighted_struct.note_placed_highlighted_skin.clone();
+    let empty_note_highlighted_skin_clone = empty_note_highlighted_struct
+        .empty_note_highlighted_skin
+        .clone();
+    let note_placed_highlighted_skin_clone = note_placed_highlighted_struct
+        .note_placed_highlighted_skin
+        .clone();
 
     //Building Context
     //This struck will change but im too lazy to fix it right now
@@ -657,13 +684,16 @@ async fn ui_main(
 
             //DRAW EVERYTHING AS GROUPS NOT WINDOWS!!
 
-            
             root_ui().push_skin(&titlebanner_skin_clone);
-            root_ui().group(hash!(), vec2(screen_width() - 10.0, context.title_banner_h), |ui| {
-                ui.label(Vec2::new(0., 0.), "TURBO SAMPLER");
-            });
+            root_ui().group(
+                hash!(),
+                vec2(screen_width() - 10.0, context.title_banner_h),
+                |ui| {
+                    ui.label(Vec2::new(0., 0.), "TURBO SAMPLER");
+                },
+            );
             root_ui().pop_skin();
-        
+
             /*
             root_ui().push_skin(&titlebanner_skin_clone);
             root_ui().window(
@@ -676,13 +706,11 @@ async fn ui_main(
             );
             root_ui().pop_skin();
             */
-            
 
             //MAIN TRACK PANEL
             //This panel shows the track currently selected by user.
             //Clicking displayed notes allows user to edit their sound.
 
-            
             root_ui().window(
                 hash!("MainWindow"),
                 vec2(context.track_choice_panel_w, context.title_banner_h),
@@ -706,24 +734,25 @@ async fn ui_main(
                     if context.current_track != -1 {
                         for i in 0..num_of_steps {
                             Group::new(hash!("Tracks", i), Vec2::new(70., 60.)).ui(ui, |ui| {
-                                if context.selected_step == i as i32 { //Check for note select (yellow)
+                                if context.selected_step == i as i32 {
+                                    //Check for note select (yellow)
                                     ui.push_skin(&note_selected_skin_clone);
-                                } else if context.current_step_play == i as i32 { //check for note playing (green)
+                                } else if context.current_step_play == i as i32 {
+                                    //check for note playing (green)
                                     ui.push_skin(&note_playing_skin_clone);
-                                } else if context.current_note_highlighted == i as i32{ //Check for note highlights (lighter colours)
-                                    if sequencer.tracks[context.current_track as usize].patterns
-                                    [0]
-                                    .steps[i]
-                                    .is_some()
+                                } else if context.current_note_highlighted == i as i32 {
+                                    //Check for note highlights (lighter colours)
+                                    if sequencer.tracks[context.current_track as usize].patterns[0]
+                                        .steps[i]
+                                        .is_some()
                                     {
                                         ui.push_skin(&note_placed_highlighted_skin_clone);
                                     } else {
                                         ui.push_skin(&empty_note_highlighted_skin_clone);
                                     }
                                 } else {
-                                    if sequencer.tracks[context.current_track as usize].patterns
-                                    [0]
-                                    .steps[i]
+                                    if sequencer.tracks[context.current_track as usize].patterns[0]
+                                        .steps[i]
                                         .is_some()
                                     {
                                         ui.push_skin(&note_placed_skin_clone);
@@ -797,14 +826,12 @@ async fn ui_main(
                 },
             );
 
-
             //USER PANEL
             //Displays current users in the jam session, their nick with the corresponding colour.
             root_ui().window(
                 hash!((screen_width() * 10f32) as i32),
                 vec2(
-                    screen_width() - context.user_panel_w
-                    ,
+                    screen_width() - context.user_panel_w,
                     context.title_banner_h,
                 ),
                 vec2(context.user_panel_w, context.track_panel_h),
@@ -903,19 +930,33 @@ async fn ui_main(
                                         |ui| {
                                             if ui.button(
                                                 Vec2::new(0., 0.),
-                                                if i as i32 % 8==context.current_slider{"O"} else if is_param { "X" } else { "." },
+                                                if i as i32 % 8 == context.current_slider {
+                                                    "O"
+                                                } else if is_param {
+                                                    "X"
+                                                } else {
+                                                    "."
+                                                },
                                             ) {
                                                 if is_param {
                                                     //switch is_param
                                                     is_param = false;
 
                                                     //Delete parameter
-                                                    delete_param(&mut context, &mut synchronisation_controller, i as usize);
+                                                    delete_param(
+                                                        &mut context,
+                                                        &mut synchronisation_controller,
+                                                        i as usize,
+                                                    );
                                                 } else {
                                                     //switch is_param
                                                     is_param = true;
 
-                                                    create_param(&mut context, &mut synchronisation_controller, i as usize);
+                                                    create_param(
+                                                        &mut context,
+                                                        &mut synchronisation_controller,
+                                                        i as usize,
+                                                    );
                                                     //Add parameter
                                                 }
                                             }
@@ -958,10 +999,18 @@ async fn ui_main(
                                     .ui(ui, |ui| {
                                         let parameter: Parameter =
                                             num::FromPrimitive::from_usize(i).unwrap();
-                                        let string_1 = &("<O>  ".to_owned() +  &parameter.to_string());
+                                        let string_1 =
+                                            &("<O>  ".to_owned() + &parameter.to_string());
                                         let string_2 = &parameter.to_string();
 
-                                        ui.label(Vec2::new(0., 0.),if context.current_slider == i as i32 %8 {string_1} else {string_2});
+                                        ui.label(
+                                            Vec2::new(0., 0.),
+                                            if context.current_slider == i as i32 % 8 {
+                                                string_1
+                                            } else {
+                                                string_2
+                                            },
+                                        );
                                     });
 
                                     Group::new(
@@ -983,7 +1032,7 @@ async fn ui_main(
                 },
             );
         }
-        
+
         sequencer.apply_mutations();
         next_frame().await;
     }

@@ -7,5 +7,5 @@ pub mod ladder_filter;
 pub mod mverb;
 pub mod sample_provider;
 pub mod sequencer;
-pub mod web_sockets;
 pub mod ui_skins;
+pub mod web_sockets;
