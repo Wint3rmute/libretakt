@@ -7,7 +7,7 @@ use libretakt::constants::NUM_OF_VOICES;
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
 use libretakt::sequencer::{
-    CurrentStepData, Parameter, Sequencer, SequencerMutation, SynchronisationController,
+    CurrentStepData, Parameter, Sequencer, SequencerMutation, SynchronisationController, Track,
     NUM_OF_PARAMETERS,
 };
 mod ui_skins;
@@ -16,9 +16,11 @@ use macroquad::prelude::*;
 
 use flume::{bounded, Receiver};
 
+use env;
 use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
 use macroquad::window::Conf;
 use rodio::{OutputStream, Sink};
+use std::io::Read;
 use std::sync::Arc;
 
 use strum::IntoEnumIterator; // 0.17.1
@@ -544,10 +546,41 @@ pub fn keyboard_operations_sliders(
     }
 }
 
+fn load_project() -> Vec<Track> {
+    let mut project_path = std::env::temp_dir();
+    project_path.push("project.json");
+
+    if let Ok(mut file) = std::fs::File::open(project_path) {
+        println!("Attempting to load tracks from /tmp/project.json..");
+        let mut buf = String::new();
+        file.read_to_string(&mut buf).unwrap();
+        let tracks: Vec<Track> = serde_json::from_str(buf.as_str()).unwrap();
+        println!("Tracks loaded!");
+        tracks
+    } else {
+        println!("No snapshot file, starting from scratch");
+
+        (0..NUM_OF_VOICES).map(|_| Track::new()).collect()
+    }
+}
+
+fn save_project(sequencer: &Sequencer) {
+    use std::io::Write;
+
+    let mut project_path = std::env::temp_dir();
+    project_path.push("project.json");
+
+    let serialised = serde_json::to_vec(&sequencer.tracks).unwrap();
+    let mut file = std::fs::File::create(project_path).unwrap();
+    file.write_all(&serialised).unwrap();
+}
+
 #[macroquad::main("LibreTakt")]
 async fn main() {
     //***SAMPLER***
     env_logger::init();
+
+    let tracks = load_project();
 
     //To be honest i haven't been looking at this code yet but Bączek wrote it
     //so i guess its something important and i trust him 👉👈.
@@ -561,6 +594,7 @@ async fn main() {
         sequencer: Sequencer::new(
             synchronisation_controller.register_new(),
             current_step_tx.clone(),
+            tracks.clone(),
         ),
         voices: (0..NUM_OF_VOICES).map(|_| Voice::new(&provider)).collect(),
     };
@@ -571,8 +605,12 @@ async fn main() {
     sink.append(engine);
     sink.play();
 
-    let sequencer = Sequencer::new(synchronisation_controller.register_new(), current_step_tx);
-
+    let sequencer = Sequencer::new(
+        synchronisation_controller.register_new(),
+        current_step_tx,
+        tracks.clone(),
+    );
+    prevent_quit();
     ui_main(sequencer, synchronisation_controller, current_step_rx).await;
 }
 
@@ -644,6 +682,13 @@ async fn ui_main(
 
     loop {
         clear_background(WHITE);
+
+        if is_quit_requested() {
+            println!("Saving sequencer state...");
+            save_project(&sequencer);
+            println!("Exiting");
+            break;
+        }
 
         if let Ok(step_data) = step_data_receiver.try_recv() {
             sequencer.tracks[context.current_track as usize].current_step = step_data[0];
