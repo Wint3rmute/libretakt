@@ -861,11 +861,25 @@ async fn ui_main(
 
                     for i in 0..sequencer.tracks.len() {
                         Group::new(hash!("Track2", i), Vec2::new(90., 30.)).ui(ui, |ui| {
-                            if ui.button(Vec2::new(30., 0.), (i + 1).to_string()) {
+                            if ui.button(Vec2::new(10., 0.), (i + 1).to_string()) {
                                 //TODO - dodać warunek że track nie jest zalockowany przez innego uzytkownika!!!
                                 context.current_track = i as i32;
                                 deselect_step(&sequencer, &mut context);
                             }
+
+                            
+                            let mut is_silenced = sequencer.tracks[i as usize].silenced; 
+
+                            if is_silenced{
+                                if ui.button(Vec2::new(30., 0.), "Unmute"){
+                                    synchronisation_controller.mutate(SequencerMutation::UnSilenceTrack(i as usize));
+                                }
+                            }else{
+                                if ui.button(Vec2::new(30., 0.), "Mute"){
+                                    synchronisation_controller.mutate(SequencerMutation::SilenceTrack(i as usize));
+                                }
+                            }
+                            
                         });
                     }
                 },
