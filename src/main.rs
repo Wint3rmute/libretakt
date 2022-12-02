@@ -432,16 +432,20 @@ pub fn perform_keyboard_operations(
         deselect_step(sequencer, context);
     }
 
-    println!("{}", context.pressed_number);
-    if context.is_tab_pressed && context.pressed_number > -1 {
+    if context.is_tab_pressed
+        && context.pressed_number > -1
+        && context.pressed_number < sequencer.tracks.len() as i32
+    {
         context.current_track = context.pressed_number;
-        println!("SMIANA");
         context.is_tab_pressed = false;
         context.pressed_number = -1;
         return;
     }
 
-    if context.is_mute_pressed && context.pressed_number > -1 {
+    if context.is_mute_pressed
+        && context.pressed_number > -1
+        && context.pressed_number < sequencer.tracks.len() as i32
+    {
         let i = context.pressed_number as usize;
         let mut is_silenced = sequencer.tracks[i].silenced;
         if is_silenced {
@@ -961,13 +965,21 @@ async fn ui_main(
 
                             if is_silenced {
                                 if ui.button(Vec2::new(30., 0.), "Unmute") {
-                                    synchronisation_controller
-                                        .mutate(SequencerMutation::UnSilenceTrack(i as usize));
+                                    unsilence_track(
+                                        sequencer,
+                                        &mut context,
+                                        &mut synchronisation_controller,
+                                        i as usize,
+                                    );
                                 }
                             } else {
                                 if ui.button(Vec2::new(30., 0.), "Mute") {
-                                    synchronisation_controller
-                                        .mutate(SequencerMutation::SilenceTrack(i as usize));
+                                    silence_track(
+                                        sequencer,
+                                        &mut context,
+                                        &mut synchronisation_controller,
+                                        i as usize,
+                                    );
                                 }
                             }
                         });
