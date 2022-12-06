@@ -1064,14 +1064,10 @@ async fn ui_main(
                             let mut is_param = false;
                             let mut param_val = 0;
 
-                            match _temp {
-                                Some(x) => {
+                            if let Some(x) = _temp {
                                     is_param = true;
                                     param_val = x;
                                 }
-
-                                None => {}
-                            }
 
                             Group::new(hash!("PanelSettings", i), Vec2::new(700., 70.)).ui(
                                 ui,
@@ -1127,7 +1123,7 @@ async fn ui_main(
                                     Group::new(hash!("Group Slider", i), Vec2::new(500., 38.)).ui(
                                         ui,
                                         |ui| {
-                                            if is_param == true {
+                                            if is_param{
                                                 ui.slider(
                                                     hash!("param slider", i),
                                                     "",
