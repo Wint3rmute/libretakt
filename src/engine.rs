@@ -121,10 +121,13 @@ impl Voice {
             self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0;
         self.filter_envelope = parameters[Parameter::FilterEnvelope as usize] as f32 / 64.0;
 
-        self.filter_adsr.attack =
-            -(parameters[Parameter::FilterAttack as usize] as f32 / 64.0) + 1.0 + 0.0001;
-        self.filter_adsr.decay =
-            -(parameters[Parameter::FilterDecay as usize] as f32 / 64.0) + 1.0 + 0.0001;
+        // From wolfram: plot 1/(x+0.2)^2 / 10
+        let filter_attack_0_1 = parameters[Parameter::FilterAttack as usize] as f32;
+        self.filter_adsr.attack = 1.0 / (filter_attack_0_1 + 0.2).powi(2) / 10.0;
+
+        let filter_decay_0_1 = parameters[Parameter::FilterDecay as usize] as f32;
+        self.filter_adsr.decay = 1.0 / (filter_decay_0_1 + 0.2).powi(2) / 10.0;
+
         self.filter_adsr.sustain = parameters[Parameter::FilterSustain as usize] as f32 / 64.0;
         self.filter_adsr.release = parameters[Parameter::FilterRelease as usize] as f32 / 1000.0;
 
