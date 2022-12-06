@@ -233,6 +233,7 @@ impl Voice {
     fn tick(&mut self) -> f32 {
         let sample_raw =
             self.get_next_raw_sample_and_progress() * self.amp_adsr.tick(true) * self.amp;
+        let sample_raw = self.get_next_raw_sample_and_progress() * self.amp_adsr.tick(true);
 
         let mut cutoff =
             self.filter_freq + self.filter_adsr.tick(true) * self.filter_envelope * 2.0;
