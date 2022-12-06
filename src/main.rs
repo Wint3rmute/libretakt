@@ -242,7 +242,7 @@ pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
     let sliders_group_iter = context.slider_group_sizes.iter();
 
     for (current_iter_group, val) in sliders_group_iter.enumerate() {
-        if context.current_slider_group == current_iter_group as i32{
+        if context.current_slider_group == current_iter_group as i32 {
             if i < sliders_before_count {
                 return false;
             }
