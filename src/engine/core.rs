@@ -1,9 +1,9 @@
 //! Responsible for sample playback.
 use rodio::Source;
 
-use crate::adsr;
-use crate::ladder_filter;
-use crate::mverb;
+use crate::engine::adsr;
+use crate::engine::ladder_filter;
+use crate::engine::mverb;
 use crate::sample_provider::{SampleData, SampleProvider};
 use crate::sequencer::{Parameter, Sequencer};
 use crate::{constants, sequencer::PlaybackParameters};

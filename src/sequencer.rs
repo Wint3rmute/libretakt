@@ -21,7 +21,7 @@ extern crate serde;
 extern crate serde_derive;
 
 use crate::constants::{self, NUM_OF_VOICES};
-use crate::engine::Voice;
+use crate::engine::core::Voice;
 use flume::{Receiver, Sender};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
