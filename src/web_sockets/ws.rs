@@ -1,14 +1,13 @@
-use crate::lobby::Lobby;
-use crate::messages::{ClientActorMessage, Connect, Disconnect, WsMessage};
-use actix::{fut, ActorContext, ActorFuture, ContextFutureSpawner, WrapFuture};
+use actix::{fut, ActorContext, WrapFuture, ContextFutureSpawner, ActorFuture};
+use crate::messages::{Disconnect, Connect, WsMessage, ClientActorMessage};
+use crate::lobby::Lobby; 
 use actix::{Actor, Addr, Running, StreamHandler};
 use actix::{AsyncContext, Handler};
 use actix_web_actors::ws;
 use actix_web_actors::ws::Message::Text;
-use log::debug;
-use log::info;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
+
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -35,7 +34,7 @@ impl Actor for WsConn {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        println!("Ws starded");
+        println!("WS conn started");
         self.hb(ctx);
 
         let addr = ctx.address();
@@ -57,11 +56,8 @@ impl Actor for WsConn {
     }
 
     fn stopping(&mut self, _: &mut Self::Context) -> Running {
-        info!("Ws started");
-        self.lobby_addr.do_send(Disconnect {
-            id: self.id,
-            room_id: self.room,
-        });
+        self.lobby_addr.do_send(Disconnect { id: self.id, room_id: self.room });
+        println!("WS conn stopped");
         Running::Stop
     }
 }
@@ -70,16 +66,13 @@ impl WsConn {
     fn hb(&self, ctx: &mut ws::WebsocketContext<Self>) {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
-                debug!("Disconnecting failed heartbeat");
-                act.lobby_addr.do_send(Disconnect {
-                    id: act.id,
-                    room_id: act.room,
-                });
+                println!("Disconnecting failed heartbeat");
+                act.lobby_addr.do_send(Disconnect { id: act.id, room_id: act.room });
                 ctx.stop();
                 return;
             }
 
-            ctx.ping(b"Ping");
+            ctx.ping(b"hi");
         });
     }
 }
@@ -90,33 +83,30 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsConn {
             Ok(ws::Message::Ping(msg)) => {
                 self.hb = Instant::now();
                 ctx.pong(&msg);
-                println!("Ctx pong sended");
+                print!("Pong sended");
             }
             Ok(ws::Message::Pong(_)) => {
                 self.hb = Instant::now();
-                println!("Ctx pong received. Reseting hb");
+                print!("Heartbit reseted");
             }
-            Ok(ws::Message::Binary(bin)) => {
-                println!("Binary data received");
-                ctx.binary(bin)
-            }
+            Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
             Ok(ws::Message::Close(reason)) => {
-                println!("Connection closed");
                 ctx.close(reason);
                 ctx.stop();
+                print!("Close message received");
             }
             Ok(ws::Message::Continuation(_)) => {
-                println!("Chuj wie co to jest ale niech będzie");
                 ctx.stop();
+                print!("Stop message received");
             }
             Ok(ws::Message::Nop) => (),
             Ok(Text(s)) => self.lobby_addr.do_send(ClientActorMessage {
                 id: self.id,
                 msg: s,
-                room_id: self.room,
+                room_id: self.room
             }),
-
-            Err(e) => panic!("{}", e),
+            
+            Err(e) => panic!("{}",e),
         }
     }
 }
@@ -125,7 +115,7 @@ impl Handler<WsMessage> for WsConn {
     type Result = ();
 
     fn handle(&mut self, msg: WsMessage, ctx: &mut Self::Context) {
-        println!("Handling ws message");
         ctx.text(msg.0);
+        println!("Handled message");
     }
 }
