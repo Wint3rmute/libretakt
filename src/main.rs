@@ -19,13 +19,14 @@ use flume::{bounded, Receiver};
 use env;
 use macroquad::ui::{hash, root_ui, widgets::Group, Skin};
 use macroquad::window::Conf;
+
 use rodio::{OutputStream, Sink};
 use std::io::Read;
 use std::sync::Arc;
 
 use strum::IntoEnumIterator; // 0.17.1
 
-use strum_macros::EnumIter; // 0.17.1
+// 0.17.1
 
 pub struct Context {
     //(temporary) variables for UI windows dimensions
@@ -55,6 +56,8 @@ pub struct Context {
     pub is_tab_pressed: bool,
     pub is_escape_pressed: bool,
     pub mapped_note_key_idx: i32,
+    pub pressed_number: i32,
+    pub is_mute_pressed: bool,
 
     //Arrow Operations
     pub vertical_move_button: i32,
@@ -126,6 +129,45 @@ impl Context {
             self.mapped_note_key_idx = 15i32;
         }
 
+        if is_key_pressed(KeyCode::Key1) {
+            self.pressed_number = 0i32;
+        } else if is_key_pressed(KeyCode::Key2) {
+            self.pressed_number = 1i32;
+        } else if is_key_pressed(KeyCode::Key3) {
+            self.pressed_number = 2i32;
+        } else if is_key_pressed(KeyCode::Key4) {
+            self.pressed_number = 3i32;
+        } else if is_key_pressed(KeyCode::Key5) {
+            self.pressed_number = 4i32;
+        } else if is_key_pressed(KeyCode::Key6) {
+            self.pressed_number = 5i32;
+        } else if is_key_pressed(KeyCode::Key7) {
+            self.pressed_number = 6i32;
+        } else if is_key_pressed(KeyCode::Key8) {
+            self.pressed_number = 7i32;
+        } else if is_key_pressed(KeyCode::Key9) {
+            self.pressed_number = 8i32;
+        }
+
+        if is_key_released(KeyCode::Key1)
+            || is_key_released(KeyCode::Key2)
+            || is_key_released(KeyCode::Key3)
+            || is_key_released(KeyCode::Key4)
+            || is_key_released(KeyCode::Key5)
+            || is_key_released(KeyCode::Key6)
+            || is_key_released(KeyCode::Key7)
+            || is_key_released(KeyCode::Key8)
+            || is_key_released(KeyCode::Key9)
+        {
+            self.pressed_number = -1i32;
+        }
+
+        if is_key_down(KeyCode::M) {
+            self.is_mute_pressed = true;
+        } else {
+            self.is_mute_pressed = false;
+        }
+
         //Arrow move
         //Map keyboard note key
         if is_key_pressed(KeyCode::W) {
@@ -185,12 +227,10 @@ pub fn delete_param(
 }
 
 pub fn param_of_idx(i: usize) -> Parameter {
-    let mut iterator = 0;
-    for param in Parameter::iter() {
+    for (iterator, param) in Parameter::iter().enumerate() {
         if i == iterator {
             return param;
         }
-        iterator += 1;
     }
 
     Parameter::Sample
@@ -198,12 +238,11 @@ pub fn param_of_idx(i: usize) -> Parameter {
 
 pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
     let mut sliders_before_count = 0;
-    let mut current_iter_group = 0;
 
     let sliders_group_iter = context.slider_group_sizes.iter();
 
-    for val in sliders_group_iter {
-        if context.current_slider_group == current_iter_group {
+    for (current_iter_group, val) in sliders_group_iter.enumerate() {
+        if context.current_slider_group == current_iter_group as i32 {
             if i < sliders_before_count {
                 return false;
             }
@@ -214,7 +253,6 @@ pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
         }
 
         sliders_before_count += val;
-        current_iter_group += 1;
     }
 
     false
@@ -231,13 +269,9 @@ pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_
     let mut is_param = false;
     let mut param_val = 0;
 
-    match _temp {
-        Some(x) => {
-            is_param = true;
-            param_val = x;
-        }
-
-        None => {}
+    if let Some(x) = _temp {
+        is_param = true;
+        param_val = x;
     }
 
     if !is_param {
@@ -278,13 +312,9 @@ pub fn compare_params_floats_with_original(
         let mut is_param = false;
         let mut param_val = 0;
 
-        match _temp {
-            Some(x) => {
-                is_param = true;
-                param_val = x;
-            }
-
-            None => {}
+        if let Some(x) = _temp {
+            is_param = true;
+            param_val = x;
         }
 
         if !is_param {
@@ -315,7 +345,7 @@ pub fn compare_floats_with_original_track(
 ) {
     //Przejdź po wszystkich parametrach tracku/aż nie znajdziemy mutacji
     for i in 0..NUM_OF_PARAMETERS {
-        let mut param_val = sequencer.tracks[context.current_track as usize]
+        let param_val = sequencer.tracks[context.current_track as usize]
             .default_parameters
             .parameters[i as usize];
 
@@ -349,6 +379,24 @@ pub fn deselect_step(sequencer: &Sequencer, context: &mut Context) {
     assign_context_track_params(sequencer, context);
 }
 
+pub fn silence_track(
+    _sequencer: &Sequencer,
+    _context: &mut Context,
+    synchronisation_controller: &mut SynchronisationController,
+    i: usize,
+) {
+    synchronisation_controller.mutate(SequencerMutation::SilenceTrack(i));
+}
+
+pub fn unsilence_track(
+    _sequencer: &Sequencer,
+    _context: &mut Context,
+    synchronisation_controller: &mut SynchronisationController,
+    i: usize,
+) {
+    synchronisation_controller.mutate(SequencerMutation::UnSilenceTrack(i));
+}
+
 pub fn perform_keyboard_operations(
     sequencer: &Sequencer,
     context: &mut Context,
@@ -364,6 +412,32 @@ pub fn perform_keyboard_operations(
         context.is_shift_pressed = false;
         context.is_edit_note_pressed = false;
         deselect_step(sequencer, context);
+    }
+
+    if context.is_tab_pressed
+        && context.pressed_number > -1
+        && context.pressed_number < sequencer.tracks.len() as i32
+    {
+        context.current_track = context.pressed_number;
+        context.is_tab_pressed = false;
+        context.pressed_number = -1;
+        return;
+    }
+
+    if context.is_mute_pressed
+        && context.pressed_number > -1
+        && context.pressed_number < sequencer.tracks.len() as i32
+    {
+        let i = context.pressed_number as usize;
+        let is_silenced = sequencer.tracks[i].silenced;
+        if is_silenced {
+            unsilence_track(sequencer, context, synchronisation_controller, i);
+        } else {
+            silence_track(sequencer, context, synchronisation_controller, i);
+        }
+
+        context.pressed_number = -1;
+        return;
     }
 
     if context.is_tab_pressed {
@@ -473,15 +547,11 @@ pub fn keyboard_operations_sliders(
             .parameters[(context.current_slider + context.current_slider_group * 8) as usize];
 
         let mut is_param = false;
-        let mut param_val = 0;
+        //let mut param_val = 0;
 
-        match _temp {
-            Some(x) => {
-                is_param = true;
-                param_val = x;
-            }
-
-            None => {}
+        if let Some(_x) = _temp {
+            is_param = true;
+            //param_val = x;
         }
 
         if context.is_shift_pressed {
@@ -674,6 +744,8 @@ async fn ui_main(
         is_tab_pressed: false,
         is_escape_pressed: false,
         mapped_note_key_idx: -1,
+        is_mute_pressed: false,
+        pressed_number: -1,
 
         main_tab: 0i32,
     };
@@ -716,13 +788,13 @@ async fn ui_main(
             if context.selected_step != -1 {
                 compare_params_floats_with_original(
                     &mut synchronisation_controller,
-                    &sequencer,
+                    sequencer,
                     &mut context,
                 );
             } else {
                 compare_floats_with_original_track(
                     &mut synchronisation_controller,
-                    &sequencer,
+                    sequencer,
                     &mut context,
                 );
             }
@@ -795,21 +867,20 @@ async fn ui_main(
                                     } else {
                                         ui.push_skin(&empty_note_highlighted_skin_clone);
                                     }
+                                } else if sequencer.tracks[context.current_track as usize].patterns
+                                    [0]
+                                .steps[i]
+                                    .is_some()
+                                {
+                                    ui.push_skin(&note_placed_skin_clone);
                                 } else {
-                                    if sequencer.tracks[context.current_track as usize].patterns[0]
-                                        .steps[i]
-                                        .is_some()
-                                    {
-                                        ui.push_skin(&note_placed_skin_clone);
-                                    } else {
-                                        ui.push_skin(&note_empty_skin_clone);
-                                    }
+                                    ui.push_skin(&note_empty_skin_clone);
                                 }
 
                                 if ui.button(Vec2::new(0., 0.), "....") {
                                     //im not sure if this kind of if/else chain is valid
                                     //i would use some "returns" and tide it up a bit but i think i cant coz its not a method
-                                    deselect_step(&sequencer, &mut context);
+                                    deselect_step(sequencer, &mut context);
                                     if sequencer.tracks[context.current_track as usize].patterns[0]
                                         .steps[i]
                                         .is_some()
@@ -861,10 +932,30 @@ async fn ui_main(
 
                     for i in 0..sequencer.tracks.len() {
                         Group::new(hash!("Track2", i), Vec2::new(90., 30.)).ui(ui, |ui| {
-                            if ui.button(Vec2::new(30., 0.), (i + 1).to_string()) {
+                            if ui.button(Vec2::new(10., 0.), (i + 1).to_string()) {
                                 //TODO - dodać warunek że track nie jest zalockowany przez innego uzytkownika!!!
                                 context.current_track = i as i32;
-                                deselect_step(&sequencer, &mut context);
+                                deselect_step(sequencer, &mut context);
+                            }
+
+                            let is_silenced = sequencer.tracks[i as usize].silenced;
+
+                            if is_silenced {
+                                if ui.button(Vec2::new(30., 0.), "Unmute") {
+                                    unsilence_track(
+                                        sequencer,
+                                        &mut context,
+                                        &mut synchronisation_controller,
+                                        i as usize,
+                                    );
+                                }
+                            } else if ui.button(Vec2::new(30., 0.), "Mute") {
+                                silence_track(
+                                    sequencer,
+                                    &mut context,
+                                    &mut synchronisation_controller,
+                                    i as usize,
+                                );
                             }
                         });
                     }
@@ -923,7 +1014,7 @@ async fn ui_main(
 
                     //STEPS LOGIC!!!
                     //Utwórz  slidery do edycji parametrów:
-                    if (context.selected_step != -1) {
+                    if context.selected_step != -1 {
                         for i in 0..sequencer.tracks[context.current_track as usize].patterns[0]
                             .steps[context.selected_step as usize]
                             .as_ref()
@@ -946,15 +1037,11 @@ async fn ui_main(
                                 .parameters[i];
 
                             let mut is_param = false;
-                            let mut param_val = 0;
+                            //let mut param_val = 0;
 
-                            match _temp {
-                                Some(x) => {
-                                    is_param = true;
-                                    param_val = x;
-                                }
-
-                                None => {}
+                            if let Some(_x) = _temp {
+                                is_param = true;
+                                //param_val = x;
                             }
 
                             Group::new(hash!("PanelSettings", i), Vec2::new(700., 70.)).ui(
@@ -1011,7 +1098,7 @@ async fn ui_main(
                                     Group::new(hash!("Group Slider", i), Vec2::new(500., 38.)).ui(
                                         ui,
                                         |ui| {
-                                            if is_param == true {
+                                            if is_param {
                                                 ui.slider(
                                                     hash!("param slider", i),
                                                     "",
