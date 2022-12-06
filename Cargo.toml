@@ -30,6 +30,8 @@ num-traits = "0.2"
 strum = "0.24"
 strum_macros = "0.24"
 awc = "3.0.1"
+tungstenite = "0.18.0"
+url = "2.3.1"
 
 [[bin]]
 bench = false

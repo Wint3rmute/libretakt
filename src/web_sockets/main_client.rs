@@ -1,17 +1,27 @@
-use awc::Client;
+use std::error::Error as StdError;
+use tungstenite::{connect, Message};
+use url::Url;
 use uuid::Uuid;
 
-#[actix_web::main]
-async fn main() {
-    let client = Client::new();
-    let url = format!("ws://localhost:8081/{}", Uuid::new_v4());
-    println!("{}", url);
+fn main() {
+    env_logger::init();
 
-    let res = client
-        .get(url) // <- Create request builder
-        .insert_header(("User-Agent", "Actix-web"))
-        .send() // <- Send http request
-        .await;
+    let (mut socket, response) =
+        connect(Url::parse("ws://localhost:8081/12312312").unwrap()).expect("Can't connect");
 
-    println!("Response: {:?}", res);
+    println!("Connected to the server");
+    println!("Response HTTP code: {}", response.status());
+    println!("Response contains the following headers:");
+    for (ref header, _value) in response.headers() {
+        println!("* {}", header);
+    }
+
+    socket
+        .write_message(Message::Text("Hello WebSocket".into()))
+        .unwrap();
+    loop {
+        let msg = socket.read_message().expect("Error reading message");
+        println!("Received: {}", msg);
+    }
+    // socket.close(None);
 }
