@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 
 use flume::bounded;
 
-use strum::IntoEnumIterator; // 0.17.1
+ // 0.17.1
 use strum_macros::EnumIter; // 0.17.1
 
 /// Allows lock-free synchronisation between multiple [Sequencer] instances,
