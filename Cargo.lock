@@ -1552,6 +1552,7 @@ dependencies = [
  "env_logger",
  "flexbuffers",
  "flume",
+ "futures-util",
  "log",
  "macroquad",
  "num",
@@ -1564,6 +1565,7 @@ dependencies = [
  "strum",
  "strum_macros",
  "synfx-dsp",
+ "tokio 1.21.2",
  "uuid",
 ]
 
@@ -2893,11 +2895,24 @@ dependencies = [
  "libc",
  "memchr",
  "mio 0.8.5",
+ "num_cpus",
  "parking_lot 0.12.1",
  "pin-project-lite 0.2.9",
  "signal-hook-registry",
  "socket2 0.4.7",
+ "tokio-macros",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "1.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d266c00fde287f55d3f1c3e96c500c362a2b8c695076ec180f27918820bc6df8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

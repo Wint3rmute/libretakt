@@ -11,13 +11,13 @@ use actix_web::{App, HttpServer};
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let chat_server = Lobby::default().start(); //create and spin up a lobby
-    println!("Beginning");
+
     HttpServer::new(move || {
         App::new()
             .service(start_connection_route) //register our route. rename with "as" import or naming conflict
-            .app_data(chat_server.clone()) //register the lobby
+            .data(chat_server.clone()) //register the lobby
     })
-    .bind("127.0.0.1:8081")?
+    .bind("127.0.0.1:8080")?
     .run()
     .await
 }
