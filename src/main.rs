@@ -26,8 +26,7 @@ use std::sync::Arc;
 
 use strum::IntoEnumIterator; // 0.17.1
 
-
- // 0.17.1
+// 0.17.1
 
 pub struct Context {
     //(temporary) variables for UI windows dimensions
@@ -150,18 +149,18 @@ impl Context {
             self.pressed_number = 8i32;
         }
 
-        if is_key_released(KeyCode::Key1) ||
- is_key_released(KeyCode::Key2) ||
-is_key_released(KeyCode::Key3) ||
-is_key_released(KeyCode::Key4) ||
-is_key_released(KeyCode::Key5) ||
-is_key_released(KeyCode::Key6) ||
-is_key_released(KeyCode::Key7) ||
-is_key_released(KeyCode::Key8) ||
-is_key_released(KeyCode::Key9){
-self.pressed_number = -1i32;
-}
-
+        if is_key_released(KeyCode::Key1)
+            || is_key_released(KeyCode::Key2)
+            || is_key_released(KeyCode::Key3)
+            || is_key_released(KeyCode::Key4)
+            || is_key_released(KeyCode::Key5)
+            || is_key_released(KeyCode::Key6)
+            || is_key_released(KeyCode::Key7)
+            || is_key_released(KeyCode::Key8)
+            || is_key_released(KeyCode::Key9)
+        {
+            self.pressed_number = -1i32;
+        }
 
         if is_key_down(KeyCode::M) {
             self.is_mute_pressed = true;
@@ -228,7 +227,7 @@ pub fn delete_param(
 }
 
 pub fn param_of_idx(i: usize) -> Parameter {
-    for (iterator, param) in Parameter::iter().enumerate(){
+    for (iterator, param) in Parameter::iter().enumerate() {
         if i == iterator {
             return param;
         }
@@ -868,13 +867,14 @@ async fn ui_main(
                                     } else {
                                         ui.push_skin(&empty_note_highlighted_skin_clone);
                                     }
-                                } else if sequencer.tracks[context.current_track as usize].patterns[0]
-                                        .steps[i]
-                                        .is_some()
-                                    {
-                                        ui.push_skin(&note_placed_skin_clone);
-                                    } else {
-                                        ui.push_skin(&note_empty_skin_clone);
+                                } else if sequencer.tracks[context.current_track as usize].patterns
+                                    [0]
+                                .steps[i]
+                                    .is_some()
+                                {
+                                    ui.push_skin(&note_placed_skin_clone);
+                                } else {
+                                    ui.push_skin(&note_empty_skin_clone);
                                 }
 
                                 if ui.button(Vec2::new(0., 0.), "....") {
@@ -950,14 +950,13 @@ async fn ui_main(
                                     );
                                 }
                             } else if ui.button(Vec2::new(30., 0.), "Mute") {
-                                    silence_track(
-                                        sequencer,
-                                        &mut context,
-                                        &mut synchronisation_controller,
-                                        i as usize,
-                                    );
+                                silence_track(
+                                    sequencer,
+                                    &mut context,
+                                    &mut synchronisation_controller,
+                                    i as usize,
+                                );
                             }
-                            
                         });
                     }
                 },
@@ -1041,9 +1040,9 @@ async fn ui_main(
                             //let mut param_val = 0;
 
                             if let Some(_x) = _temp {
-                                    is_param = true;
-                                    //param_val = x;
-                                }
+                                is_param = true;
+                                //param_val = x;
+                            }
 
                             Group::new(hash!("PanelSettings", i), Vec2::new(700., 70.)).ui(
                                 ui,
@@ -1099,7 +1098,7 @@ async fn ui_main(
                                     Group::new(hash!("Group Slider", i), Vec2::new(500., 38.)).ui(
                                         ui,
                                         |ui| {
-                                            if is_param{
+                                            if is_param {
                                                 ui.slider(
                                                     hash!("param slider", i),
                                                     "",

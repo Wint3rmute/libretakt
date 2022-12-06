@@ -1,8 +1,5 @@
 use macroquad::prelude::*;
 
-
-
-
 use macroquad::ui::{root_ui, Skin};
 
 pub struct TitleBannerSkin {
