@@ -2,22 +2,49 @@ mod lobby;
 mod ws;
 use lobby::Lobby;
 mod messages;
-mod start_connection;
 use actix::Actor;
-use start_connection::start_connection as start_connection_route;
 
-use actix_web::{App, HttpServer};
+use crate::ws::WsConn;
+use actix::Addr;
+use actix_web::middleware::Logger;
+use actix_web::{get, web::Data, web::Path, web::Payload, HttpRequest, HttpResponse};
+use actix_web::{web, App, Error, HttpServer, Responder};
+use actix_web_actors::ws::start;
+use env_logger;
+use uuid::Uuid;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::init();
     let chat_server = Lobby::default().start(); //create and spin up a lobby
 
     HttpServer::new(move || {
         App::new()
-            .service(start_connection_route) //register our route. rename with "as" import or naming conflict
+            .wrap(Logger::default())
+            .service(start_connection) //register our route. rename with "as" import or naming conflict
+            .service(hello)
             .data(chat_server.clone()) //register the lobby
     })
     .bind("127.0.0.1:8080")?
     .run()
     .await
+}
+
+#[get("/")]
+async fn hello() -> impl Responder {
+    HttpResponse::Ok().body("Hello world!")
+}
+
+#[get("/{group_id}")]
+pub async fn start_connection(
+    req: HttpRequest,
+    stream: Payload,
+    Path(group_id): Path<Uuid>,
+    srv: Data<Addr<Lobby>>,
+) -> Result<HttpResponse, Error> {
+    println!("gowno");
+    let ws = WsConn::new(group_id, srv.get_ref().clone());
+
+    let resp = start(ws, &req, stream)?;
+    Ok(resp)
 }
