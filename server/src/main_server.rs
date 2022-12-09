@@ -1,22 +1,27 @@
 mod lobby;
-mod ws;
-use lobby::Lobby;
+
 mod messages;
+// use lobby::Lobby;
+
+mod ws;
 use actix::Actor;
 
 use crate::ws::WsConn;
 use actix::Addr;
 use actix_web::middleware::Logger;
 use actix_web::{get, web::Data, web::Path, web::Payload, HttpRequest, HttpResponse};
-use actix_web::{web, App, Error, HttpServer, Responder};
+use actix_web::{App, Error, HttpServer, Responder};
 use actix_web_actors::ws::start;
 use env_logger;
+use env_logger::Env;
 use uuid::Uuid;
 
+use lobby::Lobby;
+
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    env_logger::init();
-    let chat_server = Lobby::default().start(); //create and spin up a lobby
+pub async fn main() -> std::io::Result<()> {
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    let chat_server = lobby::Lobby::default().start(); //create and spin up a lobby
 
     HttpServer::new(move || {
         App::new()
@@ -25,7 +30,8 @@ async fn main() -> std::io::Result<()> {
             .service(hello)
             .data(chat_server.clone()) //register the lobby
     })
-    .bind("127.0.0.1:8080")?
+    .bind("127.0.0.1:8080")
+    .unwrap()
     .run()
     .await
 }

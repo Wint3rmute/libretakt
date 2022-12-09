@@ -616,6 +616,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "num",
+ "num-derive",
+ "num-traits",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "strum",
+ "strum_macros",
+]
+
+[[package]]
 name = "const_fn"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1356,15 +1370,13 @@ dependencies = [
 name = "libretakt"
 version = "0.1.0"
 dependencies = [
- "actix",
- "actix-web",
- "actix-web-actors",
+ "common",
  "env_logger",
  "flexbuffers",
  "flume",
- "futures-util",
  "log",
  "macroquad",
+ "mverb",
  "num",
  "num-derive",
  "num-traits",
@@ -1372,13 +1384,10 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "server",
  "strum",
  "strum_macros",
  "synfx-dsp",
- "tokio 1.21.2",
- "tungstenite",
- "url",
- "uuid",
 ]
 
 [[package]]
@@ -1590,6 +1599,10 @@ dependencies = [
  "winapi 0.2.8",
  "ws2_32-sys",
 ]
+
+[[package]]
+name = "mverb"
+version = "0.1.0"
 
 [[package]]
 name = "nanorand"
@@ -2277,6 +2290,21 @@ dependencies = [
  "itoa 1.0.4",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "server"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-web",
+ "actix-web-actors",
+ "env_logger",
+ "futures-util",
+ "tokio 1.21.2",
+ "tungstenite",
+ "url",
+ "uuid",
 ]
 
 [[package]]

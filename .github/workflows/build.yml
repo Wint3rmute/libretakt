@@ -17,7 +17,7 @@ jobs:
       - name: Build
         run: |
           sudo apt install libasound2-dev
-          cargo build --all-targets --all-features --examples
+          cargo build --all-targets --all-features --examples --workspace
 
   clippy:
     runs-on: ubuntu-latest
@@ -26,7 +26,7 @@ jobs:
       - name: Build
         run: |
           sudo apt install libasound2-dev
-          cargo clippy --all-targets --all-features --examples
+          cargo clippy --all-targets --all-features --examples --workspace
 
   test:
     runs-on: ubuntu-latest
@@ -35,5 +35,5 @@ jobs:
       - name: Build
         run: |
           sudo apt install libasound2-dev
-          cargo test
+          cargo test --workspace
 

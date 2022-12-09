@@ -1,0 +1,32 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+default-run = "server"
+
+[[bin]]
+bench = false
+path = "src/main_server.rs"
+name = "server"
+
+[[bin]]
+path = "src/main_client.rs"
+name = "ws_client"
+
+[dependencies]
+
+actix-web="3.2.0" # duh
+actix-web-actors="3" # actors specific to web
+actix = "0.10.0" # actors
+
+uuid = { version = "0.8", features = ["v4", "serde"] } # uuid's fit well in this context.
+env_logger = "0.9.1"
+
+tungstenite = "0.18.0"
+url = "2.3.1"
+futures-util = "0.3"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+
