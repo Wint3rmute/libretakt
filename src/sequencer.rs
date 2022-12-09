@@ -15,7 +15,6 @@
 //! - "Track 4 plays the synth lead"
 //!
 
-extern crate flexbuffers;
 extern crate serde;
 extern crate serde_derive;
 
@@ -43,32 +42,7 @@ pub struct SynchronisationController {
     senders: Vec<Sender<SequencerMutation>>,
 }
 
-pub fn serialize_example() {
-    let m = SequencerMutation::CreateStep(1, 2, 3);
-    let mut sc = SynchronisationController {
-        senders: Vec::new(),
-    };
-    let vec = sc.serialize(m);
-    let slice = vec.as_slice();
-    let m2 = sc.deserialize(slice);
-
-    println!("{:?}", m2);
-}
-
 impl SynchronisationController {
-    /// Returns serialized mutation
-    pub fn serialize(&mut self, mutation: SequencerMutation) -> Vec<u8> {
-        let mut serializer = flexbuffers::FlexbufferSerializer::new();
-        mutation.serialize(&mut serializer).unwrap();
-        serializer.take_buffer()
-    }
-
-    /// Returns mutation from serialized object
-    pub fn deserialize(&mut self, data: &[u8]) -> SequencerMutation {
-        let reader = flexbuffers::Reader::get_root(data).unwrap();
-        return SequencerMutation::deserialize(reader).unwrap();
-    }
-
     /// Returns a new rx channel, which you can pass to a [Sequencer] to keep it synchronised.
     pub fn register_new(&mut self) -> Receiver<SequencerMutation> {
         let (mutations_tx, mutations_rx) = bounded::<SequencerMutation>(64);

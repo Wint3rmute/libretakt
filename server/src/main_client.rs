@@ -1,3 +1,4 @@
+use common::{deserialize, serialize, SequencerMutation};
 use tungstenite::{connect, Message};
 use url::Url;
 use uuid::Uuid;
@@ -18,13 +19,16 @@ fn main() {
     // for (ref header, _value) in response.headers() {
     //     println!("* {}", header);
     // }
+    let message = SequencerMutation::UpdateTrackParam(0, 0, 2);
+    let serialised = serialize(message);
 
-    socket
-        .write_message(Message::Text("Hello WebSocket".into()))
-        .unwrap();
+    socket.write_message(Message::Binary(serialised)).unwrap();
     loop {
         let msg = socket.read_message().expect("Error reading message");
-        println!("Received: {}", msg);
+        let mutation_raw = msg.into_data();
+        let mutation = deserialize(mutation_raw.as_ref());
+
+        println!("Received: {:?}", mutation);
     }
     // socket.close(None);
 }

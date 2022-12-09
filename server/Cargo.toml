@@ -17,6 +17,7 @@ name = "ws_client"
 
 [dependencies]
 
+common = {workspace = true}
 actix-web="3.2.0" # duh
 actix-web-actors="3" # actors specific to web
 actix = "0.10.0" # actors
