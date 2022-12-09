@@ -1356,13 +1356,9 @@ dependencies = [
 name = "libretakt"
 version = "0.1.0"
 dependencies = [
- "actix",
- "actix-web",
- "actix-web-actors",
  "env_logger",
  "flexbuffers",
  "flume",
- "futures-util",
  "log",
  "macroquad",
  "mverb",
@@ -1373,13 +1369,10 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "server",
  "strum",
  "strum_macros",
  "synfx-dsp",
- "tokio 1.21.2",
- "tungstenite",
- "url",
- "uuid",
 ]
 
 [[package]]
@@ -2282,6 +2275,20 @@ dependencies = [
  "itoa 1.0.4",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "server"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-web",
+ "actix-web-actors",
+ "futures-util",
+ "tokio 1.21.2",
+ "tungstenite",
+ "url",
+ "uuid",
 ]
 
 [[package]]
