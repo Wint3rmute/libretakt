@@ -3,13 +3,11 @@ extern crate num;
 extern crate num_derive;
 
 use crate::ui_skins::*;
+use common::{Parameter, SequencerMutation, NUM_OF_PARAMETERS};
 use libretakt::constants::NUM_OF_VOICES;
 use libretakt::engine::{Engine, Voice};
 use libretakt::sample_provider::SampleProvider;
-use libretakt::sequencer::{
-    CurrentStepData, Parameter, Sequencer, SequencerMutation, SynchronisationController, Track,
-    NUM_OF_PARAMETERS,
-};
+use libretakt::sequencer::{CurrentStepData, Sequencer, SynchronisationController, Track};
 mod ui_skins;
 
 use macroquad::prelude::*;

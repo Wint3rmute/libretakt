@@ -16,12 +16,13 @@ overflow-checks = false
 lto = true
 
 [workspace]
-members = ["mverb", "server"]
+members = ["mverb", "server", "common"]
 # default-members = ["mverb"]
 
 [dependencies]
 mverb = {path = "mverb" }
 server = {path = "server" }
+common = { path = "common" }
 
 rodio = { version = "0.15", default-features = true }
 macroquad = { version = "0.3", default-features = false }

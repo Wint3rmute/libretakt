@@ -616,6 +616,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "num",
+ "num-derive",
+ "num-traits",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "strum",
+ "strum_macros",
+]
+
+[[package]]
 name = "const_fn"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1356,6 +1370,7 @@ dependencies = [
 name = "libretakt"
 version = "0.1.0"
 dependencies = [
+ "common",
  "env_logger",
  "flexbuffers",
  "flume",
