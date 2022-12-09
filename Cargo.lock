@@ -2284,6 +2284,7 @@ dependencies = [
  "actix",
  "actix-web",
  "actix-web-actors",
+ "env_logger",
  "futures-util",
  "tokio 1.21.2",
  "tungstenite",

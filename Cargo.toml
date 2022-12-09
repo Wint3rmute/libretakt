@@ -11,6 +11,8 @@ bench = false
 [profile.dev]
 opt-level = 3
 overflow-checks = false
+
+[profile.release]
 lto = true
 
 [workspace]
@@ -42,4 +44,8 @@ bench = false
 path = "src/main.rs"
 name = "client"
 
+# [[bin]]
+# bench = false
+# path = "src/server.rs"
+# name = "server"
 
