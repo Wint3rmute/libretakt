@@ -6,9 +6,11 @@ use crate::ui_skins::*;
 use common::{Parameter, SequencerMutation, NUM_OF_PARAMETERS};
 use libretakt::constants::NUM_OF_VOICES;
 use libretakt::engine::{Engine, Voice};
+use libretakt::mutation_websocket;
 use libretakt::sample_provider::SampleProvider;
 use libretakt::sequencer::{CurrentStepData, Sequencer, SynchronisationController, Track};
 mod ui_skins;
+use env_logger::Env;
 
 use macroquad::prelude::*;
 
@@ -646,7 +648,7 @@ fn save_project(sequencer: &Sequencer) {
 #[macroquad::main("LibreTakt")]
 async fn main() {
     //***SAMPLER***
-    env_logger::init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let tracks = load_project();
 
@@ -672,6 +674,15 @@ async fn main() {
 
     sink.append(engine);
     sink.play();
+
+    #[cfg(feature = "enable_synchronisation")]
+    {
+        warn!("Synchronisation enabled, connecting to synchronisation server..");
+        let mutation_rx_for_sync_server = synchronisation_controller.register_new();
+        std::thread::spawn(|| {
+            mutation_websocket::send_mutations_to_server(mutation_rx_for_sync_server);
+        });
+    }
 
     let sequencer = Sequencer::new(
         synchronisation_controller.register_new(),

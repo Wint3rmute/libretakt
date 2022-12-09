@@ -16,18 +16,19 @@ path = "src/main_client.rs"
 name = "ws_client"
 
 [dependencies]
-
 common = {workspace = true}
+url = {workspace = true}
+uuid = {workspace = true}
+tokio-tungstenite = { workspace = true }
+tokio = {workspace = true}
+futures-util = {workspace = true}
+futures-channel = {workspace = true}
+
 actix-web="3.2.0" # duh
 actix-web-actors="3" # actors specific to web
 actix = "0.10.0" # actors
 
-uuid = { version = "0.8", features = ["v4", "serde"] } # uuid's fit well in this context.
 env_logger = "0.9.1"
 
-tungstenite = "0.18.0"
-url = "2.3.1"
-futures-util = "0.3"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 

@@ -1,7 +1,5 @@
 use crate::messages::{ClientActorMessage, Connect, Disconnect, WsMessage};
-// extern crate flexbuffers;
 use actix::prelude::{Actor, Context, Handler, Recipient};
-// use log::info;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
@@ -90,8 +88,8 @@ impl Handler<ClientActorMessage> for Lobby {
     fn handle(&mut self, msg: ClientActorMessage, _ctx: &mut Context<Self>) -> Self::Result {
         // common::SequencerMutation
 
+        println!("GOT MESSAGE!");
         let mutation = common::deserialize(msg.msg.as_bytes());
-
         println!("{:?}", mutation);
 
         // if msg.msg.starts_with("\\w") {
