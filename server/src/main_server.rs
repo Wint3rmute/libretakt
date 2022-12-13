@@ -1,7 +1,6 @@
 mod lobby;
 
 mod messages;
-// use lobby::Lobby;
 
 mod ws;
 use actix::Actor;

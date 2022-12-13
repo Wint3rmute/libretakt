@@ -68,12 +68,12 @@ impl WsConn {
     fn hb(&self, ctx: &mut ws::WebsocketContext<Self>) {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
-                println!("Disconnecting failed heartbeat");
-                act.lobby_addr.do_send(Disconnect {
-                    id: act.id,
-                    room_id: act.room,
-                });
-                ctx.stop();
+                // println!("Disconnecting failed heartbeat");
+                // act.lobby_addr.do_send(Disconnect {
+                //     id: act.id,
+                //     room_id: act.room,
+                // });
+                // ctx.stop();
                 return;
             }
 
@@ -94,7 +94,14 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsConn {
                 self.hb = Instant::now();
                 print!("Heartbit reseted");
             }
-            Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
+            Ok(ws::Message::Binary(bin)) => {
+                if let Some(mutation) = common::deserialize(bin.to_vec().as_slice()) {
+                    println!("{:?}", mutation);
+                } else {
+                    println!("Cannot deserialize mutation");
+                }
+                ctx.binary(bin);
+            }
             Ok(ws::Message::Close(reason)) => {
                 ctx.close(reason);
                 ctx.stop();
@@ -120,7 +127,11 @@ impl Handler<WsMessage> for WsConn {
     type Result = ();
 
     fn handle(&mut self, msg: WsMessage, ctx: &mut Self::Context) {
-        ctx.text(msg.0);
-        println!("Handled message");
+        ctx.text(msg.0.clone());
+        if let Some(mutation) = common::deserialize(msg.0.as_bytes()) {
+            println!("{:?}", mutation);
+        } else {
+            println!("Cannot deserialize mutation");
+        }
     }
 }

@@ -1,3 +1,4 @@
+extern crate flexbuffers;
 extern crate serde;
 extern crate serde_derive;
 use num_derive::FromPrimitive;
@@ -20,6 +21,28 @@ pub enum SequencerMutation {
     UpdateTrackParam(TrackNum, ParamNum, ParamValue),
     SilenceTrack(TrackNum),
     UnSilenceTrack(TrackNum),
+}
+
+pub fn serialize_example() {
+    let m = SequencerMutation::CreateStep(1, 2, 3);
+    let vec = serialize(m);
+    let slice = vec.as_slice();
+    let m2 = deserialize(slice);
+
+    println!("{:?}", m2);
+}
+
+/// Returns serialized mutation
+pub fn serialize(mutation: SequencerMutation) -> Vec<u8> {
+    let mut serializer = flexbuffers::FlexbufferSerializer::new();
+    mutation.serialize(&mut serializer).unwrap();
+    serializer.take_buffer()
+}
+
+/// Returns mutation from serialized object
+pub fn deserialize(data: &[u8]) -> Option<SequencerMutation> {
+    let reader = flexbuffers::Reader::get_root(data).ok()?;
+    SequencerMutation::deserialize(reader).ok()
 }
 
 /// Playback parameters, which are set by default for the entire track and can be overriden by *parameter locks*

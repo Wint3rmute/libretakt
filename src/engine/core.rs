@@ -9,7 +9,7 @@ use crate::sequencer::PlaybackParameters;
 use crate::sequencer::Sequencer;
 use common::Parameter;
 use std::sync::Arc;
-use synfx_dsp::*;
+// use synfx_dsp::*;
 
 /// Top-level component of the DSP pipeline.
 ///
