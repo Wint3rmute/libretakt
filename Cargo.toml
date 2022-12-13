@@ -36,6 +36,9 @@ server = {path = "server" }
 common = { path = "common" }
 url = {workspace = true}
 uuid = {workspace = true}
+tokio-tungstenite = {workspace = true}
+futures-util = {workspace = true}
+tokio = {workspace = true}
 
 rodio = { version = "0.15", default-features = true }
 macroquad = { version = "0.3", default-features = false }

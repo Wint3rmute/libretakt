@@ -1363,6 +1363,7 @@ dependencies = [
  "common",
  "env_logger",
  "flume",
+ "futures-util",
  "log",
  "macroquad",
  "mverb",
@@ -1376,6 +1377,8 @@ dependencies = [
  "server",
  "strum",
  "strum_macros",
+ "tokio 1.21.2",
+ "tokio-tungstenite",
  "url",
  "uuid",
 ]

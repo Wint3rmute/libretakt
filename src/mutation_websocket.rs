@@ -1,37 +1,33 @@
 use common::{deserialize, serialize, SequencerMutation};
 use flume::{Receiver, Sender};
-// use tungstenite::{connect, Message};
+use futures_util::stream::SplitSink;
+use futures_util::StreamExt;
+use log::info;
+use tokio_tungstenite::{connect_async, tungstenite::protocol::Message, WebSocketStream};
 use url::Url;
 use uuid::Uuid;
 
-pub fn send_mutations_to_server(receiver: Receiver<SequencerMutation>) {
-    // let uuid = Uuid::new_v4();
-    // let mut url = String::from("ws://localhost:8080/");
-    // url.push_str(uuid.to_string().as_str());
-    // let url = Url::parse(url.as_str()).unwrap();
-    // let (mut socket, response) = connect(url).expect("Can't connect");
-    // // connect(Url::parse("ws://echo.websocket.org").unwrap()).expect("Can't connect");
+async fn forward_user_actions(
+    user_mutations: Receiver<SequencerMutation>,
+    ws_write: SplitSink<
+        WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
+        Message,
+    >,
+) {
+    while let Ok(mutation) = user_mutations.recv_async().await {
+        info!("Received: {:?}", mutation);
+        let serialised = serialize(mutation);
+    }
+}
 
-    // println!("Connected to the server");
-    // println!("Response HTTP code: {}", response.status());
-    // // println!("Response contains the following headers:");
-    // // for (ref header, _value) in response.headers() {
-    // //     println!("* {}", header);
-    // // }
-    // // let message = SequencerMutation::UpdateTrackParam(0, 0, 2);
-    // // let serialised = serialize(message);
+pub async fn send_mutations_to_server(receiver: Receiver<SequencerMutation>) {
+    let uuid = Uuid::new_v4();
+    let mut url = String::from("ws://localhost:8080/");
+    url.push_str(uuid.to_string().as_str());
+    let url = Url::parse(url.as_str()).unwrap();
 
-    // loop {
-    //     let mutation = receiver.recv().unwrap();
-    //     println!("Sending {:?}", mutation);
-    //     let serialised = serialize(mutation);
-    //     socket.write_message(Message::Binary(serialised)).unwrap();
-    //     // socket.send
+    let (ws_stream, _) = connect_async(url).await.expect("Failed to connect");
+    let (ws_write, ws_read) = ws_stream.split();
 
-    //     // let msg = socket.read_message().expect("Error reading message");
-    //     // let mutation_raw = msg.into_data();
-    //     // let mutation = deserialize(mutation_raw.as_ref());
-
-    //     // println!("Received: {:?}", mutation);
-    // }
+    tokio::spawn(forward_user_actions(receiver, ws_write));
 }
