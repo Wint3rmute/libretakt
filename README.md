@@ -4,6 +4,8 @@ Zmiana żeby coś było
 
 Project name based on Elektron's [Digitakt](https://www.elektron.se/us/digitakt-explorer) (but free/libre/etc).
 
+![UI screenshot](./ui_screenshot.jpg)
+
 ## Learning resources
 
 - Audio playback - [Rodio](https://github.com/RustAudio/rodio)
