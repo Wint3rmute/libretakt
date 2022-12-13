@@ -27,7 +27,7 @@ uuid = { version = "0.8", features = ["v4", "serde"] } # uuid's fit well in this
 url = "2.3.1"
 tokio-tungstenite = "0.18.0"
 futures-channel = "0.3.25"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1.8.4", features = ["full"] }
 futures-util = "0.3"
 
 [dependencies]
