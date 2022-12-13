@@ -33,6 +33,5 @@ pub async fn send_mutations_to_server(receiver: Receiver<SequencerMutation>) {
     info!("WebSocket connected");
     let (ws_write, ws_read) = ws_stream.split();
 
-    // TODO: tokio select
-    forward_user_actions(receiver, ws_write).await;
+    futures::join!(forward_user_actions(receiver, ws_write));
 }
