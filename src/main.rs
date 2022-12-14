@@ -655,6 +655,9 @@ async fn main() {
     //To be honest i haven't been looking at this code yet but Bączek wrote it
     //so i guess its something important and i trust him 👉👈.
     let provider = Arc::new(SampleProvider::default());
+
+    //let sample_name = provider.samples[context.selected_step].name;
+    
     let mut synchronisation_controller = SynchronisationController::default();
 
     let (current_step_tx, current_step_rx) = bounded::<CurrentStepData>(64);
@@ -694,12 +697,13 @@ async fn main() {
         tracks.clone(),
     );
     prevent_quit();
-    ui_main(sequencer, synchronisation_controller, current_step_rx).await;
+    ui_main(sequencer, synchronisation_controller, provider, current_step_rx).await;
 }
 
 async fn ui_main(
     mut sequencer: Sequencer,
     mut synchronisation_controller: SynchronisationController,
+    sample_provider: Arc<SampleProvider>,
     step_data_receiver: Receiver<CurrentStepData>,
 ) {
     let _sample = 0.0;
@@ -1020,6 +1024,39 @@ async fn ui_main(
                                     if ui.button(Vec2::new(0., 0.), button_i.to_string()) {
                                         context.current_slider_group = button_i;
                                     }
+                                });
+                            }
+
+                            //Current sample name:
+
+                            if context.selected_step != -1{
+
+                            
+                                //get current sample
+                                //Pobranie pojedyńczego parametru
+                                 let _temp = sequencer.tracks[context.current_track as usize].patterns
+                                 [0]
+                                .steps[context.selected_step as usize]
+                                .as_ref()
+                                .unwrap()
+                                .parameters[Parameter::Sample as usize];
+
+                                let mut param_val = 0;
+
+                                if let Some(x) = _temp {
+                                    param_val = x;
+                                }
+                                
+                                //get its name
+                                let sample_name = &sample_provider.samples[param_val as usize].name;
+                            
+                                Group::new(
+                                    hash!("ASGADGXXZXCZSSCBHRAZEE"),
+                                    Vec2::new(200., 40.),
+                                )
+                                .ui(ui, |ui| {
+                                    ui.label(Vec2::new(0., 0.), "CURRENT SAMPLE NAME:");
+                                    ui.label(Vec2::new(0., 20.), sample_name.as_str());
                                 });
                             }
                         },
