@@ -1,5 +1,6 @@
 use common::{deserialize, serialize, SequencerMutation};
 use flume::{Receiver, Sender};
+use futures::stream::SplitStream;
 use futures_util::stream::SplitSink;
 use futures_util::SinkExt;
 use futures_util::StreamExt;
@@ -17,7 +18,7 @@ async fn forward_user_actions(
 ) {
     info!("Starting forwarding user actions loop");
     while let Ok(mutation) = user_mutations.recv_async().await {
-        info!("Received: {:?}", mutation);
+        info!("User created mutation: {:?}", mutation);
         let serialised = serialize(mutation);
         ws_write.send(Message::Binary(serialised)).await.unwrap();
     }
@@ -33,5 +34,16 @@ pub async fn send_mutations_to_server(receiver: Receiver<SequencerMutation>) {
     info!("WebSocket connected");
     let (ws_write, ws_read) = ws_stream.split();
 
-    futures::join!(forward_user_actions(receiver, ws_write));
+    let apply_remote_users_actions = {
+        ws_read.for_each(|message| async {
+            let data = message.unwrap().into_data();
+            let mutation = deserialize(&data);
+            info!("From remote user: {:?}", mutation);
+        })
+    };
+
+    futures::join!(
+        forward_user_actions(receiver, ws_write),
+        apply_remote_users_actions
+    );
 }
