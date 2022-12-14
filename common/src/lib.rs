@@ -21,6 +21,7 @@ pub enum SequencerMutation {
     UpdateTrackParam(TrackNum, ParamNum, ParamValue),
     SilenceTrack(TrackNum),
     UnSilenceTrack(TrackNum),
+    SelectPattern(TrackNum, PatternNum),
 }
 
 pub fn serialize_example() {

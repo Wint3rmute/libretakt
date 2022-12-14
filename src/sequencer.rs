@@ -129,6 +129,9 @@ impl Sequencer {
                 SequencerMutation::UnSilenceTrack(track) => {
                     self.tracks[track].silenced = false;
                 }
+                SequencerMutation::SelectPattern(track, pattern) => {
+                    self.tracks[track].current_pattern = pattern;
+                }
             }
         }
     }
@@ -201,7 +204,12 @@ impl Track {
     pub fn new() -> Self {
         Track {
             default_parameters: PlaybackParameters::default(),
-            patterns: vec![Pattern::new()],
+            patterns: vec![
+                Pattern::new(),
+                Pattern::new(),
+                Pattern::new(),
+                Pattern::new(),
+            ],
             silenced: false,
             current_step: 0,
             current_pattern: 0,
