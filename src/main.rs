@@ -12,6 +12,7 @@ use libretakt::sequencer::{CurrentStepData, Sequencer, SynchronisationController
 mod ui_skins;
 use env_logger::Env;
 
+use log::warn;
 use macroquad::prelude::*;
 
 use flume::{bounded, Receiver};
@@ -694,15 +695,24 @@ async fn main() {
         tracks.clone(),
     );
     prevent_quit();
-    ui_main(sequencer, synchronisation_controller, current_step_rx).await;
+    ui_main(
+        sequencer,
+        synchronisation_controller,
+        current_step_rx,
+        provider,
+    )
+    .await;
 }
 
 async fn ui_main(
     mut sequencer: Sequencer,
     mut synchronisation_controller: SynchronisationController,
     step_data_receiver: Receiver<CurrentStepData>,
+    sample_provider: Arc<SampleProvider>,
 ) {
     let _sample = 0.0;
+
+    warn!("Sample 0 name is {}", sample_provider.samples[0].name);
 
     //Loading UI Skins from ui_skins.rs to not clutter main.rs with code that does not belong in here
     let titlebanner_struct = TitleBannerSkin::new();
