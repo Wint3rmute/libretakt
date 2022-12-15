@@ -54,6 +54,9 @@ num-traits = "0.2"
 strum = "0.24"
 strum_macros = "0.24"
 
+# For cargo-fuzz
+arbitrary = { version = "1", features = ["derive"] }
+
 [[bin]]
 bench = false
 path = "src/main.rs"

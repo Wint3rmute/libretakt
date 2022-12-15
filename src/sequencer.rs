@@ -20,6 +20,7 @@ extern crate serde_derive;
 
 use crate::constants::{self, NUM_OF_VOICES};
 use crate::engine::core::Voice;
+use arbitrary::Arbitrary;
 use flume::{Receiver, Sender};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
@@ -244,7 +245,7 @@ impl Track {
 ///
 /// Used both as default playback parameters for a track
 /// and as an input message for [Voice](crate::engine::Voice).
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Arbitrary)]
 pub struct PlaybackParameters {
     #[allow(dead_code)] // TODO: remove after parameter locks are added
     pub parameters: [u8; NUM_OF_PARAMETERS],
