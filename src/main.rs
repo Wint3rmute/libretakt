@@ -35,7 +35,11 @@ pub struct Context {
     pub track_panel_h: f32,
     pub title_banner_h: f32,
 
-    //Sampler state variables
+    //Pattern varibles:
+    pub max_patterns: i32,
+
+
+    //Sampler state variables:
     pub current_track: i32,
     pub current_step_play: i32,
 
@@ -742,6 +746,8 @@ async fn ui_main(
         current_track: 0,
         current_step_play: 0,
 
+        max_patterns: 4i32,
+
         current_note_highlighted: -1,
         selected_step: -1,
         parameter_vals: [0u8; NUM_OF_PARAMETERS],
@@ -853,6 +859,8 @@ async fn ui_main(
                     context.track_panel_h,
                 ),
                 |ui| {
+
+                    //Group wypisujący nazwę aktualnego tracka
                     Group::new(hash!("GRP1"), Vec2::new(screen_width() - 210., 40.)).ui(ui, |ui| {
                         if context.current_track != -1 {
                             ui.label(
@@ -865,6 +873,26 @@ async fn ui_main(
                         ui.label(Vec2::new(100., 0.), &context.current_step_play.to_string());
                     });
 
+                    //Group związany z przechodzeniem między patternami
+                    Group::new(hash!("Przechodzenie miedzy panelami"), Vec2::new(screen_width() - 210., 40.)).ui(ui, |ui| {
+                        
+                        //Utwórz guziki związane z przełączaniem między patternami:
+                        for i in 0..context.max_patterns {
+                            Group::new(hash!("Pattern group".to_owned() + &i.to_string()), Vec2::new(40.,39.)).ui(ui, |ui|{
+                                
+                                if ui.button(Vec2::new(0.,0.), 
+                                    if (sequencer.tracks[context.current_track as usize].current_pattern == i as usize){
+                                        "X"
+                                    }else{
+                                        "O"//&(i).to_string()
+                                }){
+                                    println!("ELOO");
+                                }
+                            });
+                        }
+                    });
+
+                    //Wyświetlanie Guzików!!11
                     if context.current_track != -1 {
                         for i in 0..num_of_steps {
                             Group::new(hash!("Tracks", i), Vec2::new(70., 60.)).ui(ui, |ui| {
