@@ -37,7 +37,7 @@ pub struct Context {
 
     //Pattern varibles:
     pub max_patterns: i32,
-
+    pub current_pattern: usize,
 
     //Sampler state variables:
     pub current_track: i32,
@@ -200,6 +200,24 @@ impl Context {
     }
 }
 
+pub fn change_pattern(
+    context: &mut Context,
+    synchronisation_controller: &mut SynchronisationController,
+    sequencer: &Sequencer,
+    i: usize,
+) {
+    //Wykonaj mutacje:
+    println!("MUTACJA");
+    synchronisation_controller.mutate(SequencerMutation::SelectPattern(
+        context.current_track as usize,
+        i as usize,
+    ));
+
+    println!("PO MUTACJI");
+
+    deselect_step(&sequencer, context);
+}
+
 pub fn create_param(
     context: &mut Context,
     synchronisation_controller: &mut SynchronisationController,
@@ -209,7 +227,7 @@ pub fn create_param(
     context.parameter_vals_float[i] = default_param;
     synchronisation_controller.mutate(SequencerMutation::SetParam(
         context.current_track as usize,
-        0,
+        context.current_pattern,
         context.selected_step as usize,
         param_of_idx(i),
         (default_param as usize).try_into().unwrap(),
@@ -224,7 +242,7 @@ pub fn delete_param(
     //Delete parameter
     synchronisation_controller.mutate(SequencerMutation::RemoveParam(
         context.current_track as usize,
-        0,
+        context.current_pattern,
         context.selected_step as usize,
         param_of_idx(i),
     ));
@@ -264,8 +282,8 @@ pub fn is_in_current_slided_group(context: &Context, i: i32) -> bool {
 
 pub fn assing_context_param(sequencer: &Sequencer, context: &mut Context, param_index: usize) {
     //Pobranie pojedyńczego parametru
-    let _temp = sequencer.tracks[context.current_track as usize].patterns[0].steps
-        [context.selected_step as usize]
+    let _temp = sequencer.tracks[context.current_track as usize].patterns[context.current_pattern]
+        .steps[context.selected_step as usize]
         .as_ref()
         .unwrap()
         .parameters[param_index];
@@ -307,8 +325,9 @@ pub fn compare_params_floats_with_original(
 
     //Pobranie pojedyńczego parametru
     for i in 0..NUM_OF_PARAMETERS {
-        let _temp = sequencer.tracks[context.current_track as usize].patterns[0].steps
-            [context.selected_step as usize]
+        let _temp = sequencer.tracks[context.current_track as usize].patterns
+            [context.current_pattern]
+            .steps[context.selected_step as usize]
             .as_ref()
             .unwrap()
             .parameters[i as usize];
@@ -331,7 +350,7 @@ pub fn compare_params_floats_with_original(
         {
             synchronisation_controller.mutate(SequencerMutation::SetParam(
                 context.current_track as usize,
-                0,
+                context.current_pattern,
                 context.selected_step as usize,
                 param_of_idx(i),
                 (context.parameter_vals_float[i] as usize)
@@ -479,7 +498,7 @@ pub fn keyboard_operations_notes(
         //Check cooldown?
         context.is_shift_pressed = false;
         //If there is not note - add note
-        if sequencer.tracks[context.current_track as usize].patterns[0].steps
+        if sequencer.tracks[context.current_track as usize].patterns[context.current_pattern].steps
             [context.current_note_highlighted as usize]
             .is_some()
         {
@@ -489,14 +508,14 @@ pub fn keyboard_operations_notes(
 
             synchronisation_controller.mutate(SequencerMutation::RemoveStep(
                 context.current_track as usize,
-                0,
+                context.current_pattern,
                 context.current_note_highlighted as usize,
             ))
             // sequencer.tracks[0].patterns[0].steps[i] = None;
         } else {
             synchronisation_controller.mutate(SequencerMutation::CreateStep(
                 context.current_track as usize,
-                0,
+                context.current_pattern,
                 context.current_note_highlighted as usize,
             ))
             // sequencer.tracks[0].patterns[0].steps[i] = Some(Step::default());
@@ -507,8 +526,8 @@ pub fn keyboard_operations_notes(
         context.is_edit_note_pressed = false;
         if context.selected_step == context.current_note_highlighted {
             deselect_step(sequencer, context);
-        } else if sequencer.tracks[context.current_track as usize].patterns[0].steps
-            [context.current_note_highlighted as usize]
+        } else if sequencer.tracks[context.current_track as usize].patterns[context.current_pattern]
+            .steps[context.current_note_highlighted as usize]
             .is_some()
         {
             //EDIT MODE:
@@ -544,8 +563,9 @@ pub fn keyboard_operations_sliders(
     }
 
     if context.selected_step != -1 {
-        let _temp = sequencer.tracks[context.current_track as usize].patterns[0].steps
-            [context.selected_step as usize]
+        let _temp = sequencer.tracks[context.current_track as usize].patterns
+            [context.current_pattern]
+            .steps[context.selected_step as usize]
             .as_ref()
             .unwrap()
             .parameters[(context.current_slider + context.current_slider_group * 8) as usize];
@@ -661,7 +681,7 @@ async fn main() {
     let provider = Arc::new(SampleProvider::default());
 
     //let sample_name = provider.samples[context.selected_step].name;
-    
+
     let mut synchronisation_controller = SynchronisationController::default();
 
     let (current_step_tx, current_step_rx) = bounded::<CurrentStepData>(64);
@@ -701,7 +721,13 @@ async fn main() {
         tracks.clone(),
     );
     prevent_quit();
-    ui_main(sequencer, synchronisation_controller, provider, current_step_rx).await;
+    ui_main(
+        sequencer,
+        synchronisation_controller,
+        provider,
+        current_step_rx,
+    )
+    .await;
 }
 
 async fn ui_main(
@@ -747,6 +773,7 @@ async fn ui_main(
         current_step_play: 0,
 
         max_patterns: 4i32,
+        current_pattern: 0usize,
 
         current_note_highlighted: -1,
         selected_step: -1,
@@ -793,7 +820,8 @@ async fn ui_main(
             //Assigning main variables from sequencer.
             //Not sure if they should be assinged to some context or exist freely this way
             let sequencer = &sequencer;
-            let num_of_steps = sequencer.tracks[context.current_track as usize].patterns[0]
+            let num_of_steps = sequencer.tracks[context.current_track as usize].patterns
+                [context.current_pattern]
                 .steps
                 .len();
             // sequencer.tracks[0].default_parameters.parameters[Parameter::Sample as usize] =
@@ -806,6 +834,10 @@ async fn ui_main(
             //READ USER INPUT
             context.check_user_input();
             perform_keyboard_operations(sequencer, &mut context, &mut synchronisation_controller);
+
+            //To musi być sprawdzane w pętli bo czasami kod wykonuje się szybciej niż mutacja (mutacja jest zlagowana sequencera o jedną iteracje kodu?! xd)
+            context.current_pattern =
+                sequencer.tracks[context.current_track as usize].current_pattern;
 
             //Jakiś extra space na logike kodu
             if context.selected_step != -1 {
@@ -859,7 +891,6 @@ async fn ui_main(
                     context.track_panel_h,
                 ),
                 |ui| {
-
                     //Group wypisujący nazwę aktualnego tracka
                     Group::new(hash!("GRP1"), Vec2::new(screen_width() - 210., 40.)).ui(ui, |ui| {
                         if context.current_track != -1 {
@@ -874,19 +905,35 @@ async fn ui_main(
                     });
 
                     //Group związany z przechodzeniem między patternami
-                    Group::new(hash!("Przechodzenie miedzy panelami"), Vec2::new(screen_width() - 210., 40.)).ui(ui, |ui| {
-                        
+                    Group::new(
+                        hash!("Przechodzenie miedzy panelami"),
+                        Vec2::new(screen_width() - 210., 40.),
+                    )
+                    .ui(ui, |ui| {
                         //Utwórz guziki związane z przełączaniem między patternami:
                         for i in 0..context.max_patterns {
-                            Group::new(hash!("Pattern group".to_owned() + &i.to_string()), Vec2::new(40.,39.)).ui(ui, |ui|{
-                                
-                                if ui.button(Vec2::new(0.,0.), 
-                                    if (sequencer.tracks[context.current_track as usize].current_pattern == i as usize){
+                            Group::new(
+                                hash!("Pattern group".to_owned() + &i.to_string()),
+                                Vec2::new(40., 39.),
+                            )
+                            .ui(ui, |ui| {
+                                if ui.button(
+                                    Vec2::new(0., 0.),
+                                    if (sequencer.tracks[context.current_track as usize]
+                                        .current_pattern
+                                        == i as usize)
+                                    {
                                         "X"
-                                    }else{
-                                        "O"//&(i).to_string()
-                                }){
-                                    println!("ELOO");
+                                    } else {
+                                        "O"
+                                    },
+                                ) {
+                                    change_pattern(
+                                        &mut context,
+                                        &mut synchronisation_controller,
+                                        &sequencer,
+                                        i as usize,
+                                    );
                                 }
                             });
                         }
@@ -896,6 +943,21 @@ async fn ui_main(
                     if context.current_track != -1 {
                         for i in 0..num_of_steps {
                             Group::new(hash!("Tracks", i), Vec2::new(70., 60.)).ui(ui, |ui| {
+                                println!(
+                                    "{}",
+                                    format!(
+                                        "{} {} {}: {} {}",
+                                        i,
+                                        context.current_track,
+                                        context.current_pattern,
+                                        sequencer.tracks[context.current_track as usize]
+                                            .current_pattern,
+                                        sequencer.tracks[context.current_track as usize]
+                                            .patterns
+                                            .len()
+                                    )
+                                );
+
                                 if context.selected_step == i as i32 {
                                     //Check for note select (yellow)
                                     ui.push_skin(&note_selected_skin_clone);
@@ -904,7 +966,8 @@ async fn ui_main(
                                     ui.push_skin(&note_playing_skin_clone);
                                 } else if context.current_note_highlighted == i as i32 {
                                     //Check for note highlights (lighter colours)
-                                    if sequencer.tracks[context.current_track as usize].patterns[0]
+                                    if sequencer.tracks[context.current_track as usize].patterns
+                                        [context.current_pattern]
                                         .steps[i]
                                         .is_some()
                                     {
@@ -913,8 +976,8 @@ async fn ui_main(
                                         ui.push_skin(&empty_note_highlighted_skin_clone);
                                     }
                                 } else if sequencer.tracks[context.current_track as usize].patterns
-                                    [0]
-                                .steps[i]
+                                    [context.current_pattern]
+                                    .steps[i]
                                     .is_some()
                                 {
                                     ui.push_skin(&note_placed_skin_clone);
@@ -926,7 +989,8 @@ async fn ui_main(
                                     //im not sure if this kind of if/else chain is valid
                                     //i would use some "returns" and tide it up a bit but i think i cant coz its not a method
                                     deselect_step(sequencer, &mut context);
-                                    if sequencer.tracks[context.current_track as usize].patterns[0]
+                                    if sequencer.tracks[context.current_track as usize].patterns
+                                        [context.current_pattern]
                                         .steps[i]
                                         .is_some()
                                     {
@@ -937,7 +1001,7 @@ async fn ui_main(
                                             synchronisation_controller.mutate(
                                                 SequencerMutation::RemoveStep(
                                                     context.current_track as usize,
-                                                    0,
+                                                    context.current_pattern,
                                                     i,
                                                 ),
                                             )
@@ -947,7 +1011,7 @@ async fn ui_main(
                                         synchronisation_controller.mutate(
                                             SequencerMutation::CreateStep(
                                                 context.current_track as usize,
-                                                0,
+                                                context.current_pattern,
                                                 i,
                                             ),
                                         )
@@ -1057,35 +1121,30 @@ async fn ui_main(
 
                             //Current sample name:
 
-                            if context.selected_step != -1{
-
-                            
+                            if context.selected_step != -1 {
                                 //get current sample
                                 //Pobranie pojedyńczego parametru
-                                 let _temp = sequencer.tracks[context.current_track as usize].patterns
-                                 [0]
-                                .steps[context.selected_step as usize]
-                                .as_ref()
-                                .unwrap()
-                                .parameters[Parameter::Sample as usize];
+                                let _temp = sequencer.tracks[context.current_track as usize]
+                                    .patterns[context.current_pattern]
+                                    .steps[context.selected_step as usize]
+                                    .as_ref()
+                                    .unwrap()
+                                    .parameters[Parameter::Sample as usize];
 
                                 let mut param_val = 0;
 
                                 if let Some(x) = _temp {
                                     param_val = x;
                                 }
-                                
+
                                 //get its name
                                 let sample_name = &sample_provider.samples[param_val as usize].name;
-                            
-                                Group::new(
-                                    hash!("ASGADGXXZXCZSSCBHRAZEE"),
-                                    Vec2::new(200., 40.),
-                                )
-                                .ui(ui, |ui| {
-                                    ui.label(Vec2::new(0., 0.), "CURRENT SAMPLE NAME:");
-                                    ui.label(Vec2::new(0., 20.), sample_name.as_str());
-                                });
+
+                                Group::new(hash!("ASGADGXXZXCZSSCBHRAZEE"), Vec2::new(200., 40.))
+                                    .ui(ui, |ui| {
+                                        ui.label(Vec2::new(0., 0.), "CURRENT SAMPLE NAME:");
+                                        ui.label(Vec2::new(0., 20.), sample_name.as_str());
+                                    });
                             }
                         },
                     );
@@ -1093,7 +1152,8 @@ async fn ui_main(
                     //STEPS LOGIC!!!
                     //Utwórz  slidery do edycji parametrów:
                     if context.selected_step != -1 {
-                        for i in 0..sequencer.tracks[context.current_track as usize].patterns[0]
+                        for i in 0..sequencer.tracks[context.current_track as usize].patterns
+                            [context.current_pattern]
                             .steps[context.selected_step as usize]
                             .as_ref()
                             .unwrap()
@@ -1108,8 +1168,8 @@ async fn ui_main(
 
                             //Pobranie pojedyńczego parametru
                             let _temp = sequencer.tracks[context.current_track as usize].patterns
-                                [0]
-                            .steps[context.selected_step as usize]
+                                [context.current_pattern]
+                                .steps[context.selected_step as usize]
                                 .as_ref()
                                 .unwrap()
                                 .parameters[i];
