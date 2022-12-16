@@ -1112,10 +1112,7 @@ async fn ui_main(
                             }
 
                             //Current sample name:
-
-                            if context.selected_step != -1 {
-                                //get current sample
-                                //Pobranie pojedyńczego parametru
+                            let sample_num = if context.selected_step != -1 {
                                 let _temp = sequencer.tracks[context.current_track as usize]
                                     .patterns[context.current_pattern]
                                     .steps[context.selected_step as usize]
@@ -1129,15 +1126,28 @@ async fn ui_main(
                                     param_val = x;
                                 }
 
-                                //get its name
-                                let sample_name = &sample_provider.samples[param_val as usize].name;
+                                param_val as usize
+                            } else {
+                                let sample_num = sequencer.tracks[context.current_track as usize]
+                                    .default_parameters
+                                    .parameters[Parameter::Sample as usize];
 
-                                Group::new(hash!("ASGADGXXZXCZSSCBHRAZEE"), Vec2::new(200., 40.))
-                                    .ui(ui, |ui| {
-                                        ui.label(Vec2::new(0., 0.), "CURRENT SAMPLE NAME:");
-                                        ui.label(Vec2::new(0., 20.), sample_name.as_str());
-                                    });
-                            }
+                                sample_num as usize
+                            };
+
+                            let sample_name = if sample_num >= sample_provider.samples.len() {
+                                "Invalid!"
+                            } else {
+                                sample_provider.samples[sample_num].name.as_str()
+                            };
+
+                            Group::new(hash!("ASGADGXXZXCZSSCBHRAZEE"), Vec2::new(200., 40.)).ui(
+                                ui,
+                                |ui| {
+                                    ui.label(Vec2::new(0., 0.), "CURRENT SAMPLE NAME:");
+                                    ui.label(Vec2::new(0., 20.), sample_name);
+                                },
+                            );
                         },
                     );
 
