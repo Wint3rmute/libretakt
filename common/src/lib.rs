@@ -22,6 +22,8 @@ pub enum SequencerMutation {
     SilenceTrack(TrackNum),
     UnSilenceTrack(TrackNum),
     SelectPattern(TrackNum, PatternNum),
+    StartPlayback,
+    StopPlayback,
 }
 
 pub fn serialize_example() {
