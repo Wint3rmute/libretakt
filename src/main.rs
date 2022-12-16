@@ -728,10 +728,15 @@ async fn main() {
         warn!("Synchronisation enabled, connecting to synchronisation server..");
         let mutation_rx_for_sync_server = synchronisation_controller.lock().unwrap().register_new();
 
+        let sync_controller_clone = synchronisation_controller.clone();
         std::thread::spawn(|| {
             let runtime = tokio::runtime::Runtime::new().unwrap();
             runtime.block_on(async {
-                mutation_websocket::send_mutations_to_server(mutation_rx_for_sync_server).await
+                mutation_websocket::send_mutations_to_server(
+                    mutation_rx_for_sync_server,
+                    sync_controller_clone,
+                )
+                .await
             })
         });
     }
