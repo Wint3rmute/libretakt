@@ -207,13 +207,10 @@ pub fn change_pattern(
     i: usize,
 ) {
     //Wykonaj mutacje:
-    println!("MUTACJA");
     synchronisation_controller.mutate(SequencerMutation::SelectPattern(
         context.current_track as usize,
         i as usize,
     ));
-
-    println!("PO MUTACJI");
 
     deselect_step(&sequencer, context);
 }
@@ -943,21 +940,6 @@ async fn ui_main(
                     if context.current_track != -1 {
                         for i in 0..num_of_steps {
                             Group::new(hash!("Tracks", i), Vec2::new(70., 60.)).ui(ui, |ui| {
-                                println!(
-                                    "{}",
-                                    format!(
-                                        "{} {} {}: {} {}",
-                                        i,
-                                        context.current_track,
-                                        context.current_pattern,
-                                        sequencer.tracks[context.current_track as usize]
-                                            .current_pattern,
-                                        sequencer.tracks[context.current_track as usize]
-                                            .patterns
-                                            .len()
-                                    )
-                                );
-
                                 if context.selected_step == i as i32 {
                                     //Check for note select (yellow)
                                     ui.push_skin(&note_selected_skin_clone);
