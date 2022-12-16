@@ -899,6 +899,16 @@ async fn ui_main(
                             ui.label(Vec2::new(0., 0.), "SELECT TRACK");
                         }
                         ui.label(Vec2::new(100., 0.), &context.current_step_play.to_string());
+
+                        if ui.button(Vec2::new(200., 0.), "Play/Pause")
+                            || is_key_pressed(KeyCode::Space)
+                        {
+                            if sequencer.playing {
+                                synchronisation_controller.mutate(SequencerMutation::StopPlayback);
+                            } else {
+                                synchronisation_controller.mutate(SequencerMutation::StartPlayback);
+                            }
+                        }
                     });
 
                     //Group związany z przechodzeniem między patternami

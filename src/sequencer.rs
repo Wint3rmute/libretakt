@@ -72,6 +72,7 @@ pub struct Sequencer {
     pub time_counter: usize,
     pub mutations_queue: Receiver<SequencerMutation>,
     pub current_step_sender: Sender<CurrentStepData>,
+    pub playing: bool,
 }
 
 impl Sequencer {
@@ -86,7 +87,21 @@ impl Sequencer {
             time_counter: 0,
             mutations_queue,
             current_step_sender,
+            playing: false,
         }
+    }
+
+    fn start_playback(&mut self) {
+        self.playing = true;
+    }
+
+    fn stop_playback(&mut self) {
+        for track in self.tracks.iter_mut() {
+            track.current_step = 0;
+        }
+
+        self.playing = false;
+        self.time_counter = 0;
     }
 
     /// Lock-free synchronisation of [Sequencer]s between threads.
@@ -133,6 +148,8 @@ impl Sequencer {
                 SequencerMutation::SelectPattern(track, pattern) => {
                     self.tracks[track].current_pattern = pattern;
                 }
+                SequencerMutation::StopPlayback => self.stop_playback(),
+                SequencerMutation::StartPlayback => self.start_playback(),
             }
         }
     }
@@ -140,6 +157,9 @@ impl Sequencer {
     /// Should be called with the sound generation clock,
     /// allows for sample-perfect (aka pixel-perfect) sequence timing
     pub fn tick(&mut self, voices: &mut [Voice]) {
+        if !self.playing {
+            return;
+        }
         self.time_counter += 1;
 
         // Dividing by 4 in the end to use eight-notes as default step length,
