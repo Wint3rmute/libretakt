@@ -22,7 +22,7 @@ use macroquad::window::Conf;
 
 use rodio::{OutputStream, Sink};
 use std::io::Read;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use strum::IntoEnumIterator; // 0.17.1
 
@@ -202,47 +202,56 @@ impl Context {
 
 pub fn change_pattern(
     context: &mut Context,
-    synchronisation_controller: &mut SynchronisationController,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
     sequencer: &Sequencer,
     i: usize,
 ) {
     //Wykonaj mutacje:
-    synchronisation_controller.mutate(SequencerMutation::SelectPattern(
-        context.current_track as usize,
-        i as usize,
-    ));
+    synchronisation_controller
+        .lock()
+        .unwrap()
+        .mutate(SequencerMutation::SelectPattern(
+            context.current_track as usize,
+            i as usize,
+        ));
 
     deselect_step(&sequencer, context);
 }
 
 pub fn create_param(
     context: &mut Context,
-    synchronisation_controller: &mut SynchronisationController,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
     i: usize,
 ) {
     let default_param = 0.0;
     context.parameter_vals_float[i] = default_param;
-    synchronisation_controller.mutate(SequencerMutation::SetParam(
-        context.current_track as usize,
-        context.current_pattern,
-        context.selected_step as usize,
-        param_of_idx(i),
-        (default_param as usize).try_into().unwrap(),
-    ));
+    synchronisation_controller
+        .lock()
+        .unwrap()
+        .mutate(SequencerMutation::SetParam(
+            context.current_track as usize,
+            context.current_pattern,
+            context.selected_step as usize,
+            param_of_idx(i),
+            (default_param as usize).try_into().unwrap(),
+        ));
 }
 
 pub fn delete_param(
     context: &mut Context,
-    synchronisation_controller: &mut SynchronisationController,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
     i: usize,
 ) {
     //Delete parameter
-    synchronisation_controller.mutate(SequencerMutation::RemoveParam(
-        context.current_track as usize,
-        context.current_pattern,
-        context.selected_step as usize,
-        param_of_idx(i),
-    ));
+    synchronisation_controller
+        .lock()
+        .unwrap()
+        .mutate(SequencerMutation::RemoveParam(
+            context.current_track as usize,
+            context.current_pattern,
+            context.selected_step as usize,
+            param_of_idx(i),
+        ));
 }
 
 pub fn param_of_idx(i: usize) -> Parameter {
@@ -312,7 +321,7 @@ pub fn assign_context_track_params(sequencer: &Sequencer, context: &mut Context)
 }
 
 pub fn compare_params_floats_with_original(
-    synchronisation_controller: &mut SynchronisationController,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
     sequencer: &Sequencer,
     context: &mut Context,
 ) {
@@ -345,21 +354,24 @@ pub fn compare_params_floats_with_original(
         if (context.parameter_vals_float[i] < param_val as f32 - eps)
             || (context.parameter_vals_float[i] > param_val as f32 + eps)
         {
-            synchronisation_controller.mutate(SequencerMutation::SetParam(
-                context.current_track as usize,
-                context.current_pattern,
-                context.selected_step as usize,
-                param_of_idx(i),
-                (context.parameter_vals_float[i] as usize)
-                    .try_into()
-                    .unwrap(),
-            ));
+            synchronisation_controller
+                .lock()
+                .unwrap()
+                .mutate(SequencerMutation::SetParam(
+                    context.current_track as usize,
+                    context.current_pattern,
+                    context.selected_step as usize,
+                    param_of_idx(i),
+                    (context.parameter_vals_float[i] as usize)
+                        .try_into()
+                        .unwrap(),
+                ));
         }
     }
 }
 
 pub fn compare_floats_with_original_track(
-    synchronisation_controller: &mut SynchronisationController,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
     sequencer: &Sequencer,
     context: &mut Context,
 ) {
@@ -373,13 +385,16 @@ pub fn compare_floats_with_original_track(
         if (context.parameter_vals_float[i] < param_val as f32 - eps)
             || (context.parameter_vals_float[i] > param_val as f32 + eps)
         {
-            synchronisation_controller.mutate(SequencerMutation::UpdateTrackParam(
-                context.current_track as usize,
-                i as usize,
-                (context.parameter_vals_float[i] as usize)
-                    .try_into()
-                    .unwrap(),
-            ));
+            synchronisation_controller
+                .lock()
+                .unwrap()
+                .mutate(SequencerMutation::UpdateTrackParam(
+                    context.current_track as usize,
+                    i as usize,
+                    (context.parameter_vals_float[i] as usize)
+                        .try_into()
+                        .unwrap(),
+                ));
         }
     }
 }
@@ -402,25 +417,31 @@ pub fn deselect_step(sequencer: &Sequencer, context: &mut Context) {
 pub fn silence_track(
     _sequencer: &Sequencer,
     _context: &mut Context,
-    synchronisation_controller: &mut SynchronisationController,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
     i: usize,
 ) {
-    synchronisation_controller.mutate(SequencerMutation::SilenceTrack(i));
+    synchronisation_controller
+        .lock()
+        .unwrap()
+        .mutate(SequencerMutation::SilenceTrack(i));
 }
 
 pub fn unsilence_track(
     _sequencer: &Sequencer,
     _context: &mut Context,
-    synchronisation_controller: &mut SynchronisationController,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
     i: usize,
 ) {
-    synchronisation_controller.mutate(SequencerMutation::UnSilenceTrack(i));
+    synchronisation_controller
+        .lock()
+        .unwrap()
+        .mutate(SequencerMutation::UnSilenceTrack(i));
 }
 
 pub fn perform_keyboard_operations(
     sequencer: &Sequencer,
     context: &mut Context,
-    synchronisation_controller: &mut SynchronisationController,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
 ) {
     //update cooldown
     //context.current_cooldown-=1.0f32;
@@ -487,7 +508,7 @@ pub fn perform_keyboard_operations(
 pub fn keyboard_operations_notes(
     sequencer: &Sequencer,
     context: &mut Context,
-    synchronisation_controller: &mut SynchronisationController,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
 ) {
     context.current_note_highlighted = context.mapped_note_key_idx;
 
@@ -503,18 +524,24 @@ pub fn keyboard_operations_notes(
                 deselect_step(sequencer, context);
             }
 
-            synchronisation_controller.mutate(SequencerMutation::RemoveStep(
-                context.current_track as usize,
-                context.current_pattern,
-                context.current_note_highlighted as usize,
-            ))
+            synchronisation_controller
+                .lock()
+                .unwrap()
+                .mutate(SequencerMutation::RemoveStep(
+                    context.current_track as usize,
+                    context.current_pattern,
+                    context.current_note_highlighted as usize,
+                ))
             // sequencer.tracks[0].patterns[0].steps[i] = None;
         } else {
-            synchronisation_controller.mutate(SequencerMutation::CreateStep(
-                context.current_track as usize,
-                context.current_pattern,
-                context.current_note_highlighted as usize,
-            ))
+            synchronisation_controller
+                .lock()
+                .unwrap()
+                .mutate(SequencerMutation::CreateStep(
+                    context.current_track as usize,
+                    context.current_pattern,
+                    context.current_note_highlighted as usize,
+                ))
             // sequencer.tracks[0].patterns[0].steps[i] = Some(Step::default());
         }
     }
@@ -536,7 +563,7 @@ pub fn keyboard_operations_notes(
 pub fn keyboard_operations_sliders(
     sequencer: &Sequencer,
     context: &mut Context,
-    synchronisation_controller: &mut SynchronisationController,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
 ) {
     if context.slider_group_switch_tab != 0 {
         context.current_slider_group += context.slider_group_switch_tab + 3;
@@ -676,17 +703,14 @@ async fn main() {
     //To be honest i haven't been looking at this code yet but Bączek wrote it
     //so i guess its something important and i trust him 👉👈.
     let provider = Arc::new(SampleProvider::default());
-
-    //let sample_name = provider.samples[context.selected_step].name;
-
-    let mut synchronisation_controller = SynchronisationController::default();
+    let mut synchronisation_controller = Arc::new(Mutex::new(SynchronisationController::default()));
 
     let (current_step_tx, current_step_rx) = bounded::<CurrentStepData>(64);
 
     let _voice = Voice::new(&provider);
     let engine = Engine {
         sequencer: Sequencer::new(
-            synchronisation_controller.register_new(),
+            synchronisation_controller.lock().unwrap().register_new(),
             current_step_tx.clone(),
             tracks.clone(),
         ),
@@ -702,7 +726,7 @@ async fn main() {
     #[cfg(feature = "enable_synchronisation")]
     {
         warn!("Synchronisation enabled, connecting to synchronisation server..");
-        let mutation_rx_for_sync_server = synchronisation_controller.register_new();
+        let mutation_rx_for_sync_server = synchronisation_controller.lock().unwrap().register_new();
 
         std::thread::spawn(|| {
             let runtime = tokio::runtime::Runtime::new().unwrap();
@@ -713,15 +737,15 @@ async fn main() {
     }
 
     let sequencer = Sequencer::new(
-        synchronisation_controller.register_new(),
+        synchronisation_controller.lock().unwrap().register_new(),
         current_step_tx,
         tracks.clone(),
     );
     prevent_quit();
     ui_main(
         sequencer,
-        synchronisation_controller,
         provider,
+        synchronisation_controller,
         current_step_rx,
     )
     .await;
@@ -729,8 +753,8 @@ async fn main() {
 
 async fn ui_main(
     mut sequencer: Sequencer,
-    mut synchronisation_controller: SynchronisationController,
     sample_provider: Arc<SampleProvider>,
+    mut synchronisation_controller: Arc<Mutex<SynchronisationController>>,
     step_data_receiver: Receiver<CurrentStepData>,
 ) {
     let _sample = 0.0;
@@ -839,13 +863,13 @@ async fn ui_main(
             //Jakiś extra space na logike kodu
             if context.selected_step != -1 {
                 compare_params_floats_with_original(
-                    &mut synchronisation_controller,
+                    &synchronisation_controller,
                     sequencer,
                     &mut context,
                 );
             } else {
                 compare_floats_with_original_track(
-                    &mut synchronisation_controller,
+                    &synchronisation_controller,
                     sequencer,
                     &mut context,
                 );
@@ -904,9 +928,15 @@ async fn ui_main(
                             || is_key_pressed(KeyCode::Space)
                         {
                             if sequencer.playing {
-                                synchronisation_controller.mutate(SequencerMutation::StopPlayback);
+                                synchronisation_controller
+                                    .lock()
+                                    .unwrap()
+                                    .mutate(SequencerMutation::StopPlayback);
                             } else {
-                                synchronisation_controller.mutate(SequencerMutation::StartPlayback);
+                                synchronisation_controller
+                                    .lock()
+                                    .unwrap()
+                                    .mutate(SequencerMutation::StartPlayback);
                             }
                         }
                     });
@@ -937,7 +967,7 @@ async fn ui_main(
                                 ) {
                                     change_pattern(
                                         &mut context,
-                                        &mut synchronisation_controller,
+                                        &synchronisation_controller,
                                         &sequencer,
                                         i as usize,
                                     );
@@ -990,7 +1020,7 @@ async fn ui_main(
                                         if context.is_edit_note_pressed {
                                             select_step(sequencer, &mut context, i as i32);
                                         } else {
-                                            synchronisation_controller.mutate(
+                                            synchronisation_controller.lock().unwrap().mutate(
                                                 SequencerMutation::RemoveStep(
                                                     context.current_track as usize,
                                                     context.current_pattern,
@@ -1000,7 +1030,7 @@ async fn ui_main(
                                             // sequencer.tracks[0].patterns[0].steps[i] = None;
                                         }
                                     } else {
-                                        synchronisation_controller.mutate(
+                                        synchronisation_controller.lock().unwrap().mutate(
                                             SequencerMutation::CreateStep(
                                                 context.current_track as usize,
                                                 context.current_pattern,
