@@ -25,13 +25,12 @@ use flume::{Receiver, Sender};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
+use common::MutationWithSource;
 use common::Parameter;
 use common::SequencerMutation;
 use common::NUM_OF_PARAMETERS;
 
 use flume::bounded;
-
-// 0.17.1
 
 /// Allows lock-free synchronisation between multiple [Sequencer] instances,
 /// shared across different threads.
@@ -40,22 +39,32 @@ use flume::bounded;
 /// [Here's a good explanation](https://timur.audio/using-locks-in-real-time-audio-processing-safely)
 #[derive(Default)]
 pub struct SynchronisationController {
-    senders: Vec<Sender<SequencerMutation>>,
+    senders: Vec<Sender<MutationWithSource>>,
 }
 
 impl SynchronisationController {
     /// Returns a new rx channel, which you can pass to a [Sequencer] to keep it synchronised.
-    pub fn register_new(&mut self) -> Receiver<SequencerMutation> {
-        let (mutations_tx, mutations_rx) = bounded::<SequencerMutation>(64);
+    pub fn register_new(&mut self) -> Receiver<MutationWithSource> {
+        let (mutations_tx, mutations_rx) = bounded::<MutationWithSource>(64);
         self.senders.push(mutations_tx);
 
         mutations_rx
     }
 
+    pub fn mutate_remote(&mut self, mutation: SequencerMutation) {
+        for sender in &self.senders {
+            sender
+                .send(MutationWithSource::Remote(mutation.clone()))
+                .unwrap();
+        }
+    }
+
     /// Applies a mutation to all registered [Sequencers](Sequencer).
     pub fn mutate(&mut self, mutation: SequencerMutation) {
         for sender in &self.senders {
-            sender.send(mutation.clone()).unwrap();
+            sender
+                .send(MutationWithSource::Local(mutation.clone()))
+                .unwrap();
         }
     }
 }
@@ -70,14 +79,14 @@ pub struct Sequencer {
     pub tracks: Vec<Track>,
     pub beats_per_minute: u8,
     pub time_counter: usize,
-    pub mutations_queue: Receiver<SequencerMutation>,
+    pub mutations_queue: Receiver<MutationWithSource>,
     pub current_step_sender: Sender<CurrentStepData>,
     pub playing: bool,
 }
 
 impl Sequencer {
     pub fn new(
-        mutations_queue: Receiver<SequencerMutation>,
+        mutations_queue: Receiver<MutationWithSource>,
         current_step_sender: Sender<CurrentStepData>,
         tracks: Vec<Track>,
     ) -> Self {
@@ -109,6 +118,12 @@ impl Sequencer {
     pub fn apply_mutations(&mut self) {
         while let Ok(mutation) = self.mutations_queue.try_recv() {
             debug!("Got mutation");
+
+            let mutation = match mutation {
+                MutationWithSource::Local(mutation) => mutation,
+                MutationWithSource::Remote(mutation) => mutation,
+            };
+
             match mutation {
                 SequencerMutation::CreateStep(track, pattern, step) => {
                     self.tracks[track].patterns[pattern].steps[step] = Some(Step::default());

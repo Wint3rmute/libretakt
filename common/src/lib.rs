@@ -26,6 +26,11 @@ pub enum SequencerMutation {
     StopPlayback,
 }
 
+pub enum MutationWithSource {
+    Local(SequencerMutation),
+    Remote(SequencerMutation),
+}
+
 pub fn serialize_example() {
     let m = SequencerMutation::CreateStep(1, 2, 3);
     let vec = serialize(&m);

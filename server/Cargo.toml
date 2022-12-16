@@ -11,10 +11,6 @@ bench = false
 path = "src/main_server.rs"
 name = "server"
 
-[[bin]]
-path = "src/main_client.rs"
-name = "ws_client"
-
 [dependencies]
 common = {workspace = true}
 url = {workspace = true}

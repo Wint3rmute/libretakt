@@ -1,4 +1,5 @@
 use crate::sequencer::SynchronisationController;
+use common::MutationWithSource;
 use common::{deserialize, serialize, SequencerMutation};
 use flume::{Receiver, Sender};
 use futures::stream::SplitStream;
@@ -12,7 +13,7 @@ use url::Url;
 use uuid::Uuid;
 
 async fn forward_user_actions(
-    user_mutations: Receiver<SequencerMutation>,
+    user_mutations: Receiver<MutationWithSource>,
     mut ws_write: SplitSink<
         WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
         Message,
@@ -20,14 +21,19 @@ async fn forward_user_actions(
 ) {
     info!("Starting forwarding user actions loop");
     while let Ok(mutation) = user_mutations.recv_async().await {
-        info!("From local: {:?}", mutation);
-        let serialised = serialize(&mutation);
-        ws_write.send(Message::Binary(serialised)).await.unwrap();
+        match mutation {
+            MutationWithSource::Local(mutation) => {
+                info!("From local: {:?}", mutation);
+                let serialised = serialize(&mutation);
+                ws_write.send(Message::Binary(serialised)).await.unwrap();
+            }
+            MutationWithSource::Remote(_) => (),
+        }
     }
 }
 
 pub async fn send_mutations_to_server(
-    receiver: Receiver<SequencerMutation>,
+    receiver: Receiver<MutationWithSource>,
     synchronisation_controller: Arc<Mutex<SynchronisationController>>,
 ) {
     let uuid = Uuid::new_v4();
@@ -47,7 +53,10 @@ pub async fn send_mutations_to_server(
             let data = message.unwrap().into_data();
             if let Some(mutation) = deserialize(&data) {
                 info!("From remote user: {:?}", mutation);
-                synchronisation_controller.lock().unwrap().mutate(mutation);
+                synchronisation_controller
+                    .lock()
+                    .unwrap()
+                    .mutate_remote(mutation);
             }
         })
     };
