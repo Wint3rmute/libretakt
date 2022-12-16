@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct WsMessage(pub String);
+pub struct WsMessage(pub Vec<u8>);
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -24,6 +24,7 @@ pub struct Disconnect {
 #[rtype(result = "()")]
 pub struct ClientActorMessage {
     pub id: Uuid,
-    pub msg: String,
+    // pub msg: String,
+    pub msg: common::SequencerMutation,
     pub room_id: Uuid,
 }

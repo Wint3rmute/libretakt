@@ -1,5 +1,7 @@
 use crate::messages::{ClientActorMessage, Connect, Disconnect, WsMessage};
 use actix::prelude::{Actor, Context, Handler, Recipient};
+use common::serialize;
+use log::info;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
@@ -20,9 +22,9 @@ impl Default for Lobby {
 }
 
 impl Lobby {
-    fn send_message(&self, message: &str, id_to: &Uuid) {
+    fn send_message(&self, message: &common::SequencerMutation, id_to: &Uuid) {
         if let Some(socket_recipient) = self.sessions.get(id_to) {
-            let _ = socket_recipient.do_send(WsMessage(message.to_owned()));
+            let _ = socket_recipient.do_send(WsMessage(serialize(message)));
         } else {
             println!("attempting to send message but couldn't find user id.");
         }
@@ -44,7 +46,7 @@ impl Handler<Disconnect> for Lobby {
                 .iter()
                 .filter(|conn_id| *conn_id.to_owned() != msg.id)
                 .for_each(|user_id| {
-                    self.send_message(&format!("{} disconnected.", &msg.id), user_id)
+                    // self.send_message(&format!("{} disconnected.", &msg.id), user_id)
                 });
             if let Some(lobby) = self.rooms.get_mut(&msg.room_id) {
                 if lobby.len() > 1 {
@@ -73,12 +75,12 @@ impl Handler<Connect> for Lobby {
             .iter()
             .filter(|conn_id| *conn_id.to_owned() != msg.self_id)
             .for_each(|conn_id| {
-                self.send_message(&format!("{} just joined!", msg.self_id), conn_id)
+                // self.send_message(&format!("{} just joined!", msg.self_id), conn_id)
             });
 
         self.sessions.insert(msg.self_id, msg.addr);
 
-        self.send_message(&format!("your id is {}", msg.self_id), &msg.self_id);
+        // self.send_message(&format!("your id is {}", msg.self_id), &msg.self_id);
     }
 }
 
@@ -88,20 +90,14 @@ impl Handler<ClientActorMessage> for Lobby {
     fn handle(&mut self, msg: ClientActorMessage, _ctx: &mut Context<Self>) -> Self::Result {
         // common::SequencerMutation
 
-        println!("GOT MESSAGE!");
-        let mutation = common::deserialize(msg.msg.as_bytes());
-        println!("{:?}", mutation);
+        // let mutation = common::deserialize(msg.msg.as_bytes());
+        info!("In lobby {:?}", msg.msg);
 
-        // if msg.msg.starts_with("\\w") {
-        //     if let Some(id_to) = msg.msg.split(' ').collect::<Vec<&str>>().get(1) {
-        //         self.send_message(&msg.msg, &Uuid::parse_str(id_to).unwrap());
-        //     }
-        // } else {
-        //     self.rooms
-        //         .get(&msg.room_id)
-        //         .unwrap()
-        //         .iter()
-        //         .for_each(|client| self.send_message(&msg.msg, client));
-        // }
+        self.rooms
+            .get(&msg.room_id)
+            .unwrap()
+            .iter()
+            .filter(|conn_id| *conn_id.to_owned() != msg.id)
+            .for_each(|client| self.send_message(&msg.msg, client));
     }
 }

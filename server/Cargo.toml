@@ -11,10 +11,6 @@ bench = false
 path = "src/main_server.rs"
 name = "server"
 
-[[bin]]
-path = "src/main_client.rs"
-name = "ws_client"
-
 [dependencies]
 common = {workspace = true}
 url = {workspace = true}
@@ -23,6 +19,7 @@ tokio-tungstenite = { workspace = true }
 tokio = {workspace = true}
 futures-util = {workspace = true}
 futures-channel = {workspace = true}
+log = {workspace=true}
 
 actix-web="3.2.0" # duh
 actix-web-actors="3" # actors specific to web
