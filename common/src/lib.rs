@@ -28,7 +28,7 @@ pub enum SequencerMutation {
 
 pub fn serialize_example() {
     let m = SequencerMutation::CreateStep(1, 2, 3);
-    let vec = serialize(m);
+    let vec = serialize(&m);
     let slice = vec.as_slice();
     let m2 = deserialize(slice);
 
@@ -36,7 +36,7 @@ pub fn serialize_example() {
 }
 
 /// Returns serialized mutation
-pub fn serialize(mutation: SequencerMutation) -> Vec<u8> {
+pub fn serialize(mutation: &SequencerMutation) -> Vec<u8> {
     let mut serializer = flexbuffers::FlexbufferSerializer::new();
     mutation.serialize(&mut serializer).unwrap();
     serializer.take_buffer()

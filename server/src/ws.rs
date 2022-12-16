@@ -97,10 +97,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsConn {
             Ok(ws::Message::Binary(bin)) => {
                 if let Some(mutation) = common::deserialize(bin.to_vec().as_slice()) {
                     println!("{:?}", mutation);
+
+                    self.lobby_addr.do_send(ClientActorMessage {
+                        id: self.id,
+                        msg: mutation,
+                        room_id: self.room,
+                    })
                 } else {
                     println!("Cannot deserialize mutation");
                 }
-                ctx.binary(bin);
+                // ctx.binary(bin);
             }
             Ok(ws::Message::Close(reason)) => {
                 ctx.close(reason);
@@ -112,12 +118,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsConn {
                 print!("Stop message received");
             }
             Ok(ws::Message::Nop) => (),
-            Ok(Text(s)) => self.lobby_addr.do_send(ClientActorMessage {
-                id: self.id,
-                msg: s,
-                room_id: self.room,
-            }),
-
+            Ok(Text(s)) => (),
             Err(e) => panic!("{}", e),
         }
     }
@@ -127,8 +128,8 @@ impl Handler<WsMessage> for WsConn {
     type Result = ();
 
     fn handle(&mut self, msg: WsMessage, ctx: &mut Self::Context) {
-        ctx.text(msg.0.clone());
-        if let Some(mutation) = common::deserialize(msg.0.as_bytes()) {
+        ctx.binary(msg.0.clone());
+        if let Some(mutation) = common::deserialize(&msg.0) {
             println!("{:?}", mutation);
         } else {
             println!("Cannot deserialize mutation");

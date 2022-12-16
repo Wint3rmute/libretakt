@@ -2345,6 +2345,7 @@ dependencies = [
  "env_logger",
  "futures-channel",
  "futures-util",
+ "log",
  "tokio 1.23.0",
  "tokio-tungstenite",
  "url",

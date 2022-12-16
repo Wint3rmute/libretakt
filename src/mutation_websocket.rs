@@ -20,8 +20,8 @@ async fn forward_user_actions(
 ) {
     info!("Starting forwarding user actions loop");
     while let Ok(mutation) = user_mutations.recv_async().await {
-        info!("User created mutation: {:?}", mutation);
-        let serialised = serialize(mutation);
+        info!("From local: {:?}", mutation);
+        let serialised = serialize(&mutation);
         ws_write.send(Message::Binary(serialised)).await.unwrap();
     }
 }
