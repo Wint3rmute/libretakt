@@ -16,7 +16,8 @@ overflow-checks = false
 lto = true
 
 [features]
-enable_synchronisation = []
+synchronisation = []
+quiet = []
 
 [workspace]
 members = ["mverb", "server", "common"]

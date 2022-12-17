@@ -707,23 +707,25 @@ async fn main() {
 
     let (current_step_tx, current_step_rx) = bounded::<CurrentStepData>(64);
 
-    let _voice = Voice::new(&provider);
-    let engine = Engine {
-        sequencer: Sequencer::new(
-            synchronisation_controller.lock().unwrap().register_new(),
-            current_step_tx.clone(),
-            tracks.clone(),
-        ),
-        voices: (0..NUM_OF_VOICES).map(|_| Voice::new(&provider)).collect(),
-    };
+    #[cfg(not(feature = "quiet"))]
+    {
+        let engine = Engine {
+            sequencer: Sequencer::new(
+                synchronisation_controller.lock().unwrap().register_new(),
+                current_step_tx.clone(),
+                tracks.clone(),
+            ),
+            voices: (0..NUM_OF_VOICES).map(|_| Voice::new(&provider)).collect(),
+        };
 
-    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-    let sink = Sink::try_new(&stream_handle).unwrap();
+        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+        let sink = Sink::try_new(&stream_handle).unwrap();
 
-    sink.append(engine);
-    sink.play();
+        sink.append(engine);
+        sink.play();
+    }
 
-    #[cfg(feature = "enable_synchronisation")]
+    #[cfg(feature = "synchronisation")]
     {
         warn!("Synchronisation enabled, connecting to synchronisation server..");
         let mutation_rx_for_sync_server = synchronisation_controller.lock().unwrap().register_new();
