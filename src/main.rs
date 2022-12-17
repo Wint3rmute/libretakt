@@ -887,7 +887,7 @@ async fn ui_main(
                 hash!(),
                 vec2(screen_width() - 10.0, context.title_banner_h),
                 |ui| {
-                    ui.label(Vec2::new(0., 0.), "TURBO SAMPLER");
+                    ui.label(Vec2::new(0., 0.), " libretakt");
                 },
             );
             root_ui().pop_skin();
