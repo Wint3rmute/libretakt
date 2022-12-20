@@ -10,6 +10,7 @@ pub type PatternNum = usize;
 pub type StepNum = usize;
 pub type ParamValue = u8;
 pub type ParamNum = usize;
+pub type TrackLength = usize;
 
 /// Represents a single change applied to the [Sequencer] structure
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -24,6 +25,7 @@ pub enum SequencerMutation {
     SelectPattern(TrackNum, PatternNum),
     StartPlayback,
     StopPlayback,
+    SetTrackLength(TrackNum, TrackLength),
 }
 
 pub enum MutationWithSource {

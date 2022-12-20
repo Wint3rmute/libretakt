@@ -165,6 +165,9 @@ impl Sequencer {
                 }
                 SequencerMutation::StopPlayback => self.stop_playback(),
                 SequencerMutation::StartPlayback => self.start_playback(),
+                SequencerMutation::SetTrackLength(track, new_length) => {
+                    self.tracks[track].set_length(new_length);
+                }
             }
         }
     }
@@ -272,6 +275,22 @@ impl Track {
             Some(playback_parameters)
         } else {
             None
+        }
+    }
+
+    fn set_length(&mut self, new_length: usize) {
+        if new_length > self.patterns[0].steps.len() {
+            for _ in 0..new_length {
+                for pattern in self.patterns.iter_mut() {
+                    pattern.steps.push(None);
+                }
+            }
+        } else {
+            for _ in 0..self.patterns[0].steps.len() - new_length {
+                for pattern in self.patterns.iter_mut() {
+                    pattern.steps.pop();
+                }
+            }
         }
     }
 }
