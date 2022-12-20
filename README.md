@@ -6,6 +6,15 @@ Project name based on Elektron's [Digitakt](https://www.elektron.se/us/digitakt-
 
 ![UI screenshot](./ui_screenshot.jpg)
 
+
+## Running
+
+1. `cargo run` - default sampler UI with audio engine, no synchronisation server.
+2. `cargo run --features enable_synchronisation` - same as above, synchronisation enabled. **Remember to start the server first**.
+3. `cargo run -p server` - starts the synchronisation server.
+4. `cargo run --example headless_ffmpeg_client | ffmpeg -f f32le -i pipe: -f mp3 - | ffmpeg -re -f mp3 -i pipe: -c copy -f flv rtmp://baczek.me/live/livestream` - Headless streaming client. Again, **remember to start the server first**
+
+
 ## Learning resources
 
 - Audio playback - [Rodio](https://github.com/RustAudio/rodio)
