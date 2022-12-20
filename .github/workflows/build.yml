@@ -49,3 +49,10 @@ jobs:
           cargo install cargo-fuzz
           cargo fuzz run playback_params -- -runs=100
 
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v3.2.0
+

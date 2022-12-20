@@ -1,9 +1,26 @@
-FROM rust:latest
+FROM rust:latest as builder
 
-RUN apt-get update && apt-get install -y ffmpeg
+RUN apt update && apt-get install -y libasound2-dev && rm -rf /var/lib/apt/lists/*
 
-COPY . .
+WORKDIR /libretakt
+COPY src src
+COPY server server
+COPY common common
+COPY fff-forward fff-forward
+COPY uigraphics uigraphics
+COPY mverb mverb
+COPY examples examples
+COPY Cargo.toml .
+COPY Cargo.lock .
 
-RUN apt-get install -y libxcb-shape0-dev libxcb-xfixes0-dev libxcb1-dev libxkbcommon-dev libasound2-dev
+RUN cargo build --release --examples && cargo build --release -p server
 
-RUN cargo run --example sample_stream | ffmpeg -f f32le -i pipe: -f mp3 - | ffmpeg -re -f mp3 -i pipe: -c copy -f flv rtmp://baczek.me/live/livestream
+
+FROM debian:buster-slim
+RUN apt update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+WORKDIR /libretakt
+COPY samples samples
+COPY --from=builder /libretakt/target/release/server /usr/local/bin/
+COPY --from=builder /libretakt/target/release/examples/headless_ffmpeg_client /usr/local/bin/
+CMD ["server"]
+
