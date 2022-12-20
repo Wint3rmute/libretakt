@@ -13,6 +13,7 @@ use libretakt::sequencer::{CurrentStepData, Sequencer, SynchronisationController
 mod ui_skins;
 use env_logger::Env;
 
+use macroquad::miniquad::Texture;
 use macroquad::prelude::*;
 
 use flume::{bounded, Receiver};
@@ -734,6 +735,10 @@ async fn ui_main(
     let cat_up: Texture2D = load_texture("uigraphics/cat_up.png").await.unwrap();
     let cat_down: Texture2D = load_texture("uigraphics/cat_down.png").await.unwrap();
 
+    let cat_piano_left: Texture2D = load_texture("uigraphics/cat_left.png").await.unwrap();
+    let cat_piano_right: Texture2D = load_texture("uigraphics/cat_left.png").await.unwrap();
+    let cat_piano_none: Texture2D = load_texture("uigraphics/cat_none.png").await.unwrap();
+
     //Loading UI Skins from ui_skins.rs to not clutter main.rs with code that does not belong in here
     let titlebanner_struct = TitleBannerSkin::new();
     let empty_note_struct = EmptyNoteSkin::new();
@@ -852,15 +857,30 @@ async fn ui_main(
 
             //DRAW EVERYTHING AS GROUPS NOT WINDOWS!!
             //~ Sure thing boss, but I'll also draw a cat
-            let current_cat = if sequencer.tracks[context.current_track as usize].patterns
-                [context.current_pattern as usize]
-                .steps[context.current_step_play as usize]
-                .is_some()
-            {
-                cat_down
+            let cat_should_play = !sequencer.tracks[context.current_track as usize].silenced
+                && sequencer.tracks[context.current_track as usize].patterns
+                    [context.current_pattern as usize]
+                    .steps[context.current_step_play as usize]
+                    .is_some();
+
+            let current_cat = if context.current_track == 0 || context.current_track == 1 {
+                if cat_should_play {
+                    cat_down
+                } else {
+                    cat_up
+                }
             } else {
-                cat_up
+                if cat_should_play {
+                    if context.current_step_play % 2 == 0 {
+                        cat_piano_right
+                    } else {
+                        cat_piano_left
+                    }
+                } else {
+                    cat_piano_none
+                }
             };
+
             draw_texture(
                 current_cat,
                 750.,
