@@ -736,6 +736,10 @@ async fn ui_main(
 ) {
     let _sample = 0.0;
 
+    // Load the cats
+    let cat_up: Texture2D = load_texture("uigraphics/cat_up.png").await.unwrap();
+    let cat_down: Texture2D = load_texture("uigraphics/cat_down.png").await.unwrap();
+
     //Loading UI Skins from ui_skins.rs to not clutter main.rs with code that does not belong in here
     let titlebanner_struct = TitleBannerSkin::new();
     let empty_note_struct = EmptyNoteSkin::new();
@@ -853,6 +857,24 @@ async fn ui_main(
             }
 
             //DRAW EVERYTHING AS GROUPS NOT WINDOWS!!
+            //~ Sure thing boss, but I'll also draw a cat
+            let current_cat = if sequencer.tracks[context.current_track as usize].patterns
+                [context.current_pattern as usize]
+                .steps[context.current_step_play as usize]
+                .is_some()
+            {
+                cat_down
+            } else {
+                cat_up
+            };
+            draw_texture(
+                current_cat,
+                750.,
+                200.,
+                // screen_width() / 2. - cat_up.width() / 2.,
+                // screen_height() / 2. - cat_up.height() / 2.,
+                WHITE,
+            );
 
             root_ui().push_skin(&titlebanner_skin_clone);
             root_ui().group(
