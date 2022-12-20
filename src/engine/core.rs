@@ -100,8 +100,10 @@ impl Voice {
     }
 
     pub fn play(&mut self, parameters: PlaybackParameters) {
-        self.playback_speed = parameters.parameters[Parameter::PitchShift as usize] as f32 / 20.0;
-        // self.playback_speed = 1.0;
+        // +9 //
+        let note = (parameters.parameters[Parameter::Note as usize] + 37) as f32;
+        self.playback_speed = 2.0_f32.powf((note - 69.0 - 12.0) / 12.0); // parameters.parameters[Parameter::PitchShift as usize] as f32 / 32.0;
+                                                                         // self.playback_speed = 1.0;
 
         // self.reverb_params
         //     .fill(parameters.parameters[Parameter::PitchShift as usize as usize] as f32 / 64.0);

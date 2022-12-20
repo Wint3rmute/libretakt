@@ -289,8 +289,8 @@ pub struct PlaybackParameters {
 impl Default for PlaybackParameters {
     fn default() -> Self {
         let mut parameters = [0u8; NUM_OF_PARAMETERS];
-        parameters[Parameter::Note as usize] = 64u8;
-        parameters[Parameter::PitchShift as usize] = 20u8;
+        parameters[Parameter::Note as usize] = 32u8;
+        parameters[Parameter::PitchShift as usize] = 16u8;
         parameters[Parameter::Sample as usize] = 0u8;
         parameters[Parameter::FilterCutoff as usize] = 63u8;
         parameters[Parameter::NoteVelocity as usize] = 63u8;
