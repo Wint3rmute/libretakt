@@ -379,7 +379,7 @@ pub fn compare_floats_with_original_track(
             .default_parameters
             .parameters[i as usize];
 
-        if context.parameter_vals_float[i] as u8 != param_val { 
+        if context.parameter_vals_float[i] as u8 != param_val {
             synchronisation_controller
                 .lock()
                 .unwrap()
@@ -876,13 +876,12 @@ async fn ui_main(
                 hash!(),
                 vec2(screen_width() - 10.0, context.title_banner_h),
                 |ui| {
-                    ui.label(Vec2::new(0., 0.), " libretakt");  
+                    ui.label(Vec2::new(0., 0.), " libretakt");
                 },
             );
             root_ui().pop_skin();
             */
 
-            
             root_ui().push_skin(&titlebanner_skin_clone);
             root_ui().window(
                 hash!("Titlewindow"),
@@ -893,7 +892,6 @@ async fn ui_main(
                 },
             );
             root_ui().pop_skin();
-            
 
             //MAIN TRACK PANEL
             //This panel shows the track currently selected by user.
@@ -902,10 +900,7 @@ async fn ui_main(
             root_ui().window(
                 hash!("MainWindow"),
                 vec2(context.track_choice_panel_w, context.title_banner_h),
-                vec2(
-                    610.,
-                    150.,
-                ),
+                vec2(610., 150.),
                 |ui| {
                     //Group wypisujący nazwę aktualnego tracka
                     Group::new(hash!("GRP1"), Vec2::new(580., 40.)).ui(ui, |ui| {
@@ -937,49 +932,46 @@ async fn ui_main(
                     });
 
                     //Group związany z przechodzeniem między patternami
-                    Group::new(
-                        hash!("Przechodzenie miedzy panelami"),
-                        Vec2::new(580., 40.),
-                    )
-                    .ui(ui, |ui| {
-                        //Utwórz guziki związane z przełączaniem między patternami:
-                        for i in 0..context.max_patterns {
-                            Group::new(
-                                hash!("Pattern group".to_owned() + &i.to_string()),
-                                Vec2::new(40., 39.),
-                            )
-                            .ui(ui, |ui| {
-                                if ui.button(
-                                    Vec2::new(0., 0.),
-                                    if (sequencer.tracks[context.current_track as usize]
-                                        .current_pattern
-                                        == i as usize)
-                                    {
-                                        "X"
-                                    } else {
-                                        "O"
-                                    },
-                                ) {
-                                    change_pattern(
-                                        &mut context,
-                                        &synchronisation_controller,
-                                        &sequencer,
-                                        i as usize,
-                                    );
-                                }
-                            });
-                        }
-                    });                   
+                    Group::new(hash!("Przechodzenie miedzy panelami"), Vec2::new(580., 40.)).ui(
+                        ui,
+                        |ui| {
+                            //Utwórz guziki związane z przełączaniem między patternami:
+                            for i in 0..context.max_patterns {
+                                Group::new(
+                                    hash!("Pattern group".to_owned() + &i.to_string()),
+                                    Vec2::new(40., 39.),
+                                )
+                                .ui(ui, |ui| {
+                                    if ui.button(
+                                        Vec2::new(0., 0.),
+                                        if (sequencer.tracks[context.current_track as usize]
+                                            .current_pattern
+                                            == i as usize)
+                                        {
+                                            "X"
+                                        } else {
+                                            "O"
+                                        },
+                                    ) {
+                                        change_pattern(
+                                            &mut context,
+                                            &synchronisation_controller,
+                                            &sequencer,
+                                            i as usize,
+                                        );
+                                    }
+                                });
+                            }
+                        },
+                    );
                 },
             );
 
             root_ui().window(
                 hash!("MainWindow2"),
-                vec2(context.track_choice_panel_w, context.title_banner_h+150.),
-                vec2(
-                    610.,
-                    150.,
-                ),|ui| {
+                vec2(context.track_choice_panel_w, context.title_banner_h + 150.),
+                vec2(610., 150.),
+                |ui| {
                     if context.current_track != -1 {
                         Group::new(hash!("Panel guziorów"), Vec2::new(590., 130.)).ui(ui, |ui| {
                             for i in 0..num_of_steps {
@@ -1001,8 +993,8 @@ async fn ui_main(
                                         } else {
                                             ui.push_skin(&empty_note_highlighted_skin_clone);
                                         }
-                                    } else if sequencer.tracks[context.current_track as usize].patterns
-                                        [context.current_pattern]
+                                    } else if sequencer.tracks[context.current_track as usize]
+                                        .patterns[context.current_pattern]
                                         .steps[i]
                                         .is_some()
                                     {
@@ -1010,7 +1002,7 @@ async fn ui_main(
                                     } else {
                                         ui.push_skin(&note_empty_skin_clone);
                                     }
-        
+
                                     if ui.button(Vec2::new(0., 0.), "....") {
                                         //im not sure if this kind of if/else chain is valid
                                         //i would use some "returns" and tide it up a bit but i think i cant coz its not a method
@@ -1044,16 +1036,15 @@ async fn ui_main(
                                             // sequencer.tracks[0].patterns[0].steps[i] = Some(Step::default());
                                         }
                                     }
-        
+
                                     ui.pop_skin();
                                 });
                             }
                         });
-                    }        
-                }
+                    }
+                },
             );
 
-            
             //TRACK CHOICE PANEL
             //This panel lists all available tracks. Clicking on one of them shows its content
             //on the main Panel.
