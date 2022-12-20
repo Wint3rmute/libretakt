@@ -37,6 +37,9 @@ pub struct Context {
     pub track_panel_h: f32,
     pub title_banner_h: f32,
 
+    //Track Cards
+    pub current_track_card: i32,
+
     //Pattern varibles:
     pub max_patterns: i32,
     pub current_pattern: usize,
@@ -200,6 +203,87 @@ impl Context {
             self.slider_group_switch_tab = -1i32;
         }
     }
+}
+
+pub fn change_track(context: &mut Context, sequencer: &Sequencer, new_track: i32) {
+    context.current_track_card = 0;
+    context.current_track = new_track;
+    deselect_step(sequencer, context);
+}
+
+pub fn add_track_card(
+    context: &mut Context,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
+    sequencer: &Sequencer,
+) {
+    let mut steps_in_track = sequencer.tracks[context.current_track as usize].patterns[0]
+        .steps
+        .len();
+
+    synchronisation_controller
+        .lock()
+        .unwrap()
+        .mutate(SequencerMutation::SetTrackLength(
+            context.current_track as usize,
+            steps_in_track + 16,
+        ));
+}
+
+pub fn delete_track_card(
+    context: &mut Context,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
+    sequencer: &Sequencer,
+) {
+    let mut steps_in_track = sequencer.tracks[context.current_track as usize].patterns[0]
+        .steps
+        .len();
+
+    if steps_in_track == 16 {
+        return;
+    }
+
+    if context.current_track_card + 1
+        == (sequencer.tracks[context.current_track as usize].patterns[0]
+            .steps
+            .len()
+            / 16) as i32
+    {
+        context.current_track_card -= 1;
+    }
+
+    synchronisation_controller
+        .lock()
+        .unwrap()
+        .mutate(SequencerMutation::SetTrackLength(
+            context.current_track as usize,
+            steps_in_track - 16,
+        ));
+}
+
+pub fn move_track_card(
+    context: &mut Context,
+    synchronisation_controller: &Arc<Mutex<SynchronisationController>>,
+    sequencer: &Sequencer,
+    value: i32,
+) {
+    let mut new_value = context.current_track_card + value;
+
+    //Lower boundry check
+    if new_value < 0 {
+        return;
+    }
+
+    //Upper boundry check
+    if new_value
+        >= (sequencer.tracks[context.current_track as usize].patterns[0]
+            .steps
+            .len()
+            / 16) as i32
+    {
+        return;
+    }
+
+    context.current_track_card = new_value;
 }
 
 pub fn change_pattern(
@@ -455,7 +539,7 @@ pub fn perform_keyboard_operations(
         && context.pressed_number > -1
         && context.pressed_number < sequencer.tracks.len() as i32
     {
-        context.current_track = context.pressed_number;
+        change_track(context, sequencer, context.pressed_number as i32);
         context.is_tab_pressed = false;
         context.pressed_number = -1;
         return;
@@ -770,6 +854,8 @@ async fn ui_main(
         track_panel_h: 300.,
         title_banner_h: 60.,
 
+        current_track_card: 0,
+
         current_track: 0,
         current_step_play: 0,
 
@@ -821,12 +907,6 @@ async fn ui_main(
             //Assigning main variables from sequencer.
             //Not sure if they should be assinged to some context or exist freely this way
             let sequencer = &sequencer;
-            let num_of_steps = sequencer.tracks[context.current_track as usize].patterns
-                [context.current_pattern]
-                .steps
-                .len();
-            // sequencer.tracks[0].default_parameters.parameters[Parameter::Sample as usize] =
-            // sample as u8;
 
             // TODO BACZEK FIX
             context.current_step_play =
@@ -857,30 +937,24 @@ async fn ui_main(
 
             //DRAW EVERYTHING AS GROUPS NOT WINDOWS!!
             //~ Sure thing boss, but I'll also draw a cat
-            let cat_should_play = !sequencer.tracks[context.current_track as usize].silenced
-                && sequencer.tracks[context.current_track as usize].patterns
+
+            let current_cat = if sequencer.tracks[context.current_track as usize].patterns[0]
+                .steps
+                .len()
+                <= context.current_step_play as usize
+            {
+                cat_up
+            } else {
+                if sequencer.tracks[context.current_track as usize].patterns
                     [context.current_pattern as usize]
                     .steps[context.current_step_play as usize]
-                    .is_some();
-
-            let current_cat = if context.current_track == 0 || context.current_track == 1 {
-                if cat_should_play {
+                    .is_some()
+                {
                     cat_down
                 } else {
                     cat_up
                 }
-            } else {
-                if cat_should_play {
-                    if context.current_step_play % 2 == 0 {
-                        cat_piano_right
-                    } else {
-                        cat_piano_left
-                    }
-                } else {
-                    cat_piano_none
-                }
             };
-
             draw_texture(
                 current_cat,
                 750.,
@@ -959,7 +1033,7 @@ async fn ui_main(
                             for i in 0..context.max_patterns {
                                 Group::new(
                                     hash!("Pattern group".to_owned() + &i.to_string()),
-                                    Vec2::new(40., 39.),
+                                    Vec2::new(40., 38.),
                                 )
                                 .ui(ui, |ui| {
                                     if ui.button(
@@ -984,6 +1058,71 @@ async fn ui_main(
                             }
                         },
                     );
+
+                    Group::new(hash!("CARD TRACK gGROUP"), Vec2::new(580., 40.)).ui(ui, |ui| {
+                        Group::new(hash!("Card LEft"), Vec2::new(40., 38.)).ui(ui, |ui| {
+                            if ui.button(Vec2::new(0., 0.), "<") {
+                                move_track_card(
+                                    &mut context,
+                                    &synchronisation_controller,
+                                    &sequencer,
+                                    -1,
+                                );
+                            }
+                        });
+
+                        Group::new(hash!("CARD RIGHT"), Vec2::new(40., 38.)).ui(ui, |ui| {
+                            if ui.button(Vec2::new(0., 0.), ">") {
+                                move_track_card(
+                                    &mut context,
+                                    &synchronisation_controller,
+                                    &sequencer,
+                                    1,
+                                );
+                            }
+                        });
+
+                        Group::new(hash!("CARD DELETE"), Vec2::new(40., 38.)).ui(ui, |ui| {
+                            if ui.button(Vec2::new(0., 0.), "-") {
+                                delete_track_card(
+                                    &mut context,
+                                    &synchronisation_controller,
+                                    &sequencer,
+                                );
+                            }
+                        });
+
+                        Group::new(hash!("CARD ADD"), Vec2::new(40., 38.)).ui(ui, |ui| {
+                            if ui.button(Vec2::new(0., 0.), "+") {
+                                add_track_card(
+                                    &mut context,
+                                    &synchronisation_controller,
+                                    &sequencer,
+                                );
+                            }
+                        });
+
+                        Group::new(hash!("CARD MAX SIZE"), Vec2::new(60., 38.)).ui(ui, |ui| {
+                            ui.label(
+                                Vec2::new(0., 0.),
+                                &("MAX: ".to_owned()
+                                    + &(sequencer.tracks[context.current_track as usize].patterns
+                                        [0]
+                                    .steps
+                                    .len()
+                                        / 16)
+                                        .to_string()),
+                            );
+                        });
+
+                        Group::new(hash!("CARD CURENT ITER"), Vec2::new(60., 38.)).ui(ui, |ui| {
+                            ui.label(
+                                Vec2::new(0., 0.),
+                                &("CUR: ".to_owned()
+                                    + &(context.current_track_card + 1).to_string()),
+                            );
+                        });
+                    });
                 },
             );
 
@@ -994,7 +1133,9 @@ async fn ui_main(
                 |ui| {
                     if context.current_track != -1 {
                         Group::new(hash!("Panel guziorów"), Vec2::new(590., 130.)).ui(ui, |ui| {
-                            for i in 0..num_of_steps {
+                            //przejdz przez 16 ziomali w current
+                            for j in 0..16 {
+                                let i = j + (16 * context.current_track_card as usize);
                                 Group::new(hash!("Tracks", i), Vec2::new(70., 60.)).ui(ui, |ui| {
                                     if context.selected_step == i as i32 {
                                         //Check for note select (yellow)
@@ -1082,8 +1223,8 @@ async fn ui_main(
                         Group::new(hash!("Track2", i), Vec2::new(90., 30.)).ui(ui, |ui| {
                             if ui.button(Vec2::new(10., 0.), (i + 1).to_string()) {
                                 //TODO - dodać warunek że track nie jest zalockowany przez innego uzytkownika!!!
-                                context.current_track = i as i32;
-                                deselect_step(sequencer, &mut context);
+                                change_track(&mut context, sequencer, i as i32);
+                                //SKOKTU
                             }
 
                             let is_silenced = sequencer.tracks[i as usize].silenced;
