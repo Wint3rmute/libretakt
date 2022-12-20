@@ -351,10 +351,7 @@ pub fn compare_params_floats_with_original(
             continue;
         }
 
-        let eps = 0.1;
-        if (context.parameter_vals_float[i] < param_val as f32 - eps)
-            || (context.parameter_vals_float[i] > param_val as f32 + eps)
-        {
+        if context.parameter_vals_float[i] as u8 != param_val {
             synchronisation_controller
                 .lock()
                 .unwrap()
@@ -382,10 +379,7 @@ pub fn compare_floats_with_original_track(
             .default_parameters
             .parameters[i as usize];
 
-        let eps = 0.1;
-        if (context.parameter_vals_float[i] < param_val as f32 - eps)
-            || (context.parameter_vals_float[i] > param_val as f32 + eps)
-        {
+        if context.parameter_vals_float[i] as u8 != param_val { 
             synchronisation_controller
                 .lock()
                 .unwrap()
