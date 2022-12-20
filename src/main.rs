@@ -870,17 +870,19 @@ async fn ui_main(
                 WHITE,
             );
 
+            /*
             root_ui().push_skin(&titlebanner_skin_clone);
             root_ui().group(
                 hash!(),
                 vec2(screen_width() - 10.0, context.title_banner_h),
                 |ui| {
-                    ui.label(Vec2::new(0., 0.), " libretakt");
+                    ui.label(Vec2::new(0., 0.), " libretakt");  
                 },
             );
             root_ui().pop_skin();
+            */
 
-            /*
+            
             root_ui().push_skin(&titlebanner_skin_clone);
             root_ui().window(
                 hash!("Titlewindow"),
@@ -891,7 +893,7 @@ async fn ui_main(
                 },
             );
             root_ui().pop_skin();
-            */
+            
 
             //MAIN TRACK PANEL
             //This panel shows the track currently selected by user.
@@ -901,12 +903,12 @@ async fn ui_main(
                 hash!("MainWindow"),
                 vec2(context.track_choice_panel_w, context.title_banner_h),
                 vec2(
-                    screen_width() - context.track_choice_panel_w - context.user_panel_w,
-                    context.track_panel_h,
+                    610.,
+                    150.,
                 ),
                 |ui| {
                     //Group wypisujący nazwę aktualnego tracka
-                    Group::new(hash!("GRP1"), Vec2::new(screen_width() - 210., 40.)).ui(ui, |ui| {
+                    Group::new(hash!("GRP1"), Vec2::new(580., 40.)).ui(ui, |ui| {
                         if context.current_track != -1 {
                             ui.label(
                                 Vec2::new(0., 0.),
@@ -937,7 +939,7 @@ async fn ui_main(
                     //Group związany z przechodzeniem między patternami
                     Group::new(
                         hash!("Przechodzenie miedzy panelami"),
-                        Vec2::new(screen_width() - 210., 40.),
+                        Vec2::new(580., 40.),
                     )
                     .ui(ui, |ui| {
                         //Utwórz guziki związane z przełączaniem między patternami:
@@ -967,80 +969,91 @@ async fn ui_main(
                                 }
                             });
                         }
-                    });
+                    });                   
+                },
+            );
 
-                    //Wyświetlanie Guzików!!11
+            root_ui().window(
+                hash!("MainWindow2"),
+                vec2(context.track_choice_panel_w, context.title_banner_h+150.),
+                vec2(
+                    610.,
+                    150.,
+                ),|ui| {
                     if context.current_track != -1 {
-                        for i in 0..num_of_steps {
-                            Group::new(hash!("Tracks", i), Vec2::new(70., 60.)).ui(ui, |ui| {
-                                if context.selected_step == i as i32 {
-                                    //Check for note select (yellow)
-                                    ui.push_skin(&note_selected_skin_clone);
-                                } else if context.current_step_play == i as i32 {
-                                    //check for note playing (green)
-                                    ui.push_skin(&note_playing_skin_clone);
-                                } else if context.current_note_highlighted == i as i32 {
-                                    //Check for note highlights (lighter colours)
-                                    if sequencer.tracks[context.current_track as usize].patterns
+                        Group::new(hash!("Panel guziorów"), Vec2::new(590., 130.)).ui(ui, |ui| {
+                            for i in 0..num_of_steps {
+                                Group::new(hash!("Tracks", i), Vec2::new(70., 60.)).ui(ui, |ui| {
+                                    if context.selected_step == i as i32 {
+                                        //Check for note select (yellow)
+                                        ui.push_skin(&note_selected_skin_clone);
+                                    } else if context.current_step_play == i as i32 {
+                                        //check for note playing (green)
+                                        ui.push_skin(&note_playing_skin_clone);
+                                    } else if context.current_note_highlighted == i as i32 {
+                                        //Check for note highlights (lighter colours)
+                                        if sequencer.tracks[context.current_track as usize].patterns
+                                            [context.current_pattern]
+                                            .steps[i]
+                                            .is_some()
+                                        {
+                                            ui.push_skin(&note_placed_highlighted_skin_clone);
+                                        } else {
+                                            ui.push_skin(&empty_note_highlighted_skin_clone);
+                                        }
+                                    } else if sequencer.tracks[context.current_track as usize].patterns
                                         [context.current_pattern]
                                         .steps[i]
                                         .is_some()
                                     {
-                                        ui.push_skin(&note_placed_highlighted_skin_clone);
+                                        ui.push_skin(&note_placed_skin_clone);
                                     } else {
-                                        ui.push_skin(&empty_note_highlighted_skin_clone);
+                                        ui.push_skin(&note_empty_skin_clone);
                                     }
-                                } else if sequencer.tracks[context.current_track as usize].patterns
-                                    [context.current_pattern]
-                                    .steps[i]
-                                    .is_some()
-                                {
-                                    ui.push_skin(&note_placed_skin_clone);
-                                } else {
-                                    ui.push_skin(&note_empty_skin_clone);
-                                }
-
-                                if ui.button(Vec2::new(0., 0.), "....") {
-                                    //im not sure if this kind of if/else chain is valid
-                                    //i would use some "returns" and tide it up a bit but i think i cant coz its not a method
-                                    deselect_step(sequencer, &mut context);
-                                    if sequencer.tracks[context.current_track as usize].patterns
-                                        [context.current_pattern]
-                                        .steps[i]
-                                        .is_some()
-                                    {
-                                        //EDIT MODE:
-                                        if context.is_edit_note_pressed {
-                                            select_step(sequencer, &mut context, i as i32);
+        
+                                    if ui.button(Vec2::new(0., 0.), "....") {
+                                        //im not sure if this kind of if/else chain is valid
+                                        //i would use some "returns" and tide it up a bit but i think i cant coz its not a method
+                                        deselect_step(sequencer, &mut context);
+                                        if sequencer.tracks[context.current_track as usize].patterns
+                                            [context.current_pattern]
+                                            .steps[i]
+                                            .is_some()
+                                        {
+                                            //EDIT MODE:
+                                            if context.is_edit_note_pressed {
+                                                select_step(sequencer, &mut context, i as i32);
+                                            } else {
+                                                synchronisation_controller.lock().unwrap().mutate(
+                                                    SequencerMutation::RemoveStep(
+                                                        context.current_track as usize,
+                                                        context.current_pattern,
+                                                        i,
+                                                    ),
+                                                )
+                                                // sequencer.tracks[0].patterns[0].steps[i] = None;
+                                            }
                                         } else {
                                             synchronisation_controller.lock().unwrap().mutate(
-                                                SequencerMutation::RemoveStep(
+                                                SequencerMutation::CreateStep(
                                                     context.current_track as usize,
                                                     context.current_pattern,
                                                     i,
                                                 ),
                                             )
-                                            // sequencer.tracks[0].patterns[0].steps[i] = None;
+                                            // sequencer.tracks[0].patterns[0].steps[i] = Some(Step::default());
                                         }
-                                    } else {
-                                        synchronisation_controller.lock().unwrap().mutate(
-                                            SequencerMutation::CreateStep(
-                                                context.current_track as usize,
-                                                context.current_pattern,
-                                                i,
-                                            ),
-                                        )
-                                        // sequencer.tracks[0].patterns[0].steps[i] = Some(Step::default());
                                     }
-                                }
-
-                                ui.pop_skin();
-                            });
-                        }
-                    }
-                },
+        
+                                    ui.pop_skin();
+                                });
+                            }
+                        });
+                    }        
+                }
             );
 
+            
             //TRACK CHOICE PANEL
             //This panel lists all available tracks. Clicking on one of them shows its content
             //on the main Panel.
@@ -1086,6 +1099,7 @@ async fn ui_main(
                 },
             );
 
+            /*
             //USER PANEL
             //Displays current users in the jam session, their nick with the corresponding colour.
             root_ui().window(
@@ -1101,6 +1115,7 @@ async fn ui_main(
                     });
                 },
             );
+            */
 
             //SETTINGS/EDIT PANEL
             //This panel allows user to edit parameters of currently selected note.
@@ -1108,7 +1123,7 @@ async fn ui_main(
                 hash!("Settings"),
                 vec2(0., context.title_banner_h + context.track_panel_h),
                 vec2(
-                    screen_width(),
+                    600. + context.track_choice_panel_w + 10.0,
                     screen_height() - context.title_banner_h - context.track_panel_h,
                 ),
                 |ui| {
