@@ -1,5 +1,5 @@
 //! Reads sample data from files and and provides it to other components.
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use log::info;
 use rodio::decoder::Decoder;
@@ -18,8 +18,17 @@ impl Default for SampleProvider {
 
         let mut samples = vec![];
 
+        let mut paths_vec = vec![];
         for path in paths {
-            let path = path.unwrap().path();
+            let path_str = path.unwrap().path().into_os_string();
+            let path_str = path_str.to_str().unwrap().to_string();
+            paths_vec.push(path_str);
+        }
+
+        paths_vec.sort();
+
+        for path in paths_vec {
+            let path = PathBuf::from(path);
 
             if path.extension().unwrap() != "wav" {
                 continue;
