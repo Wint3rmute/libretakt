@@ -900,7 +900,9 @@ async fn ui_main(
         }
 
         if let Ok(step_data) = step_data_receiver.try_recv() {
-            sequencer.tracks[context.current_track as usize].current_step = step_data[0];
+            for (track, step) in sequencer.tracks.iter_mut().zip(step_data) {
+                track.current_step = step;
+            }
         }
 
         {
