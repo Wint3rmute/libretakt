@@ -280,7 +280,7 @@ impl Track {
 
     fn set_length(&mut self, new_length: usize) {
         if new_length > self.patterns[0].steps.len() {
-            for _ in 0..new_length {
+            for _ in 0..new_length - self.patterns[0].steps.len() {
                 for pattern in self.patterns.iter_mut() {
                     pattern.steps.push(None);
                 }
