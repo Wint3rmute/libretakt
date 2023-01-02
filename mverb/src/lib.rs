@@ -91,7 +91,8 @@ impl Default for MVerb {
         };
         // Multiplying the sample rate by 10 fixes the
         // clipping issue and honestly I'm out of ideas now so let's leave it as it is
-        result.set_sample_rate(sample_rate * 10.0);
+        // UPDATE: low early_mix causes this to happen, must be set above 0.7 ???
+        result.set_sample_rate(sample_rate);
 
         result
     }
