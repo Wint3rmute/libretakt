@@ -1,5 +1,6 @@
 use crate::constants::NUM_OF_VOICES;
 use crate::sequencer::{CurrentStepData, Sequencer, SynchronisationController, Track};
+use log::info;
 use std::io::Read;
 
 pub fn load_project() -> Vec<Track> {
@@ -7,14 +8,14 @@ pub fn load_project() -> Vec<Track> {
     project_path.push("project.json");
 
     if let Ok(mut file) = std::fs::File::open(project_path) {
-        println!("Attempting to load tracks from /tmp/project.json..");
+        info!("Attempting to load tracks from /tmp/project.json..");
         let mut buf = String::new();
         file.read_to_string(&mut buf).unwrap();
         let tracks: Vec<Track> = serde_json::from_str(buf.as_str()).unwrap();
-        println!("Tracks loaded!");
+        info!("Tracks loaded!");
         tracks
     } else {
-        println!("No snapshot file, starting from scratch");
+        info!("No snapshot file, starting from scratch");
 
         (0..NUM_OF_VOICES).map(|_| Track::new()).collect()
     }
