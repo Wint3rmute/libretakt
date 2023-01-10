@@ -893,9 +893,9 @@ async fn ui_main(
         clear_background(WHITE);
 
         if is_quit_requested() {
-            println!("Saving sequencer state...");
+            info!("Saving sequencer state...");
             save_project(&sequencer);
-            println!("Exiting");
+            info!("Exiting");
             break;
         }
 
