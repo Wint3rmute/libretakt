@@ -7,6 +7,7 @@ use futures_util::stream::SplitSink;
 use futures_util::SinkExt;
 use futures_util::StreamExt;
 use log::info;
+use std::env;
 use std::sync::{Arc, Mutex};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message, WebSocketStream};
 use url::Url;
@@ -37,10 +38,15 @@ pub async fn send_mutations_to_server(
     synchronisation_controller: Arc<Mutex<SynchronisationController>>,
 ) {
     let uuid = Uuid::new_v4();
-    let mut url = String::from("ws://localhost:8080/");
-    // url.push_str(uuid.to_string().as_str());
-    url.push_str("3f33ef73-4104-4c84-a826-11336ee24d65");
-    let url = Url::parse(url.as_str()).unwrap();
+
+    let url = match env::var("LIBRETAKT_SERVER") {
+        Ok(value) => Url::parse(value.as_str()).unwrap(),
+        Err(_) => {
+            let mut url = String::from("ws://localhost:8081/");
+            url.push_str("3f33ef73-4104-4c84-a826-11336ee24d65");
+            Url::parse(url.as_str()).unwrap()
+        }
+    };
 
     info!("Connecting to url {url}");
 

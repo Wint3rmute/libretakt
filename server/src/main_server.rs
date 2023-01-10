@@ -29,7 +29,7 @@ pub async fn main() -> std::io::Result<()> {
             .service(hello)
             .data(chat_server.clone()) //register the lobby
     })
-    .bind("0.0.0.0:8080")
+    .bind("0.0.0.0:8081")
     .unwrap()
     .run()
     .await
