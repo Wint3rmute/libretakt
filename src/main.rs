@@ -823,6 +823,9 @@ async fn ui_main(
     let cat_piano_right: Texture2D = load_texture("uigraphics/cat_right.png").await.unwrap();
     let cat_piano_none: Texture2D = load_texture("uigraphics/cat_none.png").await.unwrap();
 
+    let cat_piano2_middle: Texture2D = load_texture("uigraphics/cat_middle.png").await.unwrap();
+    let cat_piano2_none: Texture2D = load_texture("uigraphics/cat_none_2.png").await.unwrap();
+
     //Loading UI Skins from ui_skins.rs to not clutter main.rs with code that does not belong in here
     let titlebanner_struct = TitleBannerSkin::new();
     let empty_note_struct = EmptyNoteSkin::new();
@@ -947,7 +950,13 @@ async fn ui_main(
                 <= context.current_step_play as usize
                 || sequencer.tracks[context.current_track as usize].silenced
             {
-                cat_up
+                if context.current_track == 3 {
+                    cat_piano_none
+                } else if context.current_track == 2 {
+                    cat_piano2_none
+                } else {
+                    cat_up
+                }
             } else {
                 if sequencer.tracks[context.current_track as usize].patterns
                     [context.current_pattern as usize]
@@ -960,12 +969,16 @@ async fn ui_main(
                         } else {
                             cat_piano_right
                         }
+                    } else if context.current_track == 2 {
+                        cat_piano2_middle
                     } else {
                         cat_down
                     }
                 } else {
                     if context.current_track == 3 {
                         cat_piano_none
+                    } else if context.current_track == 2 {
+                        cat_piano2_none
                     } else {
                         cat_up
                     }
