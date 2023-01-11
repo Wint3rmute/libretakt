@@ -22,5 +22,6 @@ WORKDIR /libretakt
 COPY samples samples
 COPY --from=builder /libretakt/target/release/server /usr/local/bin/
 COPY --from=builder /libretakt/target/release/examples/headless_ffmpeg_client /usr/local/bin/
+COPY project.json /tmp/project.json
 CMD ["server"]
 
