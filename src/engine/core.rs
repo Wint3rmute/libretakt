@@ -1,7 +1,9 @@
 //! Responsible for sample playback.
+use log::info;
 use rodio::Source;
 
 use crate::constants;
+use crate::constants::SAMPLE_RATE;
 use crate::engine::adsr;
 use crate::engine::ladder_filter;
 use crate::sample_provider::{SampleData, SampleProvider};
@@ -66,8 +68,7 @@ pub struct Voice {
     pub playback_speed: f32,
     // pub reverb: reverb::DattorroReverbF32,
     pub mverb: mverb::MVerb,
-    pub delay: mverb::AllPass<44100>,
-
+    pub delay: mverb::AllPass<{ constants::SAMPLE_RATE as usize * 4 }>,
     pub filter_freq: f32,
     pub filter_adsr: adsr::Adsr,
     pub filter_envelope: f32,
@@ -117,8 +118,10 @@ impl Voice {
         self.delay_send = parameters[Parameter::DelaySend as usize] as f32 / 64.0;
         self.reverb_send = parameters[Parameter::ReverbSend as usize] as f32 / 64.0;
 
-        self.delay
-            .set_length(parameters[Parameter::DelayTime as usize] as usize * 1000);
+        let delay_len =
+            parameters[Parameter::DelayTime as usize] as f32 * 0.1 * SAMPLE_RATE as f32 * 0.5;
+
+        self.delay.set_length(delay_len as usize);
 
         self.filter_freq =
             self.playback_parameters.parameters[Parameter::FilterCutoff as usize] as f32 / 64.0;
