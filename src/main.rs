@@ -819,6 +819,11 @@ async fn ui_main(
     let cat_up: Texture2D = load_texture("uigraphics/cat_up.png").await.unwrap();
     let cat_down: Texture2D = load_texture("uigraphics/cat_down.png").await.unwrap();
 
+    let cat_cymbal_up: Texture2D = load_texture("uigraphics/cat_cymbal_up.png").await.unwrap();
+    let cat_cymbal_down: Texture2D = load_texture("uigraphics/cat_cymbal_down.png")
+        .await
+        .unwrap();
+
     let cat_piano_left: Texture2D = load_texture("uigraphics/cat_left.png").await.unwrap();
     let cat_piano_right: Texture2D = load_texture("uigraphics/cat_right.png").await.unwrap();
     let cat_piano_none: Texture2D = load_texture("uigraphics/cat_none.png").await.unwrap();
@@ -952,6 +957,8 @@ async fn ui_main(
             {
                 if context.current_track == 3 {
                     cat_piano_none
+                } else if context.current_track == 1 {
+                    cat_cymbal_up
                 } else if context.current_track == 2 {
                     cat_piano2_none
                 } else {
@@ -969,6 +976,8 @@ async fn ui_main(
                         } else {
                             cat_piano_right
                         }
+                    } else if context.current_track == 1 {
+                        cat_cymbal_down
                     } else if context.current_track == 2 {
                         cat_piano2_middle
                     } else {
@@ -977,6 +986,8 @@ async fn ui_main(
                 } else {
                     if context.current_track == 3 {
                         cat_piano_none
+                    } else if context.current_track == 1 {
+                        cat_cymbal_up
                     } else if context.current_track == 2 {
                         cat_piano2_none
                     } else {
