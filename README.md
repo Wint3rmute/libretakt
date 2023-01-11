@@ -1,10 +1,22 @@
 # Libretakt
 
-Zmiana żeby coś było
+An open-source standalone software sampler, allowing for collaborative music creation over the network & streaming your performance via an internet radio.
 
-Project name based on Elektron's [Digitakt](https://www.elektron.se/us/digitakt-explorer) (but free/libre/etc).
+Workflow and project name inspired by Elektron's [Digitakt](https://www.elektron.se/us/digitakt-explorer).
 
 ![UI screenshot](./ui_screenshot.jpg)
+
+## Features
+
+- 4 voice polyphony
+- Elektron-style parameter locking
+- Every voice gets a separate:
+  - Amp ADSR
+  - Filter ADSR
+  - Delay effect with adjustable send, feedback & length
+  - Reverb effect with adjustable send, size & early mix
+  - [TODO] an LFO
+- [TODO] a master compressor
 
 
 ## Running
@@ -14,8 +26,12 @@ Project name based on Elektron's [Digitakt](https://www.elektron.se/us/digitakt-
 3. `cargo run -p server` - starts the synchronisation server.
 4. `cargo run --example headless_ffmpeg_client | ffmpeg -f f32le -i pipe: -f mp3 - | ffmpeg -re -f mp3 -i pipe: -c copy -f flv rtmp://baczek.me/live/livestream` - Headless streaming client. Again, **remember to start the server first**
 
+---
 
-## Learning resources
+Note: below are the notes collected during development and some diagrams we made for the university course.
+Most of it is messy, some notes are in polish :)
+
+## Learning resources used during development
 
 - Audio playback - [Rodio](https://github.com/RustAudio/rodio)
 - UI - [MacroQuad](https://macroquad.rs/)
