@@ -50,19 +50,9 @@ impl TitleBannerSkin {
                     color_selected_hovered: Color::from_rgba(55, 55, 55, 68),
                     ..Style::default(default_font.clone())
                 },*/
-                let window_style = root_ui()
-                    .style_builder()
-                    .background(Image::from_file_with_format(
-                        include_bytes!("../uigraphics/note_background_0.png"),
-                        None,
-                    ))
-                    .background_margin(RectOffset::new(20.0, 20.0, 10.0, 10.0))
-                    .margin(RectOffset::new(-20.0, -30.0, 0.0, 0.0))
-                    .build();
 
                 Skin {
                     label_style,
-                    window_style,
                     ..root_ui().default_skin()
                 }
             },
