@@ -807,6 +807,17 @@ async fn main() {
     .await;
 }
 
+fn is_step_hit(track_num: usize, sequencer: &Sequencer) -> bool {
+    sequencer.tracks[track_num].patterns[sequencer.tracks[track_num].current_pattern]
+        .steps
+        .len()
+        > sequencer.tracks[track_num].current_step as usize
+        && !sequencer.tracks[track_num].silenced
+        && sequencer.tracks[track_num].patterns[sequencer.tracks[track_num].current_pattern].steps
+            [sequencer.tracks[track_num].current_step]
+            .is_some()
+}
+
 async fn ui_main(
     mut sequencer: Sequencer,
     sample_provider: Arc<SampleProvider>,
@@ -819,9 +830,17 @@ async fn ui_main(
     let cat_up: Texture2D = load_texture("uigraphics/cat_up.png").await.unwrap();
     let cat_down: Texture2D = load_texture("uigraphics/cat_down.png").await.unwrap();
 
+    let cat_cymbal_up: Texture2D = load_texture("uigraphics/cat_cymbal_up.png").await.unwrap();
+    let cat_cymbal_down: Texture2D = load_texture("uigraphics/cat_cymbal_down.png")
+        .await
+        .unwrap();
+
     let cat_piano_left: Texture2D = load_texture("uigraphics/cat_left.png").await.unwrap();
-    let cat_piano_right: Texture2D = load_texture("uigraphics/cat_left.png").await.unwrap();
+    let cat_piano_right: Texture2D = load_texture("uigraphics/cat_right.png").await.unwrap();
     let cat_piano_none: Texture2D = load_texture("uigraphics/cat_none.png").await.unwrap();
+
+    let cat_piano2_middle: Texture2D = load_texture("uigraphics/cat_middle.png").await.unwrap();
+    let cat_piano2_none: Texture2D = load_texture("uigraphics/cat_none_2.png").await.unwrap();
 
     //Loading UI Skins from ui_skins.rs to not clutter main.rs with code that does not belong in here
     let titlebanner_struct = TitleBannerSkin::new();
@@ -889,6 +908,11 @@ async fn ui_main(
 
     deselect_step(&sequencer, &mut context);
 
+    let mut cat_1_seen = false;
+    let mut cat_2_seen = false;
+    let mut cat_3_seen = false;
+    let mut cat_4_seen = false;
+
     loop {
         clear_background(WHITE);
 
@@ -940,31 +964,101 @@ async fn ui_main(
             //DRAW EVERYTHING AS GROUPS NOT WINDOWS!!
             //~ Sure thing boss, but I'll also draw a cat
 
-            let current_cat = if sequencer.tracks[context.current_track as usize].patterns[0]
-                .steps
-                .len()
-                <= context.current_step_play as usize
-            {
-                cat_up
-            } else {
-                if sequencer.tracks[context.current_track as usize].patterns
-                    [context.current_pattern as usize]
-                    .steps[context.current_step_play as usize]
-                    .is_some()
-                {
-                    cat_down
+            // let current_cat = if sequencer.tracks[context.current_track as usize].patterns
+            //     [context.current_pattern]
+            //     .steps
+            //     .len()
+            //     <= context.current_step_play as usize
+            //     || sequencer.tracks[context.current_track as usize].silenced
+            // {
+            //     if context.current_track == 3 {
+            //         cat_piano_none
+            //     } else if context.current_track == 1 {
+            //         cat_cymbal_up
+            //     } else if context.current_track == 2 {
+            //         cat_piano2_none
+            //     } else {
+            //         cat_up
+            //     }
+            // } else {
+            //     if sequencer.tracks[context.current_track as usize].patterns
+            //         [context.current_pattern as usize]
+            //         .steps[context.current_step_play as usize]
+            //         .is_some()
+            //     {
+            //         if context.current_track == 3 {
+            //             if context.current_step_play % 2 == 0 {
+            //                 cat_piano_left
+            //             } else {
+            //                 cat_piano_right
+            //             }
+            //         } else if context.current_track == 1 {
+            //             cat_cymbal_down
+            //         } else if context.current_track == 2 {
+            //             cat_piano2_middle
+            //         } else {
+            //             cat_down
+            //         }
+            //     } else {
+            //         if context.current_track == 3 {
+            //             cat_piano_none
+            //         } else if context.current_track == 1 {
+            //             cat_cymbal_up
+            //         } else if context.current_track == 2 {
+            //             cat_piano2_none
+            //         } else {
+            //             cat_up
+            //         }
+            //     }
+            // };
+            // draw_texture(
+            //     current_cat,
+            //     750.,
+            //     200.,
+            //     // screen_width() / 2. - cat_up.width() / 2.,
+            //     // screen_height() / 2. - cat_up.height() / 2.,
+            //     WHITE,
+            // );
+
+            if cat_1_seen || !sequencer.tracks[0].silenced {
+                if is_step_hit(0, sequencer) && sequencer.playing {
+                    draw_texture(cat_down, 750., 200., WHITE);
+                    cat_1_seen = true;
                 } else {
-                    cat_up
+                    draw_texture(cat_up, 750., 200., WHITE);
                 }
-            };
-            draw_texture(
-                current_cat,
-                750.,
-                200.,
-                // screen_width() / 2. - cat_up.width() / 2.,
-                // screen_height() / 2. - cat_up.height() / 2.,
-                WHITE,
-            );
+            }
+
+            if cat_2_seen || !sequencer.tracks[1].silenced {
+                if is_step_hit(1, sequencer) && sequencer.playing {
+                    draw_texture(cat_cymbal_down, 750., 400., WHITE);
+                    cat_2_seen = true;
+                } else {
+                    draw_texture(cat_cymbal_up, 750., 400., WHITE);
+                }
+            }
+
+            if cat_3_seen || !sequencer.tracks[2].silenced {
+                if is_step_hit(2, sequencer) && sequencer.playing {
+                    draw_texture(cat_piano2_middle, 750., 600., WHITE);
+                    cat_3_seen = true;
+                } else {
+                    draw_texture(cat_piano2_none, 750., 600., WHITE);
+                }
+            }
+
+            if cat_4_seen || !sequencer.tracks[3].silenced {
+                if is_step_hit(3, sequencer) && sequencer.playing {
+                    if sequencer.tracks[3].current_step % 2 == 0 {
+                        draw_texture(cat_piano_left, 750., 800., WHITE);
+                        cat_4_seen = true;
+                    } else {
+                        draw_texture(cat_piano_right, 750., 800., WHITE);
+                    }
+                } else {
+                    draw_texture(cat_piano_none, 750., 800., WHITE);
+                }
+            }
 
             /*
             root_ui().push_skin(&titlebanner_skin_clone);
