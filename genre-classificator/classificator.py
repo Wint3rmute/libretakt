@@ -1,4 +1,3 @@
-
 import pickle
 import time
 
@@ -18,6 +17,7 @@ while True:
     # download sample
     body = []
     start = time.time()
+    print("Downloading sample..")
     r = requests.get('http://70.34.252.191:8080/live/livestream.flv', verify=False, stream=True)
 
     for chunk in r.iter_content():
@@ -30,6 +30,7 @@ while True:
         binary_file.write(b''.join(body))
 
     # open sample
+    print("Analyzing sample...")
     y, sr = librosa.load("sample.flv")
     audio, _ = librosa.effects.trim(y)
 
@@ -57,4 +58,4 @@ while True:
 
     prediction_index = int(model.predict(features))
 
-    print(labels[prediction_index])
+    print("Prediction:", labels[prediction_index])

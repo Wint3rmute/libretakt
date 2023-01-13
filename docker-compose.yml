@@ -27,4 +27,13 @@ services:
       - 1935:1935
       - 8080:8080
     command: ./objs/srs -c conf/docker.conf
+  
+  genre_classificator:
+    build:
+      context: .
+      dockerfile: genre.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - streaming_server
+    command: python -u classificator.py
 

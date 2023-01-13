@@ -7,7 +7,12 @@ from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 
 # use features_3_sec file from GTZAN dataset
-data = pd.read_csv('data/features_3_sec.csv')
+try:
+    data = pd.read_csv('data/features_3_sec.csv')
+except Exception as e:
+    print("Download the dataset from https://www.kaggle.com/datasets/andradaolteanu/gtzan-dataset-music-genre-classification?resource=download")
+    exit(1)
+
 data = data.iloc[0:, 1:]
 
 y = data['label']  # genre variable.
