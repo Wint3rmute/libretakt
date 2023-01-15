@@ -97,7 +97,8 @@ impl Default for LadderParameters {
             poles: 3,
             pole_value: 1.,
             drive: 0.,
-            sample_rate: 44100.,
+            // sample_rate: 44100.,
+            sample_rate: 44100. * 2.0,
             g: 0.07135868,
         }
     }
