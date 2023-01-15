@@ -833,7 +833,11 @@ async fn ui_main(
     let cat_down_right: Texture2D = load_texture("uigraphics/cat_down_right.png").await.unwrap();
 
     let cat_cymbal_up: Texture2D = load_texture("uigraphics/cat_cymbal_up.png").await.unwrap();
-    let cat_cymbal_down: Texture2D = load_texture("uigraphics/cat_cymbal_down.png")
+    let cat_cymbal_down_left: Texture2D = load_texture("uigraphics/cat_cymbal_down_left.png")
+        .await
+        .unwrap();
+
+    let cat_cymbal_down_right: Texture2D = load_texture("uigraphics/cat_cymbal_down_right.png")
         .await
         .unwrap();
 
@@ -1024,7 +1028,7 @@ async fn ui_main(
 
             if cat_1_seen || !sequencer.tracks[0].silenced {
                 if is_step_hit(0, sequencer) && sequencer.playing {
-                    if sequencer.tracks[3].current_step % 2 == 0 {
+                    if sequencer.tracks[0].current_step % 2 == 0 {
                         draw_texture(cat_down_right, 750., 200., WHITE);
                     } else {
                         draw_texture(cat_down_left, 750., 200., WHITE);
@@ -1037,7 +1041,11 @@ async fn ui_main(
 
             if cat_2_seen || !sequencer.tracks[1].silenced {
                 if is_step_hit(1, sequencer) && sequencer.playing {
-                    draw_texture(cat_cymbal_down, 750., 400., WHITE);
+                    if sequencer.tracks[1].current_step % 2 == 0 {
+                        draw_texture(cat_cymbal_down_left, 750., 400., WHITE);
+                    } else {
+                        draw_texture(cat_cymbal_down_right, 750., 400., WHITE);
+                    }
                     cat_2_seen = true;
                 } else {
                     draw_texture(cat_cymbal_up, 750., 400., WHITE);
