@@ -828,7 +828,9 @@ async fn ui_main(
 
     // Load the cats
     let cat_up: Texture2D = load_texture("uigraphics/cat_up.png").await.unwrap();
-    let cat_down: Texture2D = load_texture("uigraphics/cat_down.png").await.unwrap();
+    // let cat_down: Texture2D = load_texture("uigraphics/cat_down.png").await.unwrap();
+    let cat_down_left: Texture2D = load_texture("uigraphics/cat_down_left.png").await.unwrap();
+    let cat_down_right: Texture2D = load_texture("uigraphics/cat_down_right.png").await.unwrap();
 
     let cat_cymbal_up: Texture2D = load_texture("uigraphics/cat_cymbal_up.png").await.unwrap();
     let cat_cymbal_down: Texture2D = load_texture("uigraphics/cat_cymbal_down.png")
@@ -1022,7 +1024,11 @@ async fn ui_main(
 
             if cat_1_seen || !sequencer.tracks[0].silenced {
                 if is_step_hit(0, sequencer) && sequencer.playing {
-                    draw_texture(cat_down, 750., 200., WHITE);
+                    if sequencer.tracks[3].current_step % 2 == 0 {
+                        draw_texture(cat_down_right, 750., 200., WHITE);
+                    } else {
+                        draw_texture(cat_down_left, 750., 200., WHITE);
+                    }
                     cat_1_seen = true;
                 } else {
                     draw_texture(cat_up, 750., 200., WHITE);
