@@ -22,9 +22,11 @@ Workflow and project name inspired by Elektron's [Digitakt](https://www.elektron
 ## Running
 
 1. `cargo run` - default sampler UI with audio engine, no synchronisation server.
-2. `cargo run --features enable_synchronisation` - same as above, synchronisation enabled. **Remember to start the server first**.
+2. `LIBRETAKT_SERVER=ws://70.34.252
+.191:8081/3f33ef73-4104-4c84-a826-11336ee24d65 cargo run --release --features enable_synchronisation` - same as above, synchronisation enabled. **Remember to start the server first**.
 3. `cargo run -p server` - starts the synchronisation server.
 4. `cargo run --example headless_ffmpeg_client | ffmpeg -f f32le -i pipe: -f mp3 - | ffmpeg -re -f mp3 -i pipe: -c copy -f flv rtmp://baczek.me/live/livestream` - Headless streaming client. Again, **remember to start the server first**
+5. http://70.34.252.191:8080/players/srs_player.html?autostart=true&stream=livestream.flv&port=8080&schema=http
 
 ---
 
