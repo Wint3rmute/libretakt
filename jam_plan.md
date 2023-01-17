@@ -43,6 +43,31 @@
 4. Odpalamy track 4, powoli, otwieramy filter envelope
 5. Dochodzimy do agresywnego brzmienia w tracku 4, uruchamiany track 1
 6. Zamykamy filtr w tracku 4 żeby sobie względnie cicho plumkał
-7. Zwiększamy reverb send w tracku 4, mówimy że jest fajny efekt
-8. todo: skończ
+7. Mutujemy track 1
+8. Zwiększamy reverb send w tracku 4, mówimy że jest fajny efekt
+9. Zwiększamy delay send w tracku 4, mówimy że też fajne
+10. Ok, teraz płynnie przejdziemy do czegoś trochę mniej minimalnego.
+11. Wyciszamy track 4, włączamy track 3
+
+## Jam 3:
+
+1. Track 1: filter cutoff na 20%
+2. Przełączamy track 1 na pattern 2
+4. Track 4, sample przełączony na 0.0
+5. Track 4 delay send wyłączone, reverb send na 2.0
+6. Powoli zwiększamy filter cutoff na tracku 1
+7. Przełączamy track 2 na pattern 2
+8. Wyłączamy track 2
+9. Powoli otwieramy filter cutoff na tracku 1
+10. Po otwarciu praktycznie na maxa filter cutoff na tracku 1, wyciszamy go i kończymy takt z włączonym trackiem 2
+11. Odpalamy jednocześnie track 1, 2 i 3
+12. Czekamy żeby ludzie pozbierali szczęki z podłogi B) xd
+13. Wyciszamy track 1
+14. Powoli zwiększamy filter envelope na tracku 4
+15. Dochodzimy do agresywnego dźwięku w tracku 4
+16. Włączamy track 1
+17. Bawimy się efektami w tracku 4
+18. Wyciszamy track 4 i 3
+19. Bawimy się bębnami, note w góre i w dół, wyciszanie na zmianę tracku 1 i 2
+20. Wszystko na raz, losowe kręcenie pokrętłami
 
