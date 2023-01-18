@@ -34,11 +34,7 @@
 0. A focus na track 1
 1. B focus na track 4
 2. A 1-szy track pattern 1 
-3. B 2-gi track pattern 1 (domyślny)
-4. B 3-ci track pattern 1 (domyślny) (Na nim nie gramy w tym przypadku)
-5. B 4-ty track pattern 2 (domyślny)
-6. B Zmutowane wszystko poza 1szym trackiem
-7. B Track 4, filter envelope na 10%, malutko
+3. m, malutko
 
 ### Jazdunia
 
@@ -62,11 +58,12 @@
 2. A Przełączamy track 1 na pattern 2
 4. B Track 4, sample przełączony na 0.0
 5. B Track 4 delay send wyłączone, reverb send na 2.0
-6. A Powoli zwiększamy filter cutoff na tracku 1
-7. A Przełączamy track 2 na pattern 2
+5. A Włącz track 1 
+6. A Powoli zwiększamy filter cutoff na tracku 1 do 50%
 8. A Wyłączamy track 2
-9. A Powoli otwieramy filter cutoff na tracku 1
-10. A Po otwarciu praktycznie na maxa filter cutoff na tracku 1, wyciszamy go i kończymy takt z włączonym trackiem 2
+7. A Przełączamy track 2 na pattern 2
+9. A Powoli otwieramy filter cutoff na tracku 1 do 100%
+10. B Po otwarciu praktycznie na maxa filter cutoff na tracku 1, wyciszamy go i kończymy takt z włączonym trackiem 2
 11. B Odpalamy jednocześnie track 1, 2 i 3
 12. B Czekamy żeby ludzie pozbierali szczęki z podłogi B) xd
 13. A Wyciszamy track 1
