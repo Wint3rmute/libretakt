@@ -34,7 +34,8 @@
 0. A focus na track 1
 1. B focus na track 4
 2. A 1-szy track pattern 1 
-3. m, malutko
+6. B Zmutowane wszystko poza 1szym trackiem
+7. B Track 4, filter envelope na 10%, malutko
 
 ### Jazdunia
 
