@@ -1,23 +1,29 @@
+
 import pickle
 import time
 
 import librosa
 import numpy as np
 import requests
+import asyncio
 from librosa.beat import tempo
 from librosa.effects import harmonic, percussive
 from librosa.feature import chroma_stft, rms, spectral_centroid, spectral_bandwidth, spectral_rolloff, \
     zero_crossing_rate, mfcc
+from fastapi import FastAPI
+
+app = FastAPI()
+prediction = ""
 
 # load model
 model = pickle.load(open('model', "rb"))
-labels = ["blues", "classical", "country", "disco", "hiphop", "jazz", "metal", "pop", "reggae", "rock"]
+labels = ["blues", "classical", "country", "disco", "hiphop", "jazz", "metal", "pop", "reggae", "rock",
+          "melodic_techno", "techno", "ambient"]
 
-while True:
-    # download sample
+
+async def predict():
     body = []
     start = time.time()
-    print("Downloading sample..")
     r = requests.get('http://70.34.252.191:8080/live/livestream.flv', verify=False, stream=True)
 
     for chunk in r.iter_content():
@@ -30,7 +36,6 @@ while True:
         binary_file.write(b''.join(body))
 
     # open sample
-    print("Analyzing sample...")
     y, sr = librosa.load("sample.flv")
     audio, _ = librosa.effects.trim(y)
 
@@ -55,7 +60,18 @@ while True:
 
     # predict
     features = np.array(features).reshape(1, 58)
-
     prediction_index = int(model.predict(features))
 
-    print("Prediction:", labels[prediction_index])
+    global prediction
+    prediction = labels[prediction_index]
+
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(predict())
+
+
+@app.get("/prediction")
+def get_prediction():
+    return prediction
+
