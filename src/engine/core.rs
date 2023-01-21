@@ -73,6 +73,8 @@ pub struct Voice {
     pub filter_adsr: adsr::Adsr,
     pub filter_envelope: f32,
 
+    pub pitch_adsr: adsr::Adsr,
+    pub pitch_adsr_intensity: f32,
     pub amp_adsr: adsr::Adsr,
     pub amp: f32,
 
@@ -117,6 +119,16 @@ impl Voice {
 
         self.delay_send = parameters[Parameter::DelaySend as usize] as f32 / 64.0;
         self.reverb_send = parameters[Parameter::ReverbSend as usize] as f32 / 64.0;
+
+        self.pitch_adsr_intensity = parameters[Parameter::FilterType as usize] as f32 / 64.0 - 0.5;
+        self.pitch_adsr.attack = 1.0
+            / (parameters[Parameter::DelayParamIdkWhatYet1 as usize] as f32 + 0.2).powi(2)
+            / 10.0;
+        self.pitch_adsr.sustain = 1.0;
+        // self.pitch_adsr.decay = 1.0
+        //     / (parameters[Parameter::DelayParamIdkWhatYet2 as usize] as f32 + 0.2).powi(2)
+        //     / 10.0;
+        self.pitch_adsr.reset();
 
         let delay_len =
             parameters[Parameter::DelayTime as usize] as f32 * 0.1 * SAMPLE_RATE as f32 * 0.5;
@@ -188,6 +200,8 @@ impl Voice {
             filter_envelope: 0.0,
 
             amp_adsr: adsr::Adsr::default(),
+            pitch_adsr: adsr::Adsr::default(),
+            pitch_adsr_intensity: 1.0,
             amp: 1.0,
 
             b0: 0.0,
@@ -234,7 +248,8 @@ impl Voice {
             0.0
         } else {
             let result = self.get_at_index(sample, self.play_position);
-            self.play_position += self.playback_speed;
+            self.play_position +=
+                self.playback_speed + self.pitch_adsr.tick(true) * self.pitch_adsr_intensity;
             result
         }
     }
