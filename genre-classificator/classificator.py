@@ -1,4 +1,3 @@
-
 import pickle
 import time
 
@@ -20,8 +19,11 @@ model = pickle.load(open('model', "rb"))
 labels = ["blues", "classical", "country", "disco", "hiphop", "jazz", "metal", "pop", "reggae", "rock",
           "melodic_techno", "techno", "ambient"]
 
+prediction = ""
 
-async def predict():
+
+def predict():
+    print("prediction started")
     body = []
     start = time.time()
     r = requests.get('http://70.34.252.191:8080/live/livestream.flv', verify=False, stream=True)
@@ -32,6 +34,7 @@ async def predict():
         if time.time() > (start + 3):
             break
 
+    print("sample downloaded")
     with open("sample.flv", "wb") as binary_file:
         binary_file.write(b''.join(body))
 
@@ -58,6 +61,7 @@ async def predict():
         features.append(np.mean(mfcc_))
         features.append(np.var(mfcc_))
 
+    print("features extracted")
     # predict
     features = np.array(features).reshape(1, 58)
     prediction_index = int(model.predict(features))
@@ -68,10 +72,13 @@ async def predict():
 
 @app.on_event("startup")
 async def startup_event():
-    asyncio.create_task(predict())
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, predict)
 
 
 @app.get("/prediction")
-def get_prediction():
+async def get_prediction():
+    print("get prediction")
+    loop = asyncio.get_running_loop()
+    loop.run_in_executor(None, predict)
     return prediction
-
