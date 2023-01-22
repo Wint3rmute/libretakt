@@ -35,5 +35,7 @@ services:
     restart: unless-stopped
     depends_on:
       - streaming_server
-    command: python -u classificator.py
+    ports:
+      - 8000:8000
+    command: uvicorn classificator:app
 
