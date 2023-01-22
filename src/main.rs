@@ -849,6 +849,11 @@ async fn ui_main(
     let cat_piano2_middle: Texture2D = load_texture("uigraphics/cat_middle.png").await.unwrap();
     let cat_piano2_none: Texture2D = load_texture("uigraphics/cat_none_2.png").await.unwrap();
 
+    let cat_bateman_up: Texture2D = load_texture("uigraphics/cat_bateman_up.png").await.unwrap();
+    let cat_bateman_down: Texture2D = load_texture("uigraphics/cat_bateman_down.png")
+        .await
+        .unwrap();
+
     //Loading UI Skins from ui_skins.rs to not clutter main.rs with code that does not belong in here
     let titlebanner_struct = TitleBannerSkin::new();
     let empty_note_struct = EmptyNoteSkin::new();
@@ -1077,13 +1082,16 @@ async fn ui_main(
             if cat_4_seen || !sequencer.tracks[3].silenced {
                 if is_step_hit(3, sequencer) && sequencer.playing {
                     if sequencer.tracks[3].current_step % 2 == 0 {
-                        draw_texture(cat_piano_left, 750., 800., WHITE);
+                        // draw_texture(cat_piano_left, 750., 800., WHITE);
+                        draw_texture(cat_bateman_down, 750., 800., WHITE);
                         cat_4_seen = true;
                     } else {
-                        draw_texture(cat_piano_right, 750., 800., WHITE);
+                        // draw_texture(cat_piano_right, 750., 800., WHITE);
+                        draw_texture(cat_bateman_down, 750., 800., WHITE);
                     }
                 } else {
-                    draw_texture(cat_piano_none, 750., 800., WHITE);
+                    // draw_texture(cat_piano_none, 750., 800., WHITE);
+                    draw_texture(cat_bateman_up, 750., 800., WHITE);
                 }
             }
 
