@@ -66,8 +66,10 @@ def predict():
     features = np.array(features).reshape(1, 58)
     prediction_index = int(model.predict(features))
 
+    p = labels[prediction_index]
+    print(f"prediction: {p}")
     global prediction
-    prediction = labels[prediction_index]
+    prediction = p
 
 
 @app.on_event("startup")
