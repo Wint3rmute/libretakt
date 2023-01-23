@@ -17,7 +17,7 @@ prediction = ""
 # load model
 model = pickle.load(open('model', "rb"))
 labels = ["blues", "classical", "country", "disco", "hiphop", "jazz", "metal", "pop", "reggae", "rock",
-          "melodic_techno", "techno", "ambient"]
+          "melodic techno", "techno", "ambient"]
 
 prediction = ""
 
