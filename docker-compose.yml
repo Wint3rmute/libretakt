@@ -37,5 +37,5 @@ services:
       - streaming_server
     ports:
       - 8000:8000
-    command: python -u -m uvicorn classificator:app
+    command: python -u -m uvicorn classificator:app --host 0.0.0.0 --port 8000
 
