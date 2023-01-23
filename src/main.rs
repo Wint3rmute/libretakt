@@ -6,6 +6,7 @@ use crate::ui_skins::*;
 use common::{Parameter, SequencerMutation, NUM_OF_PARAMETERS};
 use libretakt::constants::NUM_OF_VOICES;
 use libretakt::engine::{Engine, Voice};
+use libretakt::genre_info;
 use libretakt::mutation_websocket;
 use libretakt::persistence::{load_project, save_project};
 use libretakt::sample_provider::SampleProvider;
@@ -919,8 +920,20 @@ async fn ui_main(
     let mut cat_3_seen = false;
     let mut cat_4_seen = false;
 
+    let (genre_prediction_tx, genre_prediction_rx) = bounded::<String>(64);
+    std::thread::spawn(|| {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        info!("Starting predict api runtime");
+        runtime.block_on(async { genre_info::get_predictions(genre_prediction_tx).await })
+    });
+    let mut top_text: String = String::from(" libretakt");
+
     loop {
         clear_background(WHITE);
+
+        if let Ok(new_genre) = genre_prediction_rx.try_recv() {
+            top_text = " libretakt, now playing:".to_owned() + &new_genre;
+        }
 
         if is_quit_requested() {
             info!("Saving sequencer state...");
@@ -1092,7 +1105,7 @@ async fn ui_main(
                 vec2(0., 0.),
                 vec2(screen_width(), context.title_banner_h),
                 |ui| {
-                    ui.label(Vec2::new(0., 0.), " libretakt");
+                    ui.label(Vec2::new(0., 0.), top_text.as_str());
                 },
             );
             root_ui().pop_skin();

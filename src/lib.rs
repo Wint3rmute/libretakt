@@ -2,6 +2,7 @@
 
 pub mod constants;
 pub mod engine;
+pub mod genre_info;
 pub mod mutation_websocket;
 pub mod persistence;
 pub mod sample_provider;
