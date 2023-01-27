@@ -27,7 +27,8 @@ Workflow and project name inspired by Elektron's [Digitakt](https://www.elektron
 3. `cargo run -p server` - starts the synchronisation server.
 4. `cargo run --example headless_ffmpeg_client | ffmpeg -f f32le -i pipe: -f mp3 - | ffmpeg -re -f mp3 -i pipe: -c copy -f flv rtmp://baczek.me/live/livestream` - Headless streaming client. Again, **remember to start the server first**
 5. For windows `$env:LIBRETAKT_SERVER = "ws://70.34.252.191:8081/3f33ef73-4104-4c84-a826-11336ee24d65"`
-5. http://70.34.252.191:8080/players/srs_player.html?autostart=true&stream=livestream.flv&port=8080&schema=http
+6. `cp project.json C:\\Users\\mateu\\AppData\\Local\\Temp\\project.json`
+7. http://70.34.252.191:8080/players/srs_player.html?autostart=true&stream=livestream.flv&port=8080&schema=http
 
 ---
 
