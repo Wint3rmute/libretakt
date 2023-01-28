@@ -4,6 +4,8 @@ An open-source standalone software sampler, allowing for collaborative music cre
 
 Workflow and project name inspired by Elektron's [Digitakt](https://www.elektron.se/us/digitakt-explorer).
 
+**You can listen to a demo [here](https://odysee.com/@Wint3rmute:c/libretakt_demo:2)**
+
 ![UI screenshot](./ui_screenshot.jpg)
 
 ## Features
@@ -11,6 +13,7 @@ Workflow and project name inspired by Elektron's [Digitakt](https://www.elektron
 - 4 voice polyphony
 - Elektron-style parameter locking
 - Every voice gets a separate:
+  - Animated cat
   - Amp ADSR
   - Filter ADSR
   - Delay effect with adjustable send, feedback & length
