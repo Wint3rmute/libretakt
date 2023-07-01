@@ -46,7 +46,7 @@ jobs:
           sudo apt install libasound2-dev
           rustup install nightly
           rustup default nightly
-          cargo install cargo-fuzz
+          cargo install -f cargo-fuzz
           cargo fuzz run playback_params -- -runs=100
 
   rust_docker:
