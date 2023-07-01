@@ -6,7 +6,6 @@ use crate::ui_skins::*;
 use common::{Parameter, SequencerMutation, NUM_OF_PARAMETERS};
 use libretakt::constants::NUM_OF_VOICES;
 use libretakt::engine::{Engine, Voice};
-use libretakt::mutation_websocket;
 use libretakt::persistence::{load_project, save_project};
 use libretakt::sample_provider::SampleProvider;
 use libretakt::sequencer::{CurrentStepData, Sequencer, SynchronisationController, Track};
@@ -773,24 +772,6 @@ async fn main() {
 
     sink.append(engine);
     sink.play();
-
-    #[cfg(feature = "enable_synchronisation")]
-    {
-        warn!("Synchronisation enabled, connecting to synchronisation server..");
-        let mutation_rx_for_sync_server = synchronisation_controller.lock().unwrap().register_new();
-
-        let sync_controller_clone = synchronisation_controller.clone();
-        std::thread::spawn(|| {
-            let runtime = tokio::runtime::Runtime::new().unwrap();
-            runtime.block_on(async {
-                mutation_websocket::send_mutations_to_server(
-                    mutation_rx_for_sync_server,
-                    sync_controller_clone,
-                )
-                .await
-            })
-        });
-    }
 
     let sequencer = Sequencer::new(
         synchronisation_controller.lock().unwrap().register_new(),
