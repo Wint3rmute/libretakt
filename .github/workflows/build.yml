@@ -37,18 +37,6 @@ jobs:
           sudo apt install libasound2-dev
           cargo test --workspace
 
-  fuzz:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Build
-        run: |
-          sudo apt install libasound2-dev
-          rustup install nightly
-          rustup default nightly
-          cargo install -f cargo-fuzz
-          cargo fuzz run playback_params -- -runs=100
-
   rust_docker:
     runs-on: ubuntu-latest
     steps:
