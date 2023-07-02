@@ -19,7 +19,7 @@ lto = true
 enable_synchronisation = []
 
 [workspace]
-members = ["mverb", "server", "common"]
+members = ["mverb", "common"]
 
 [workspace.dependencies]
 common = { path = "common" }
@@ -33,11 +33,8 @@ log = "0.4.17"
 
 [dependencies]
 mverb = {path = "mverb" }
-server = {path = "server" }
 common = { path = "common" }
 url = {workspace = true}
-uuid = {workspace = true}
-tokio-tungstenite = {workspace = true}
 futures-util = {workspace = true}
 tokio = {workspace = true}
 log = {workspace=true}
