@@ -1,3 +1,15 @@
+## 🚧🚧 **Under (re)construction** 🚧🚧
+
+After writing the initial version of LibreTakt for a university project, I've
+decided to rewrite it for a slightly different use case. The new version will be structured as follows:
+
+- a single synthesis/sampling engine running locally on a PC/laptop
+- multiple remote controllers running as a web app, based on WebAssembly and
+  [egui](https://egui.rs), connected via local network
+
+For the previous final stage of the project, check the [1.0.0
+tag](https://github.com/Wint3rmute/libretakt/tags).
+
 # Libretakt
 
 An open-source standalone software sampler, allowing for collaborative music creation over the network & streaming your performance via an internet radio.
