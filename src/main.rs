@@ -15,7 +15,6 @@ fn main() {
     //To be honest i haven't been looking at this code yet but Bączek wrote it
     //so i guess its something important and i trust him 👉👈.
     let provider = Arc::new(SampleProvider::default());
-
 }
 
 // When compiling to web using trunk:
