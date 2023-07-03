@@ -10,3 +10,6 @@ pub mod persistence;
 pub mod sample_provider;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod sequencer;
+
+#[cfg(target_arch = "wasm32")]
+pub mod ui;

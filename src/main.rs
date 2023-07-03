@@ -31,7 +31,7 @@ fn main() {
             .start(
                 "the_canvas_id", // hardcode it
                 web_options,
-                Box::new(|cc| Box::new(eframe_template::LibretaktUI::new(cc))),
+                Box::new(|cc| Box::new(libretakt::ui::LibretaktUI::new(cc))),
             )
             .await
             .expect("failed to start eframe");
