@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: setup toolchain
+        run: rustup target add wasm32-unknown-unknown
       - name: Build
         run: |
           cargo install trunk
