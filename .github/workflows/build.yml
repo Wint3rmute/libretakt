@@ -10,14 +10,23 @@ jobs:
         run: |
           cargo fmt --check
 
-  build:
+  build-server:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Build
         run: |
           sudo apt install libasound2-dev
-          cargo build --all-targets --all-features --examples --workspace
+          cargo build --release --all-targets --all-features --examples --workspace
+
+  build-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: |
+          cargo install trunk
+          trunk build --release
 
   clippy:
     runs-on: ubuntu-latest
