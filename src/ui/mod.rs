@@ -1,4 +1,5 @@
 use egui::Align;
+use egui::Direction;
 use ewebsock::{WsEvent, WsMessage, WsReceiver, WsSender};
 use log::info;
 
@@ -23,25 +24,6 @@ impl WebSocketConnection {
         while let Some(event) = self.ws_receiver.try_recv() {
             self.events.push(event);
         }
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Message to send:");
-                if ui.text_edit_singleline(&mut self.text_to_send).lost_focus()
-                    && ui.input(|i| i.key_pressed(egui::Key::Enter))
-                {
-                    info!("wololo");
-                    self.ws_sender
-                        .send(WsMessage::Text(std::mem::take(&mut self.text_to_send)));
-                }
-            });
-
-            ui.separator();
-            ui.heading("Received events:");
-            for event in &self.events {
-                ui.label(format!("{:?}", event));
-            }
-        });
     }
 }
 
@@ -86,29 +68,72 @@ impl LibretaktUI {
 }
 
 impl eframe::App for LibretaktUI {
+    fn add_step(ui: egui::Ui) {}
+
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::bottom("bottom_menu").show(ctx, |ui| {
-            ui.with_layout(egui::Layout::left_to_right(Align::Center), |ui| {
-                if ui.button("T1").clicked() {
-                    info!("Quit");
-                }
-
-                if ui.button("T2").clicked() {
-                    info!("Quit");
-                }
-
-                if ui.button("T3").clicked() {
-                    info!("Quit");
-                }
-
-                if ui.button("T4").clicked() {
-                    info!("Quit");
-                }
-
-                if ui.button("Mixer").clicked() {
-                    info!("Quit");
-                }
-            });
+            ui.with_layout(
+                egui::Layout {
+                    main_dir: Direction::LeftToRight,
+                    main_wrap: false,
+                    main_align: Align::Min,
+                    main_justify: false,
+                    cross_align: Align::Min,
+                    cross_justify: false,
+                },
+                |ui| {
+                    ui.button("T1");
+                    ui.button("T2");
+                    ui.button("T3");
+                    ui.button("Mixer");
+                },
+            );
         });
+
+        egui::TopBottomPanel::top("my_panel").show(ctx, |ui| {
+            ui.label("Hello World! From `TopBottomPanel`, that must be before `CentralPanel`!");
+        });
+
+        egui::CentralPanel::default().show(ctx, |ui| {
+            let width = ui.min_size().x / 4.0;
+            let height = 60.0;
+
+            egui::Grid::new("some_unique_id")
+                .spacing(egui::Vec2 { x: 0.0, y: 0.0 })
+                .show(ui, |ui| {
+                    ui.add_sized([width, height], egui::widgets::Button::new("asasdsa"));
+                    ui.add_sized([width, height], egui::widgets::Button::new("asasdsa"));
+                    ui.add_sized([width, height], egui::widgets::Button::new("asasdsa"));
+                    ui.add_sized([width, height], egui::widgets::Button::new("asasdsa"));
+                    ui.end_row();
+                    ui.add_sized([width, height], egui::widgets::Button::new("asasdsa"));
+                    ui.add_sized([width, height], egui::widgets::Button::new("asasdsa"));
+                    ui.add_sized([width, height], egui::widgets::Button::new("asasdsa"));
+                    ui.add_sized([width, height], egui::widgets::Button::new("asasdsa"));
+                    ui.end_row();
+                });
+        });
+
+        // ui.with_layout(egui::Layout::left_to_right(Align::Center), |ui| {
+        //     if ui.button("T1").clicked() {
+        //         info!("Quit");
+        //     }
+
+        //     if ui.button("T2").clicked() {
+        //         info!("Quit");
+        //     }
+
+        //     if ui.button("T3").clicked() {
+        //         info!("Quit");
+        //     }
+
+        //     if ui.button("T4").clicked() {
+        //         info!("Quit");
+        //     }
+
+        //     if ui.button("Mixer").clicked() {
+        //         info!("Quit");
+        //     }
+        // });
     }
 }
