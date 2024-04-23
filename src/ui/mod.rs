@@ -21,28 +21,25 @@ impl LibretaktUI {
 
 impl eframe::App for LibretaktUI {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::TopBottomPanel::bottom("bottom_menu").show(ctx, |ui| {
-            ui.with_layout(egui::Layout::left_to_right(Align::Center), |ui| {
-                if ui.button("T1").clicked() {
-                    info!("Quit");
-                }
-
-                if ui.button("T2").clicked() {
-                    info!("Quit");
-                }
-
-                if ui.button("T3").clicked() {
-                    info!("Quit");
-                }
-
-                if ui.button("T4").clicked() {
-                    info!("Quit");
-                }
-
-                if ui.button("Mixer").clicked() {
-                    info!("Quit");
-                }
+        egui::TopBottomPanel::top("track_select").show(ctx, |ui| {
+            ui.columns(4, |columns| {
+                columns[0].button("T1");
+                columns[1].button("T2");
+                columns[2].button("T3");
+                columns[3].button("T4");
             });
+        });
+        egui::CentralPanel::default().show(&ctx, |ui| {
+            let num_cols = 4;
+            let num_rows = 8;
+
+            for _ in 0..num_rows {
+                ui.columns(num_cols, |columns| {
+                    for col in 0..num_cols {
+                        columns[col].add(egui::widgets::Button::new(" \n ").rounding(0.0));
+                    }
+                });
+            }
         });
     }
 }
