@@ -29,7 +29,7 @@ futures-util = "0.3"
 log = "0.4.17"
 
 [dependencies]
-env_logger = "0.9.1"
+env_logger = "0.11.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mverb = {path = "mverb" }
@@ -40,7 +40,7 @@ tokio = {workspace = true}
 log = {workspace=true}
 futures = "0.3.25"
 
-rodio = { version = "0.15", default-features = true }
+rodio = { version = "0.17", default-features = true }
 macroquad = { version = "0.3", default-features = false }
 serde_json = "1.0.86"
 serde = { version = "1.0", features = ["derive"] }
