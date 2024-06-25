@@ -32,7 +32,7 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
       - name: Build
         run: |
-          wget -qO- https://github.com/thedodd/trunk/releases/download/v0.17.1/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+          wget -qO- https://github.com/thedodd/trunk/releases/download/v0.20.2/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
           TRUNK_BUILD_PUBLIC_URL="https://wint3rmute.github.io/libretakt/" ./trunk build --release
       - name: Setup Pages
         uses: actions/configure-pages@v3

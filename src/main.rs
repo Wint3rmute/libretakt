@@ -3,14 +3,14 @@ use env_logger::Env;
 // When compiling the PC/laptop sound engine server
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
-    use libretakt::persistence::{load_project, save_project};
+    // use libretakt::persistence::{load_project, save_project};
     use libretakt::sample_provider::SampleProvider;
     use std::sync::{Arc, Mutex};
 
     //***SAMPLER***
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    let tracks = load_project();
+    // let tracks = load_project();
 
     //To be honest i haven't been looking at this code yet but Bączek wrote it
     //so i guess its something important and i trust him 👉👈.
