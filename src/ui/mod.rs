@@ -57,7 +57,7 @@ impl LibretaktUI {
 
     fn connect(&mut self, ctx: egui::Context) {
         let wakeup = move || ctx.request_repaint(); // wake up UI thread on new message
-        match ewebsock::connect_with_wakeup(&self.server_url, wakeup) {
+        match ewebsock::connect_with_wakeup(&self.server_url, Default::default(), wakeup) {
             Ok((ws_sender, ws_receiver)) => {
                 self.websocket = Some(WebSocketConnection::new(ws_sender, ws_receiver));
                 self.error = None;
