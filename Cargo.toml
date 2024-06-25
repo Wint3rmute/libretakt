@@ -28,8 +28,8 @@ futures-util = "0.3"
 log = "0.4.17"
 
 [dependencies]
-env_logger = "0.9.1"
 serde = { version = "1.0", features = ["derive"] }
+env_logger = "0.11.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mverb = {path = "mverb" }
@@ -40,7 +40,7 @@ tokio = {workspace = true}
 log = {workspace=true}
 futures = "0.3.25"
 
-rodio = { version = "0.15", default-features = true }
+rodio = { version = "0.17", default-features = true }
 macroquad = { version = "0.3", default-features = false }
 serde_json = "1.0.86"
 flume = "0.10.14"
@@ -57,15 +57,16 @@ arbitrary = { version = "1", features = ["derive"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"
-egui = "0.22.0"
-eframe = { version = "0.22.0", default-features = false, features = [
+egui = "0.27.0"
+eframe = { version = "0.27.0", default-features = false, features = [
+    "accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
     "persistence",   # Enable restoring app state when restarting the app.
 ] }
 log = "0.4"
 reqwasm = "0.5.0"
-ewebsock = "0.2.0"
+ewebsock = "0.5.0"
 
 [[bin]]
 bench = false
