@@ -12,4 +12,6 @@ pub mod sequencer;
 #[cfg(target_arch = "wasm32")]
 pub mod sequencer;
 #[cfg(target_arch = "wasm32")]
+pub mod state;
+#[cfg(target_arch = "wasm32")]
 pub mod ui;
