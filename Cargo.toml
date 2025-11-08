@@ -20,16 +20,16 @@ members = ["mverb", "common"]
 
 [workspace.dependencies]
 common = { path = "common" }
-uuid = { version = "0.8", features = ["v4", "serde"] } # uuid's fit well in this context.
-url = "2.3.1"
-futures-channel = "0.3.25"
-tokio = { version = "1.8.4", features = ["full"] }
-futures-util = "0.3"
-log = "0.4.17"
+uuid = { version = "1.11", features = ["v4", "serde"] } # uuid's fit well in this context.
+url = "2.5"
+futures-channel = "0.3.31"
+tokio = { version = "1.48", features = ["full"] }
+futures-util = "0.3.31"
+log = "0.4.28"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-env_logger = "0.11.3"
+env_logger = "0.11.8"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mverb = {path = "mverb" }
@@ -38,20 +38,21 @@ url = {workspace = true}
 futures-util = {workspace = true}
 tokio = {workspace = true}
 log = {workspace=true}
-futures = "0.3.25"
+futures = "0.3.31"
 
 egui = "0.27.0"
+axum = { version = "0.8.6", features = ["ws"] }
 
-rodio = { version = "0.17", default-features = true }
-serde_json = "1.0.86"
-flume = "0.10.14"
-serde_derive = "1.0.147"
-tokio-tungstenite = "0.18.0"
+rodio = { version = "0.21", default-features = true }
+serde_json = "1.0.145"
+flume = "0.11.1"
+serde_derive = "1.0.228"
+tokio-tungstenite = "0.28.0"
 num = "0.4"
 num-derive = "0.4"
 num-traits = "0.2"
-strum = "0.26"
-strum_macros = "0.26"
+strum = "0.27"
+strum_macros = "0.27"
 
 # For cargo-fuzz
 arbitrary = { version = "1", features = ["derive"] }
