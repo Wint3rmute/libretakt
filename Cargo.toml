@@ -42,7 +42,7 @@ futures = "0.3.31"
 
 egui = "0.27.0"
 
-rodio = { version = "0.17", default-features = true }
+rodio = { version = "0.21", default-features = true }
 serde_json = "1.0.86"
 flume = "0.11.1"
 serde_derive = "1.0.147"
