@@ -10,7 +10,7 @@ jobs:
   formatting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: Build
         run: |
           cargo fmt --check
@@ -18,7 +18,7 @@ jobs:
   build-server:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: Build
         run: |
           sudo apt install libasound2-dev
@@ -27,7 +27,7 @@ jobs:
   deploy-wasm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: setup toolchain
         run: rustup target add wasm32-unknown-unknown
       - name: Build
@@ -47,7 +47,7 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: Build
         run: |
           sudo apt install libasound2-dev
@@ -56,7 +56,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: Build
         run: |
           sudo apt install libasound2-dev
@@ -65,6 +65,6 @@ jobs:
   rust_docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
       - name: Build and push Docker images
         uses: docker/build-push-action@v3.2.0
