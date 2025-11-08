@@ -6,10 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde_json = "1.0.86"
+serde_json = "1.0.145"
 serde = { version = "1.0", features = ["derive"] }
 flexbuffers = "2.0.0"
-serde_derive = "1.0.147"
+serde_derive = "1.0.228"
 num = "0.4"
 num-derive = "0.4"
 num-traits = "0.2"
