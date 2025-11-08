@@ -11,8 +11,8 @@ serde = { version = "1.0", features = ["derive"] }
 flexbuffers = "2.0.0"
 serde_derive = "1.0.147"
 num = "0.4"
-num-derive = "0.3"
+num-derive = "0.4"
 num-traits = "0.2"
 
-strum = "0.24"
-strum_macros = "0.24"
+strum = "0.27"
+strum_macros = "0.27"
