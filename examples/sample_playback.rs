@@ -1,7 +1,6 @@
-use macroquad::prelude::*;
 use rodio::decoder::Decoder;
 use rodio::source::Source;
-use rodio::{OutputStream, Sink};
+use rodio::{OutputStreamBuilder, Sink};
 
 use std::time::Duration;
 
@@ -47,7 +46,7 @@ impl Iterator for Sample {
 }
 
 impl Source for Sample {
-    fn current_frame_len(&self) -> Option<usize> {
+    fn current_span_len(&self) -> Option<usize> {
         None // Means that the sound will play indefinitely
     }
 
@@ -65,8 +64,8 @@ impl Source for Sample {
 }
 
 fn main() {
-    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-    let sink = Sink::try_new(&stream_handle).unwrap();
+    let stream = OutputStreamBuilder::open_default_stream().unwrap();
+    let sink = Sink::connect_new(stream.mixer());
 
     let source = Sample::from_file();
     sink.append(source);

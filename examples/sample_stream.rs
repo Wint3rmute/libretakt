@@ -1,7 +1,5 @@
-use macroquad::prelude::*;
 use rodio::decoder::Decoder;
 use rodio::source::Source;
-use rodio::{OutputStream, Sink};
 use std::io::{self, Write};
 
 use std::time::Duration;
@@ -48,7 +46,7 @@ impl Iterator for Sample {
 }
 
 impl Source for Sample {
-    fn current_frame_len(&self) -> Option<usize> {
+    fn current_span_len(&self) -> Option<usize> {
         None // Means that the sound will play indefinitely
     }
 
@@ -70,7 +68,7 @@ fn main() {
     let mut stdout = io::stdout().lock();
 
     let mut source = Sample::from_file();
-    while let Some(mut sample) = source.next() {
-        stdout.write_all(&sample.to_le_bytes());
+    while let Some(sample) = source.next() {
+        let _ = stdout.write_all(&sample.to_le_bytes());
     }
 }
