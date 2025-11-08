@@ -29,7 +29,7 @@ log = "0.4.28"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-env_logger = "0.11.3"
+env_logger = "0.11.8"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mverb = {path = "mverb" }
