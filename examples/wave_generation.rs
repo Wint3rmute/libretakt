@@ -1,5 +1,5 @@
 use rodio::source::Source;
-use rodio::{OutputStream, Sink};
+use rodio::{OutputStreamBuilder, Sink};
 use std::time::Duration;
 
 const SAMPLE_RATE: u32 = 48000;
@@ -29,7 +29,7 @@ impl Iterator for SineWaveSource {
 }
 
 impl Source for SineWaveSource {
-    fn current_frame_len(&self) -> Option<usize> {
+    fn current_span_len(&self) -> Option<usize> {
         None
     }
 
@@ -47,8 +47,8 @@ impl Source for SineWaveSource {
 }
 
 fn main() {
-    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-    let sink = Sink::try_new(&stream_handle).unwrap();
+    let stream = OutputStreamBuilder::open_default_stream().unwrap();
+    let sink = Sink::connect_new(stream.mixer());
 
     let source = SineWaveSource::from_frequency(440.0);
     sink.append(source);

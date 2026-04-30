@@ -3,7 +3,7 @@ use crate::state::{ProjectData, State, UiState};
 use egui::Direction;
 use egui::{Align, Context, Ui};
 use ewebsock::{WsEvent, WsMessage, WsReceiver, WsSender};
-use log::info;
+use log::{error, info};
 
 struct WebSocketConnection {
     ws_sender: WsSender,
@@ -61,15 +61,15 @@ impl LibretaktUI {
         let wakeup = move || ctx.request_repaint(); // wake up UI thread on new message
 
         // Uncomment to bring back websocket
-        // match ewebsock::connect_with_wakeup(&self.server_url, Default::default(), wakeup) {
-        //     Ok((ws_sender, ws_receiver)) => {
-        //         self.websocket = Some(WebSocketConnection::new(ws_sender, ws_receiver));
-        //     }
-        //     Err(error) => {
-        //         log::error!("Failed to connect to {:?}: {}", &self.server_url, error);
-        //         self.state = State::Disconnected("Failed to connect to server".to_string());
-        //     }
-        // }
+        match ewebsock::connect_with_wakeup(&self.server_url, Default::default(), wakeup) {
+            Ok((ws_sender, ws_receiver)) => {
+                self.websocket = Some(WebSocketConnection::new(ws_sender, ws_receiver));
+            }
+            Err(error) => {
+                log::error!("Failed to connect to {:?}: {}", &self.server_url, error);
+                self.state = State::Disconnected("Failed to connect to server".to_string());
+            }
+        }
     }
 
     fn show_mixing_console(&mut self, ctx: &Context, ui: &mut Ui) {
@@ -179,7 +179,7 @@ impl eframe::App for LibretaktUI {
                 UiState::PlayerSelection => {
                     show_player_selection(ui_state, ctx, ui);
                 }
-                UiState::AudioTrack_T1 => {
+                UiState::AudioTrackT1 => {
                     self.show_sequencer(ctx, ui);
                 }
                 UiState::MixingConsole_T0 => {
@@ -241,7 +241,7 @@ fn show_player_selection(ui_state: &mut UiState, ctx: &Context, ui: &mut Ui) {
                 )
                 .clicked()
             {
-                *ui_state = UiState::AudioTrack_T1;
+                *ui_state = UiState::AudioTrackT1;
             }
 
             ui.end_row();
@@ -253,7 +253,7 @@ fn show_player_selection(ui_state: &mut UiState, ctx: &Context, ui: &mut Ui) {
                 )
                 .clicked()
             {
-                *ui_state = UiState::AudioTrack_T2;
+                *ui_state = UiState::AudioTrackT2;
             }
 
             if ui
@@ -263,7 +263,7 @@ fn show_player_selection(ui_state: &mut UiState, ctx: &Context, ui: &mut Ui) {
                 )
                 .clicked()
             {
-                *ui_state = UiState::AudioTrack_T3;
+                *ui_state = UiState::AudioTrackT3;
             }
         });
 }

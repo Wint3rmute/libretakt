@@ -3,14 +3,14 @@ pub struct ProjectData;
 pub enum UiState {
     PlayerSelection,
     MixingConsole_T0,
-    AudioTrack_T1,
-    AudioTrack_T2,
-    AudioTrack_T3,
-    AudioTrack_T4,
-    AudioTrack_T5,
-    AudioTrack_T6,
-    AudioTrack_T7,
-    AudioTrack_T8,
+    AudioTrackT1,
+    AudioTrackT2,
+    AudioTrackT3,
+    AudioTrackT4,
+    AudioTrackT5,
+    AudioTrackT6,
+    AudioTrackT7,
+    AudioTrackT8,
 }
 
 pub enum State {
@@ -32,9 +32,9 @@ impl UiState {
         match &self {
             UiState::PlayerSelection => "Player Selection",
             UiState::MixingConsole_T0 => "Mixing Console",
-            UiState::AudioTrack_T1 => "Track 1",
-            UiState::AudioTrack_T2 => "Track 2",
-            UiState::AudioTrack_T3 => "Track 3",
+            UiState::AudioTrackT1 => "Track 1",
+            UiState::AudioTrackT2 => "Track 2",
+            UiState::AudioTrackT3 => "Track 3",
             _ => "TODO: undefined status summary",
         }
         .to_string()
