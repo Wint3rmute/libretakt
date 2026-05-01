@@ -14,12 +14,12 @@
 use std::{env, io::Error};
 
 use futures_util::{future, StreamExt, TryStreamExt};
-use log::info;
 use tokio::net::{TcpListener, TcpStream};
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let _ = env_logger::try_init();
+    let _ = tracing_subscriber::fmt().try_init();
     let addr = env::args()
         .nth(1)
         .unwrap_or_else(|| "127.0.0.1:8081".to_string());

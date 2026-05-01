@@ -4,29 +4,26 @@ mod server;
 // When compiling the PC/laptop sound engine server
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
-    // use libretakt::persistence::{load_project, save_project};
-
     server::main();
-
-    //***SAMPLER***
-    use env_logger::Env;
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-
-    // let tracks = load_project();
-
-    //To be honest i haven't been looking at this code yet but Bączek wrote it
-    //so i guess its something important and i trust him 👉👈.
-    // let provider = Arc::new(SampleProvider::default());
 }
 
 // When compiling to web using trunk:
 #[cfg(target_arch = "wasm32")]
 fn main() {
+    use ewebsock::WsEvent;
     use libretakt::app_state::create_channels;
     use std::time::Duration;
 
-    // Redirect `log` message to `console.log` and friends:
-    eframe::WebLogger::init(log::LevelFilter::Debug).ok();
+    // Redirect tracing events to the browser console:
+    use tracing_subscriber::prelude::*;
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .with_ansi(false)
+        .without_time()
+        .with_writer(tracing_web::MakeWebConsoleWriter::new());
+    tracing_subscriber::registry()
+        .with(fmt_layer)
+        .with(tracing_subscriber::filter::LevelFilter::DEBUG)
+        .init();
 
     let (app_state, ws_channels) = create_channels();
 
@@ -36,7 +33,7 @@ fn main() {
         ..eframe::WebOptions::default()
     };
 
-    log::info!("Spawning UI thread...");
+    tracing::info!("Spawning UI thread...");
     wasm_bindgen_futures::spawn_local(async {
         eframe::WebRunner::new()
             .start(
@@ -48,7 +45,7 @@ fn main() {
             .expect("failed to start eframe");
     });
 
-    log::info!("Spawning websocket thread...");
+    tracing::info!("Spawning websocket thread...");
     wasm_bindgen_futures::spawn_local(async move {
         loop {
             let options = ewebsock::Options::default();
@@ -57,20 +54,58 @@ fn main() {
                 .to_ui
                 .unbounded_send("Connecting to websocket...".into())
                 .ok();
-            let (_sender, receiver) = ewebsock::connect("ws://localhost:3000", options).unwrap();
+            let (mut sender, receiver) =
+                ewebsock::connect("ws://localhost:3000/ws", options).unwrap();
 
-            while let Some(event) = receiver.try_recv() {
-                log::info!("Received {:?}", event);
-                // Forward to UI via channel:
-                // ws_channels.to_ui.unbounded_send(...).ok();
+            loop {
+                // TODO: ugly, how can I get asynchronous events
+                // from the websocket without polling?
+                gloo_timers::future::sleep(Duration::from_millis(10)).await;
+                if let Some(event) = receiver.try_recv() {
+                    tracing::debug!("WebSocket event: {:?}", event);
+                    match event {
+                        WsEvent::Opened => {
+                            tracing::info!("Websocket opened!");
+                            ws_channels
+                                .to_ui
+                                .unbounded_send("Connected to server".into())
+                                .ok();
+                        }
+                        WsEvent::Closed => {
+                            tracing::info!("Websocket closed, disconnecting!");
+                            break;
+                        }
+                        WsEvent::Message(message) => {
+                            tracing::info!("WebSocket message: {:?}", message);
+                            match message {
+                                ewebsock::WsMessage::Binary(_items) => todo!(),
+                                ewebsock::WsMessage::Text(_) => todo!(),
+                                ewebsock::WsMessage::Unknown(_) => todo!(),
+                                ewebsock::WsMessage::Ping(items) => {
+                                    use ewebsock::WsMessage;
+                                    tracing::debug!("Ping received: {:?}", items);
+                                    sender.send(WsMessage::Pong(items));
+                                }
+                                ewebsock::WsMessage::Pong(items) => {
+                                    tracing::error!("Unexpected pong: {:?}", items);
+                                }
+                            }
+                        }
+                        WsEvent::Error(error) => {
+                            tracing::error!("Websocket error, disconnecting: {:?}", error);
+                            break;
+                        }
+                    }
+                    // Forward to UI via channel:
+                    // ws_channels.to_ui.unbounded_send(...).ok();
+                }
             }
 
-            gloo_timers::future::sleep(Duration::from_secs(1)).await;
             ws_channels
                 .to_ui
                 .unbounded_send("Websocket disconnected!".into())
                 .ok();
-            log::error!("Websocket disconnected! Attempting to reconnect...");
+            tracing::error!("Websocket disconnected! Attempting to reconnect...");
             gloo_timers::future::sleep(Duration::from_secs(5)).await;
         }
     });
