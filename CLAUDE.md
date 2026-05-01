@@ -61,5 +61,6 @@ Use `tracing::info!`, `tracing::warn!`, etc. at call sites.
 
 - Clippy `-D warnings` is enforced in CI — keep the codebase warning-free
 - Each logical fix/change gets its own commit
+- Commit titles follow conventional commits
 - `tracing::` macros for logging
 - WASM async tasks must `.await` periodically to yield — never spin in a tight synchronous loop
