@@ -5,9 +5,8 @@ Collaborative sampler. Rust workspace with a **dual-target architecture**: a nat
 ## Build commands
 
 ```bash
-cargo build                                        # native server
-cargo build --target wasm32-unknown-unknown        # WASM (type-check)
-cargo clippy --all-targets --all-features -- -D warnings  # must be warning-free
+make build  # build all targets
+make check  # checks all targets with clippy
 ```
 
 ## Dual-target pattern
@@ -51,7 +50,7 @@ Every egui frame runs three phases in order:
 ## Architecture: native server
 
 - `axum` WebSocket server on `0.0.0.0:3000`, endpoint at `/ws`
-- `handle_socket` uses `tokio::select!` to either receive a message or send a keepalive ping every 1000ms of silence
+- `handle_socket` uses `tokio::select!` to either receive a message or send a keepalive ping if no messages arrive
 
 ## Logging
 
@@ -62,5 +61,6 @@ Use `tracing::info!`, `tracing::warn!`, etc. at call sites.
 
 - Clippy `-D warnings` is enforced in CI — keep the codebase warning-free
 - Each logical fix/change gets its own commit
+- Commit titles follow conventional commits
 - `tracing::` macros for logging
 - WASM async tasks must `.await` periodically to yield — never spin in a tight synchronous loop
