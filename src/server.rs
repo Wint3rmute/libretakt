@@ -10,39 +10,67 @@ async fn websocket_handler(ws: WebSocketUpgrade) -> Response {
 }
 
 async fn handle_socket(mut socket: WebSocket) {
-    while let Some(msg) = socket.recv().await {
-        let msg = if let Ok(msg) = msg {
-            msg
-        } else {
-            // client disconnected
-            return;
-        };
+    use axum::extract::ws::Message;
+    use tokio::time::{sleep, Duration};
 
-        if socket.send(msg).await.is_err() {
-            // client disconnected
-            return;
+    tracing::info!("New WebSocket connection");
+
+    loop {
+        tokio::select! {
+            msg = socket.recv() => {
+                match msg {
+                    Some(Ok(msg)) => {
+                        tracing::debug!("WebSocket message: {:?}", msg);
+                        match msg {
+                            Message::Text(ref text) => {
+                                tracing::info!("Text message: {:?}", text);
+                            },
+                            Message::Binary(ref data) => {
+                                tracing::warn!("Unexpected binary message: {:?}", data);
+                            },
+                            Message::Ping(ref data) => {
+                                tracing::warn!("Unexpected ping: {:?}", data);
+                            },
+                            Message::Pong(_) => {
+                                tracing::debug!("Pong from client");
+                            },
+                            Message::Close(_) => {
+                                tracing::info!("Client closed connection");
+                                return
+                            },
+                        }
+                        if socket.send(msg).await.is_err() {
+                            tracing::warn!("WebSocket connection closed by client");
+                            return;
+                        }
+                    }
+                    Some(Err(_)) | None => {
+                        tracing::warn!("WebSocket connection closed by client");
+                        return;
+                    }
+                }
+            }
+            _ = sleep(Duration::from_millis(1000)) => {
+                tracing::debug!("No message received for 1000ms, sending ping");
+                if socket.send(Message::Ping(vec![].into())).await.is_err() {
+                    tracing::warn!("WebSocket connection closed while sending ping");
+                    return;
+                }
+            }
         }
     }
 }
 
 #[tokio::main]
 pub async fn main() {
-    // use libretakt::persistence::{load_project, save_project};
-    use env_logger::Env;
-    use std::io::Write;
-    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
-        .format(|buf, record| {
-            let level_style = buf.default_level_style(record.level());
-            writeln!(
-                buf,
-                "{ts} {level_style}{level}{level_style:#} {file}:{line} - {msg}",
-                ts = buf.timestamp(),
-                level = record.level(),
-                file = record.file().unwrap_or("unknown"),
-                line = record.line().unwrap_or(0),
-                msg = record.args(),
-            )
-        })
+    tracing_subscriber::fmt()
+        .with_file(true)
+        .with_line_number(true)
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::builder()
+                .with_default_directive(tracing::Level::INFO.into())
+                .from_env_lossy(),
+        )
         .init();
 
     //***SAMPLER***
@@ -53,13 +81,14 @@ pub async fn main() {
     // let provider = Arc::new(SampleProvider::default());
 
     // build our application with a single route
-    log::info!("Building app & router");
+    tracing::info!("Building app & router");
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .route("/ws", any(websocket_handler));
 
-    log::info!("Binding listener...");
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    log::info!("Application running!");
+    const BIND_ADDR: &str = "0.0.0.0:3000";
+    tracing::info!("Binding listener to {}...", BIND_ADDR);
+    let listener = tokio::net::TcpListener::bind(BIND_ADDR).await.unwrap();
+    tracing::info!("Application running at {}", BIND_ADDR);
     axum::serve(listener, app).await.unwrap();
 }

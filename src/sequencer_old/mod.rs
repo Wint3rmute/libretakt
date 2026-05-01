@@ -22,8 +22,8 @@ use crate::constants::{self, NUM_OF_VOICES};
 use crate::engine::core::Voice;
 use arbitrary::Arbitrary;
 use flume::{Receiver, Sender};
-use log::{debug, error};
 use serde::{Deserialize, Serialize};
+use tracing::{debug, error};
 
 use common::MutationWithSource;
 use common::Parameter;

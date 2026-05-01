@@ -25,11 +25,10 @@ url = "2.5"
 futures-channel = "0.3.31"
 tokio = { version = "1.48", features = ["full"] }
 futures-util = "0.3.31"
-log = "0.4.28"
+tracing = "0.1"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-env_logger = "0.11.8"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mverb = {path = "mverb" }
@@ -37,7 +36,8 @@ common = { path = "common" }
 url = {workspace = true}
 futures-util = {workspace = true}
 tokio = {workspace = true}
-log = {workspace=true}
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 futures = "0.3.31"
 
 egui = "0.27.0"
@@ -65,7 +65,9 @@ eframe = { version = "0.27.0", default-features = false, features = [
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
     "persistence",   # Enable restoring app state when restarting the app.
 ] }
-log = "0.4"
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "registry"] }
+tracing-web = "0.1"
 reqwasm = "0.5.0"
 ewebsock = "0.5.0"
 gloo-timers = { version = "0.3", features = ["futures"] }

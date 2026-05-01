@@ -3,7 +3,7 @@ use crate::sequencer::Sequencer;
 use crate::state::{ProjectData, State, UiState};
 use egui::{Context, Ui};
 
-use log::info;
+use tracing::info;
 
 pub struct LibretaktUI {
     state: State,
@@ -16,7 +16,7 @@ impl LibretaktUI {
     pub fn new(_cc: &eframe::CreationContext<'_>, app_state: ApplicationState) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
-        log::info!("Creating UI...");
+        tracing::info!("Creating UI...");
 
         Self {
             state: State::Connected(ProjectData, UiState::PlayerSelection),
