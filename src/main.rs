@@ -31,8 +31,8 @@ fn main() {
     let (app_state, ws_channels) = create_channels();
 
     let web_options = eframe::WebOptions {
-        follow_system_theme: false,
-        default_theme: eframe::Theme::Dark,
+        follow_system_theme: true,
+        // default_theme: eframe::Theme::Light,
         ..eframe::WebOptions::default()
     };
 
