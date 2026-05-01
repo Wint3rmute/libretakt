@@ -1,5 +1,3 @@
-use env_logger::Env;
-
 #[cfg(not(target_arch = "wasm32"))]
 mod server;
 
@@ -7,13 +5,11 @@ mod server;
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
     // use libretakt::persistence::{load_project, save_project};
-    
-    
-    
 
     server::main();
 
     //***SAMPLER***
+    use env_logger::Env;
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     // let tracks = load_project();
@@ -61,7 +57,7 @@ fn main() {
                 .to_ui
                 .unbounded_send("Connecting to websocket...".into())
                 .ok();
-            let (mut sender, receiver) = ewebsock::connect("ws://localhost:3000", options).unwrap();
+            let (_sender, receiver) = ewebsock::connect("ws://localhost:3000", options).unwrap();
 
             while let Some(event) = receiver.try_recv() {
                 log::info!("Received {:?}", event);

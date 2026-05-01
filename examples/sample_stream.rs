@@ -19,7 +19,7 @@ impl Sample {
         let mut sample_data: Vec<f32> = vec![];
 
         while let Some(s) = decoder.next() {
-            sample_data.push(s as f32 / i16::MAX as f32);
+            sample_data.push(s / i16::MAX as f32);
             decoder.next(); // Skip the 2nd channel
         }
 
@@ -67,8 +67,8 @@ impl Source for Sample {
 fn main() {
     let mut stdout = io::stdout().lock();
 
-    let mut source = Sample::from_file();
-    while let Some(sample) = source.next() {
+    let source = Sample::from_file();
+    for sample in source {
         let _ = stdout.write_all(&sample.to_le_bytes());
     }
 }
