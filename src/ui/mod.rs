@@ -168,7 +168,7 @@ impl eframe::App for LibretaktUI {
                 UiState::AudioTrackT1 => {
                     self.show_sequencer(ctx, ui);
                 }
-                UiState::MixingConsole_T0 => {
+                UiState::MixingConsoleT0 => {
                     self.show_mixing_console(ctx, ui);
                 }
                 _ => {}
@@ -217,7 +217,7 @@ fn show_player_selection(ui_state: &mut UiState, ctx: &Context, ui: &mut Ui) {
                 )
                 .clicked()
             {
-                *ui_state = UiState::MixingConsole_T0;
+                *ui_state = UiState::MixingConsoleT0;
             }
 
             if ui

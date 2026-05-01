@@ -2,7 +2,7 @@ pub struct ProjectData;
 
 pub enum UiState {
     PlayerSelection,
-    MixingConsole_T0,
+    MixingConsoleT0,
     AudioTrackT1,
     AudioTrackT2,
     AudioTrackT3,
@@ -31,7 +31,7 @@ impl UiState {
     pub fn summary(&self) -> String {
         match &self {
             UiState::PlayerSelection => "Player Selection",
-            UiState::MixingConsole_T0 => "Mixing Console",
+            UiState::MixingConsoleT0 => "Mixing Console",
             UiState::AudioTrackT1 => "Track 1",
             UiState::AudioTrackT2 => "Track 2",
             UiState::AudioTrackT3 => "Track 3",
