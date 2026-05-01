@@ -2,36 +2,10 @@ use crate::app_state::ApplicationState;
 use crate::sequencer::Sequencer;
 use crate::state::{ProjectData, State, UiState};
 use egui::{Context, Ui};
-use ewebsock::{WsEvent, WsReceiver, WsSender};
+
 use log::info;
 
-struct WebSocketConnection {
-    ws_sender: WsSender,
-    ws_receiver: WsReceiver,
-    events: Vec<WsEvent>,
-    text_to_send: String,
-}
-
-impl WebSocketConnection {
-    fn new(ws_sender: WsSender, ws_receiver: WsReceiver) -> Self {
-        Self {
-            ws_sender,
-            ws_receiver,
-            events: Default::default(),
-            text_to_send: Default::default(),
-        }
-    }
-
-    fn ui(&mut self, _ctx: &egui::Context) {
-        while let Some(event) = self.ws_receiver.try_recv() {
-            self.events.push(event);
-        }
-    }
-}
-
 pub struct LibretaktUI {
-    server_url: String,
-    websocket: Option<WebSocketConnection>,
     state: State,
     sequencer: Sequencer,
     app_state: ApplicationState,
@@ -45,8 +19,6 @@ impl LibretaktUI {
         log::info!("Creating UI...");
 
         Self {
-            server_url: "http://localhost:8081".to_string(),
-            websocket: None,
             state: State::Connected(ProjectData, UiState::PlayerSelection),
             sequencer: Sequencer::default(),
             app_state,
