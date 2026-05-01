@@ -1,63 +1,218 @@
 use axum::{
-    extract::ws::{WebSocket, WebSocketUpgrade},
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        State,
+    },
     response::Response,
     routing::{any, get},
     Router,
 };
+use libretakt::shared::{ClientCommand, ClientId, SequencerState, ServerMessage};
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
+use tokio::sync::{broadcast, Mutex};
 
-async fn websocket_handler(ws: WebSocketUpgrade) -> Response {
-    ws.on_upgrade(handle_socket)
+#[derive(Clone)]
+struct AppState {
+    sequencer: Arc<Mutex<SequencerState>>,
+    broadcast: broadcast::Sender<ServerMessage>,
 }
 
-async fn handle_socket(mut socket: WebSocket) {
-    use axum::extract::ws::Message;
-    use tokio::time::{sleep, Duration};
+static NEXT_CLIENT_ID: AtomicU64 = AtomicU64::new(1);
 
-    tracing::info!("New WebSocket connection");
+fn to_ws_text(msg: &ServerMessage) -> Message {
+    Message::Text(
+        serde_json::to_string(msg)
+            .expect("serialization failed")
+            .into(),
+    )
+}
+
+async fn websocket_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> Response {
+    ws.on_upgrade(move |socket| handle_socket(socket, state))
+}
+
+async fn handle_socket(mut socket: WebSocket, state: AppState) {
+    let client_id = NEXT_CLIENT_ID.fetch_add(1, Ordering::Relaxed);
+    tracing::info!(client_id, "New WebSocket connection");
+
+    // Acquire lock, snapshot state, release lock — no await while holding the guard.
+    let init_msg = {
+        let seq = state.sequencer.lock().await;
+        let snapshot = seq.clone();
+        ServerMessage::Init {
+            client_id,
+            state: snapshot,
+        }
+        // seq dropped here, before any await
+    };
+
+    if socket.send(to_ws_text(&init_msg)).await.is_err() {
+        tracing::warn!(client_id, "Failed to send Init message, closing");
+        return;
+    }
+
+    let mut rx = state.broadcast.subscribe();
 
     loop {
         tokio::select! {
             msg = socket.recv() => {
                 match msg {
-                    Some(Ok(msg)) => {
-                        tracing::debug!("WebSocket message: {:?}", msg);
-                        match msg {
-                            Message::Text(ref text) => {
-                                tracing::info!("Text message: {:?}", text);
-                            },
-                            Message::Binary(ref data) => {
-                                tracing::warn!("Unexpected binary message: {:?}", data);
-                            },
-                            Message::Ping(ref data) => {
-                                tracing::warn!("Unexpected ping: {:?}", data);
-                            },
-                            Message::Pong(_) => {
-                                tracing::debug!("Pong from client");
-                            },
-                            Message::Close(_) => {
-                                tracing::info!("Client closed connection");
-                                return
-                            },
-                        }
-                        if socket.send(msg).await.is_err() {
-                            tracing::warn!("WebSocket connection closed by client");
-                            return;
+                    Some(Ok(Message::Text(text))) => {
+                        match serde_json::from_str::<ClientCommand>(&text) {
+                            Ok(cmd) => {
+                                handle_command(cmd, client_id, &state, &mut socket).await;
+                            }
+                            Err(e) => {
+                                tracing::warn!(client_id, error = %e, "Failed to parse ClientCommand");
+                            }
                         }
                     }
-                    Some(Err(_)) | None => {
-                        tracing::warn!("WebSocket connection closed by client");
-                        return;
+                    Some(Ok(Message::Ping(data))) => {
+                        if socket.send(Message::Pong(data)).await.is_err() {
+                            tracing::warn!(client_id, "Failed to send Pong, closing");
+                            break;
+                        }
+                    }
+                    Some(Ok(Message::Close(_))) | None => {
+                        tracing::info!(client_id, "Client disconnected");
+                        break;
+                    }
+                    Some(Err(e)) => {
+                        tracing::warn!(client_id, error = %e, "WebSocket error, closing");
+                        break;
+                    }
+                    Some(Ok(_)) => {
+                        // Binary, Pong — ignore
                     }
                 }
             }
-            _ = sleep(Duration::from_millis(5000)) => {
-                tracing::debug!("No message received for 5000ms, sending ping");
-                if socket.send(Message::Ping(vec![].into())).await.is_err() {
-                    tracing::warn!("WebSocket connection closed while sending ping");
-                    return;
+            Ok(msg) = rx.recv() => {
+                if socket.send(to_ws_text(&msg)).await.is_err() {
+                    tracing::warn!(client_id, "Failed to forward broadcast message, closing");
+                    break;
                 }
             }
         }
+    }
+
+    release_all_locks(client_id, &state).await;
+}
+
+async fn handle_command(
+    cmd: ClientCommand,
+    client_id: ClientId,
+    state: &AppState,
+    socket: &mut WebSocket,
+) {
+    match cmd {
+        ClientCommand::RequestLock { track } => {
+            // Acquire, mutate, clone what we need, drop — then do async work.
+            let maybe_track_state = {
+                let mut seq = state.sequencer.lock().await;
+                if seq.tracks[track].locked_by.is_none() {
+                    seq.tracks[track].locked_by = Some(client_id);
+                    Some(seq.tracks[track].clone())
+                } else {
+                    None
+                }
+                // seq dropped here
+            };
+
+            match maybe_track_state {
+                Some(track_state) => {
+                    tracing::info!(client_id, track, "Lock acquired");
+                    let _ = state.broadcast.send(ServerMessage::TrackUpdate {
+                        track,
+                        state: track_state,
+                    });
+                }
+                None => {
+                    tracing::debug!(client_id, track, "Lock denied — track already held");
+                    let _ = socket
+                        .send(to_ws_text(&ServerMessage::LockDenied { track }))
+                        .await;
+                }
+            }
+        }
+
+        ClientCommand::ReleaseLock { track } => {
+            let maybe_track_state = {
+                let mut seq = state.sequencer.lock().await;
+                if seq.tracks[track].locked_by == Some(client_id) {
+                    seq.tracks[track].locked_by = None;
+                    Some(seq.tracks[track].clone())
+                } else {
+                    tracing::warn!(
+                        client_id,
+                        track,
+                        "ReleaseLock ignored: client does not hold the lock"
+                    );
+                    None
+                }
+                // seq dropped here
+            };
+
+            if let Some(track_state) = maybe_track_state {
+                tracing::info!(client_id, track, "Lock released");
+                let _ = state.broadcast.send(ServerMessage::TrackUpdate {
+                    track,
+                    state: track_state,
+                });
+            }
+        }
+
+        ClientCommand::ToggleStep { track, step } => {
+            let maybe_track_state = {
+                let mut seq = state.sequencer.lock().await;
+                if seq.tracks[track].locked_by == Some(client_id) {
+                    seq.tracks[track].steps[step] = !seq.tracks[track].steps[step];
+                    Some(seq.tracks[track].clone())
+                } else {
+                    tracing::warn!(
+                        client_id,
+                        track,
+                        step,
+                        "ToggleStep ignored: client does not hold the lock"
+                    );
+                    None
+                }
+                // seq dropped here
+            };
+
+            if let Some(track_state) = maybe_track_state {
+                tracing::debug!(client_id, track, step, "Step toggled");
+                let _ = state.broadcast.send(ServerMessage::TrackUpdate {
+                    track,
+                    state: track_state,
+                });
+            }
+        }
+    }
+}
+
+async fn release_all_locks(client_id: ClientId, state: &AppState) {
+    let released = {
+        let mut seq = state.sequencer.lock().await;
+        let mut pairs: Vec<(usize, _)> = Vec::new();
+        for (idx, track) in seq.tracks.iter_mut().enumerate() {
+            if track.locked_by == Some(client_id) {
+                track.locked_by = None;
+                pairs.push((idx, track.clone()));
+            }
+        }
+        pairs
+        // seq dropped here
+    };
+
+    for (track, track_state) in released {
+        tracing::info!(client_id, track, "Lock released on disconnect");
+        let _ = state.broadcast.send(ServerMessage::TrackUpdate {
+            track,
+            state: track_state,
+        });
     }
 }
 
@@ -73,18 +228,18 @@ pub async fn main() {
         )
         .init();
 
-    //***SAMPLER***
-    // let tracks = load_project();
+    let (broadcast_tx, _) = broadcast::channel::<ServerMessage>(64);
+    let sequencer = Arc::new(Mutex::new(SequencerState::new(8, 16)));
+    let app_state = AppState {
+        sequencer,
+        broadcast: broadcast_tx,
+    };
 
-    //To be honest i haven't been looking at this code yet but Bączek wrote it
-    //so i guess its something important and i trust him 👉👈.
-    // let provider = Arc::new(SampleProvider::default());
-
-    // build our application with a single route
     tracing::info!("Building app & router");
     let app = Router::new()
-        .route("/", get(|| async { "Hello, World!" }))
-        .route("/ws", any(websocket_handler));
+        .route("/", get(|| async { "libretakt server" }))
+        .route("/ws", any(websocket_handler))
+        .with_state(app_state);
 
     const BIND_ADDR: &str = "0.0.0.0:3000";
     tracing::info!("Binding listener to {}...", BIND_ADDR);
