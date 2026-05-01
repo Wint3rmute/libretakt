@@ -78,10 +78,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-  rust_docker:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Build and push Docker images
-        uses: docker/build-push-action@v3.2.0
