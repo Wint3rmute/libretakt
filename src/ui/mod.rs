@@ -174,7 +174,7 @@ impl eframe::App for LibretaktUI {
 fn show_player_selection(ui_state: &mut UiState, _ctx: &Context, ui: &mut Ui) {
     let width = ui.min_size().x / 2.0;
     let height = 60.0;
-    let BUTTON_COLOR = egui::Color32::TRANSPARENT;
+    let button_color = egui::Color32::TRANSPARENT;
 
     egui::Grid::new("player_selection_id")
         .spacing(egui::Vec2 { x: 0.0, y: 0.0 })
@@ -182,7 +182,7 @@ fn show_player_selection(ui_state: &mut UiState, _ctx: &Context, ui: &mut Ui) {
             if ui
                 .add_sized(
                     [width, height],
-                    egui::widgets::Button::new("Mixing Console").fill(BUTTON_COLOR),
+                    egui::widgets::Button::new("Mixing Console").fill(button_color),
                 )
                 .clicked()
             {
@@ -192,7 +192,7 @@ fn show_player_selection(ui_state: &mut UiState, _ctx: &Context, ui: &mut Ui) {
             if ui
                 .add_sized(
                     [width, height],
-                    egui::widgets::Button::new("Track 1").fill(BUTTON_COLOR),
+                    egui::widgets::Button::new("Track 1").fill(button_color),
                 )
                 .clicked()
             {
@@ -204,7 +204,7 @@ fn show_player_selection(ui_state: &mut UiState, _ctx: &Context, ui: &mut Ui) {
             if ui
                 .add_sized(
                     [width, height],
-                    egui::widgets::Button::new("Track 2").fill(BUTTON_COLOR),
+                    egui::widgets::Button::new("Track 2").fill(button_color),
                 )
                 .clicked()
             {
@@ -214,7 +214,7 @@ fn show_player_selection(ui_state: &mut UiState, _ctx: &Context, ui: &mut Ui) {
             if ui
                 .add_sized(
                     [width, height],
-                    egui::widgets::Button::new("Track 3").fill(BUTTON_COLOR),
+                    egui::widgets::Button::new("Track 3").fill(button_color),
                 )
                 .clicked()
             {
