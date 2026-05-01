@@ -1,7 +1,13 @@
-use crate::app_state::ApplicationState;
-use crate::sequencer::Sequencer;
-use crate::state::{ProjectData, State, UiState};
+mod main;
+pub use main::main;
+
+pub mod app_state;
+mod sequencer;
+mod state;
+use app_state::ApplicationState;
 use egui::{Context, Ui};
+use sequencer::Sequencer;
+use state::{ProjectData, State, UiState};
 
 use tracing::info;
 

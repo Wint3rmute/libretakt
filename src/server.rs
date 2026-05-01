@@ -50,8 +50,8 @@ async fn handle_socket(mut socket: WebSocket) {
                     }
                 }
             }
-            _ = sleep(Duration::from_millis(1000)) => {
-                tracing::debug!("No message received for 1000ms, sending ping");
+            _ = sleep(Duration::from_millis(5000)) => {
+                tracing::debug!("No message received for 5000ms, sending ping");
                 if socket.send(Message::Ping(vec![].into())).await.is_err() {
                     tracing::warn!("WebSocket connection closed while sending ping");
                     return;
