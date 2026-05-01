@@ -126,6 +126,7 @@ impl LadderFilter {
     }
 
     // nonlinear ladder filter function with distortion.
+    #[allow(dead_code)]
     fn run_ladder_nonlinear(&mut self, input: f32) {
         let mut a = [1f32; 5];
         let base = [input, self.s[0], self.s[1], self.s[2], self.s[3]];

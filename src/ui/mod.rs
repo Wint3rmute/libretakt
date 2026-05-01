@@ -1,87 +1,40 @@
+use crate::app_state::ApplicationState;
 use crate::sequencer::Sequencer;
 use crate::state::{ProjectData, State, UiState};
-use egui::Direction;
-use egui::{Align, Context, Ui};
-use ewebsock::{WsEvent, WsMessage, WsReceiver, WsSender};
-use log::{error, info};
+use egui::{Context, Ui};
 
-struct WebSocketConnection {
-    ws_sender: WsSender,
-    ws_receiver: WsReceiver,
-    events: Vec<WsEvent>,
-    text_to_send: String,
-}
-
-impl WebSocketConnection {
-    fn new(ws_sender: WsSender, ws_receiver: WsReceiver) -> Self {
-        Self {
-            ws_sender,
-            ws_receiver,
-            events: Default::default(),
-            text_to_send: Default::default(),
-        }
-    }
-
-    fn ui(&mut self, ctx: &egui::Context) {
-        while let Some(event) = self.ws_receiver.try_recv() {
-            self.events.push(event);
-        }
-    }
-}
+use log::info;
 
 pub struct LibretaktUI {
-    server_url: String,
-    websocket: Option<WebSocketConnection>,
     state: State,
     sequencer: Sequencer,
-}
-
-impl Default for LibretaktUI {
-    fn default() -> Self {
-        Self {
-            server_url: "http://localhost:8081".to_string(),
-            websocket: None,
-            // state: State::Disconnected("Connecting..".to_string()),
-            state: State::Connected(ProjectData, UiState::PlayerSelection),
-            sequencer: Sequencer::default(),
-        }
-    }
+    app_state: ApplicationState,
 }
 
 impl LibretaktUI {
     /// Called once before the first frame.
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(_cc: &eframe::CreationContext<'_>, app_state: ApplicationState) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
+        log::info!("Creating UI...");
 
-        Default::default()
-    }
-
-    fn connect(&mut self, ctx: egui::Context) {
-        let wakeup = move || ctx.request_repaint(); // wake up UI thread on new message
-
-        // Uncomment to bring back websocket
-        match ewebsock::connect_with_wakeup(&self.server_url, Default::default(), wakeup) {
-            Ok((ws_sender, ws_receiver)) => {
-                self.websocket = Some(WebSocketConnection::new(ws_sender, ws_receiver));
-            }
-            Err(error) => {
-                log::error!("Failed to connect to {:?}: {}", &self.server_url, error);
-                self.state = State::Disconnected("Failed to connect to server".to_string());
-            }
+        Self {
+            state: State::Connected(ProjectData, UiState::PlayerSelection),
+            sequencer: Sequencer::default(),
+            app_state,
         }
     }
 
-    fn show_mixing_console(&mut self, ctx: &Context, ui: &mut Ui) {
-        let width = ui.min_size().x / 4.0;
-        let height = 60.0;
+    fn show_mixing_console(&mut self, _ctx: &Context, ui: &mut Ui) {
+        let _width = ui.min_size().x / 4.0;
+        let _height = 60.0;
         let mut my_f32 = 30.5;
 
         ui.add(egui::Slider::new(&mut my_f32, 0.0..=100.0).text("bASS"));
         ui.add(egui::Slider::new(&mut my_f32, 0.0..=100.0).text("Treble"));
     }
 
-    fn show_sequencer(&mut self, ctx: &Context, ui: &mut Ui) {
+    fn show_sequencer(&mut self, _ctx: &Context, ui: &mut Ui) {
         let width = ui.min_size().x / 4.0;
         let height = 60.0;
 
@@ -133,24 +86,26 @@ impl eframe::App for LibretaktUI {
     // fn add_step(ui: egui::Ui) {}
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // egui::TopBottomPanel::bottom("bottom_menu").show(ctx, |ui| {
-        //     ui.with_layout(
-        //         egui::Layout {
-        //             main_dir: Direction::LeftToRight,
-        //             main_wrap: false,
-        //             main_align: Align::Min,
-        //             main_justify: false,
-        //             cross_align: Align::Min,
-        //             cross_justify: false,
-        //         },
-        //         |ui| {
-        //             ui.button("T1");
-        //             ui.button("T2");
-        //             ui.button("T3");
-        //             ui.button("Mixer");
-        //         },
-        //     );
-        // });
+        if let Ok(Some(msg)) = self.app_state.from_ws.try_next() {
+            self.app_state.server_status = msg;
+            // self.state = State::Disconnected(msg);
+        }
+
+        egui::TopBottomPanel::bottom("bottom_menu").show(ctx, |ui| {
+            ui.with_layout(
+                egui::Layout {
+                    main_dir: egui::Direction::LeftToRight,
+                    main_wrap: false,
+                    main_align: egui::Align::Min,
+                    main_justify: false,
+                    cross_align: egui::Align::Min,
+                    cross_justify: false,
+                },
+                |ui| {
+                    ui.label(self.app_state.server_status.clone());
+                },
+            );
+        });
 
         egui::TopBottomPanel::top("my_panel").show(ctx, |ui| {
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
@@ -175,14 +130,14 @@ impl eframe::App for LibretaktUI {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| match &mut self.state {
-            State::Connected(project_data, ref mut ui_state) => match ui_state {
+            State::Connected(_project_data, ref mut ui_state) => match ui_state {
                 UiState::PlayerSelection => {
                     show_player_selection(ui_state, ctx, ui);
                 }
                 UiState::AudioTrackT1 => {
                     self.show_sequencer(ctx, ui);
                 }
-                UiState::MixingConsole_T0 => {
+                UiState::MixingConsoleT0 => {
                     self.show_mixing_console(ctx, ui);
                 }
                 _ => {}
@@ -216,10 +171,10 @@ impl eframe::App for LibretaktUI {
     }
 }
 
-fn show_player_selection(ui_state: &mut UiState, ctx: &Context, ui: &mut Ui) {
+fn show_player_selection(ui_state: &mut UiState, _ctx: &Context, ui: &mut Ui) {
     let width = ui.min_size().x / 2.0;
     let height = 60.0;
-    let BUTTON_COLOR = egui::Color32::TRANSPARENT;
+    let button_color = egui::Color32::TRANSPARENT;
 
     egui::Grid::new("player_selection_id")
         .spacing(egui::Vec2 { x: 0.0, y: 0.0 })
@@ -227,17 +182,17 @@ fn show_player_selection(ui_state: &mut UiState, ctx: &Context, ui: &mut Ui) {
             if ui
                 .add_sized(
                     [width, height],
-                    egui::widgets::Button::new("Mixing Console").fill(BUTTON_COLOR),
+                    egui::widgets::Button::new("Mixing Console").fill(button_color),
                 )
                 .clicked()
             {
-                *ui_state = UiState::MixingConsole_T0;
+                *ui_state = UiState::MixingConsoleT0;
             }
 
             if ui
                 .add_sized(
                     [width, height],
-                    egui::widgets::Button::new("Track 1").fill(BUTTON_COLOR),
+                    egui::widgets::Button::new("Track 1").fill(button_color),
                 )
                 .clicked()
             {
@@ -249,7 +204,7 @@ fn show_player_selection(ui_state: &mut UiState, ctx: &Context, ui: &mut Ui) {
             if ui
                 .add_sized(
                     [width, height],
-                    egui::widgets::Button::new("Track 2").fill(BUTTON_COLOR),
+                    egui::widgets::Button::new("Track 2").fill(button_color),
                 )
                 .clicked()
             {
@@ -259,7 +214,7 @@ fn show_player_selection(ui_state: &mut UiState, ctx: &Context, ui: &mut Ui) {
             if ui
                 .add_sized(
                     [width, height],
-                    egui::widgets::Button::new("Track 3").fill(BUTTON_COLOR),
+                    egui::widgets::Button::new("Track 3").fill(button_color),
                 )
                 .clicked()
             {
