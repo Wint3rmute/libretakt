@@ -50,7 +50,7 @@ Every egui frame runs three phases in order:
 ## Architecture: native server
 
 - `axum` WebSocket server on `0.0.0.0:3000`, endpoint at `/ws`
-- `handle_socket` uses `tokio::select!` to either receive a message or send a keepalive ping every 1000ms of silence
+- `handle_socket` uses `tokio::select!` to either receive a message or send a keepalive ping if no messages arrive
 
 ## Logging
 
