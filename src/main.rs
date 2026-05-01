@@ -8,10 +8,6 @@ fn main() {
 }
 
 #[cfg(target_arch = "wasm32")]
-mod frontend;
-
-// When compiling to web using trunk:
-#[cfg(target_arch = "wasm32")]
 fn main() {
-    frontend::main();
+    libretakt::frontend::main();
 }
