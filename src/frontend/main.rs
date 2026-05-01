@@ -36,7 +36,7 @@ pub fn main() {
     };
 
     tracing::info!("Spawning UI thread...");
-    wasm_bindgen_futures::spawn_local(async {
+    wasm_bindgen_futures::spawn_local(async move {
         eframe::WebRunner::new()
             .start(
                 "the_canvas_id",
