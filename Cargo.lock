@@ -1612,6 +1612,7 @@ dependencies = [
  "tracing-web",
  "url",
  "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]

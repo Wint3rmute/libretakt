@@ -25,6 +25,19 @@ fn main() {
         .with(tracing_subscriber::filter::LevelFilter::DEBUG)
         .init();
 
+    tracing::info!("Trying to get URL params...");
+    if let Some(search) = web_sys::window()
+        .and_then(|w| w.location().search().ok())
+        .filter(|s| !s.is_empty())
+    {
+        for pair in search.trim_start_matches('?').split('&') {
+            let mut parts = pair.splitn(2, '=');
+            let key = parts.next().unwrap_or("");
+            let val = parts.next().unwrap_or("");
+            tracing::info!("URL param: {} = {}", key, val);
+        }
+    }
+
     let (app_state, ws_channels) = create_channels();
 
     let web_options = eframe::WebOptions {
