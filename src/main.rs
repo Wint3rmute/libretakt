@@ -4,19 +4,7 @@ mod server;
 // When compiling the PC/laptop sound engine server
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
-    // use libretakt::persistence::{load_project, save_project};
-
     server::main();
-
-    //***SAMPLER***
-    use env_logger::Env;
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-
-    // let tracks = load_project();
-
-    //To be honest i haven't been looking at this code yet but Bączek wrote it
-    //so i guess its something important and i trust him 👉👈.
-    // let provider = Arc::new(SampleProvider::default());
 }
 
 // When compiling to web using trunk:
@@ -57,7 +45,7 @@ fn main() {
                 .to_ui
                 .unbounded_send("Connecting to websocket...".into())
                 .ok();
-            let (_sender, receiver) = ewebsock::connect("ws://localhost:3000", options).unwrap();
+            let (_sender, receiver) = ewebsock::connect("ws://localhost:3000/ws", options).unwrap();
 
             while let Some(event) = receiver.try_recv() {
                 log::info!("Received {:?}", event);
