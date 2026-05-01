@@ -22,7 +22,7 @@ impl WebSocketConnection {
         }
     }
 
-    fn ui(&mut self, ctx: &egui::Context) {
+    fn ui(&mut self, _ctx: &egui::Context) {
         while let Some(event) = self.ws_receiver.try_recv() {
             self.events.push(event);
         }
@@ -39,7 +39,7 @@ pub struct LibretaktUI {
 
 impl LibretaktUI {
     /// Called once before the first frame.
-    pub fn new(cc: &eframe::CreationContext<'_>, app_state: ApplicationState) -> Self {
+    pub fn new(_cc: &eframe::CreationContext<'_>, app_state: ApplicationState) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
         log::info!("Creating UI...");
@@ -53,16 +53,16 @@ impl LibretaktUI {
         }
     }
 
-    fn show_mixing_console(&mut self, ctx: &Context, ui: &mut Ui) {
-        let width = ui.min_size().x / 4.0;
-        let height = 60.0;
+    fn show_mixing_console(&mut self, _ctx: &Context, ui: &mut Ui) {
+        let _width = ui.min_size().x / 4.0;
+        let _height = 60.0;
         let mut my_f32 = 30.5;
 
         ui.add(egui::Slider::new(&mut my_f32, 0.0..=100.0).text("bASS"));
         ui.add(egui::Slider::new(&mut my_f32, 0.0..=100.0).text("Treble"));
     }
 
-    fn show_sequencer(&mut self, ctx: &Context, ui: &mut Ui) {
+    fn show_sequencer(&mut self, _ctx: &Context, ui: &mut Ui) {
         let width = ui.min_size().x / 4.0;
         let height = 60.0;
 
@@ -124,11 +124,11 @@ impl eframe::App for LibretaktUI {
         egui::TopBottomPanel::bottom("bottom_menu").show(ctx, |ui| {
             ui.with_layout(
                 egui::Layout {
-                    main_dir: Direction::LeftToRight,
+                    main_dir: egui::Direction::LeftToRight,
                     main_wrap: false,
-                    main_align: Align::Min,
+                    main_align: egui::Align::Min,
                     main_justify: false,
-                    cross_align: Align::Min,
+                    cross_align: egui::Align::Min,
                     cross_justify: false,
                 },
                 |ui| {
@@ -160,7 +160,7 @@ impl eframe::App for LibretaktUI {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| match &mut self.state {
-            State::Connected(project_data, ref mut ui_state) => match ui_state {
+            State::Connected(_project_data, ref mut ui_state) => match ui_state {
                 UiState::PlayerSelection => {
                     show_player_selection(ui_state, ctx, ui);
                 }
@@ -201,7 +201,7 @@ impl eframe::App for LibretaktUI {
     }
 }
 
-fn show_player_selection(ui_state: &mut UiState, ctx: &Context, ui: &mut Ui) {
+fn show_player_selection(ui_state: &mut UiState, _ctx: &Context, ui: &mut Ui) {
     let width = ui.min_size().x / 2.0;
     let height = 60.0;
     let BUTTON_COLOR = egui::Color32::TRANSPARENT;
