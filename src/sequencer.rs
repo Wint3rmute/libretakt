@@ -26,12 +26,7 @@ impl Default for Track {
     }
 }
 
+#[derive(Default)]
 pub struct Step {
     pub set: bool,
-}
-
-impl Default for Step {
-    fn default() -> Self {
-        Self { set: false }
-    }
 }
