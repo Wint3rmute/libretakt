@@ -22,7 +22,7 @@ jobs:
       - name: Build
         run: |
           sudo apt install libasound2-dev
-          make build
+          make build-backend
 
   deploy-wasm:
     runs-on: ubuntu-latest
