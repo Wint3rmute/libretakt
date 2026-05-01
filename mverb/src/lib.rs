@@ -261,12 +261,7 @@ impl MVerb {
         self.control_rate_counter += 1;
         self.predelay.set_length(self.predelay_smooth as usize);
         self.density2 = self.decay_smooth + 0.15;
-        if self.density2 > 0.5 {
-            self.density2 = 0.5;
-        }
-        if self.density2 < 0.25 {
-            self.density2 = 0.25;
-        }
+        self.density2 = self.density2.clamp(0.25, 0.5);
         self.all_pass_four_tap[1].set_feedback(self.density2);
         self.all_pass_four_tap[3].set_feedback(self.density2);
         self.all_pass_four_tap[0].set_feedback(self.density1);
