@@ -72,7 +72,7 @@ reqwasm = "0.5.0"
 ewebsock = "0.5.0"
 gloo-timers = { version = "0.3", features = ["futures"] }
 futures-channel = { workspace = true }
-web-sys = { version = "0.3", features = ["Window", "Location", "UrlSearchParams"] }
+web-sys = { version = "0.3", features = ["Window", "Location"] }
 
 [[bin]]
 bench = false
