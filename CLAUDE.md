@@ -5,9 +5,8 @@ Collaborative sampler. Rust workspace with a **dual-target architecture**: a nat
 ## Build commands
 
 ```bash
-cargo build                                        # native server
-cargo build --target wasm32-unknown-unknown        # WASM (type-check)
-cargo clippy --all-targets --all-features -- -D warnings  # must be warning-free
+make build  # build all targets
+make check  # checks all targets with clippy
 ```
 
 ## Dual-target pattern
