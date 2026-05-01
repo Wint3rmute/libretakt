@@ -1,10 +1,9 @@
 use crate::app_state::ApplicationState;
 use crate::sequencer::Sequencer;
 use crate::state::{ProjectData, State, UiState};
-use egui::Direction;
-use egui::{Align, Context, Ui};
-use ewebsock::{WsEvent, WsMessage, WsReceiver, WsSender};
-use log::{error, info};
+use egui::{Context, Ui};
+use ewebsock::{WsEvent, WsReceiver, WsSender};
+use log::info;
 
 struct WebSocketConnection {
     ws_sender: WsSender,
