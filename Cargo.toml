@@ -68,9 +68,10 @@ eframe = { version = "0.27.0", default-features = false, features = [
 log = "0.4"
 reqwasm = "0.5.0"
 ewebsock = "0.5.0"
+gloo-timers = { version = "0.3", features = ["futures"] }
+futures-channel = { workspace = true }
 
 [[bin]]
 bench = false
 path = "src/main.rs"
 name = "client"
-

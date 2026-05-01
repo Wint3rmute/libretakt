@@ -10,6 +10,8 @@ pub mod sample_provider;
 pub mod sequencer;
 
 #[cfg(target_arch = "wasm32")]
+pub mod app_state;
+#[cfg(target_arch = "wasm32")]
 pub mod sequencer;
 #[cfg(target_arch = "wasm32")]
 pub mod state;
