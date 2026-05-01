@@ -86,11 +86,9 @@ impl eframe::App for LibretaktUI {
     // fn add_step(ui: egui::Ui) {}
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if let Ok(msg) = self.app_state.from_ws.try_next() {
-            if let Some(msg) = msg {
-                self.app_state.server_status = msg;
-                // self.state = State::Disconnected(msg);
-            }
+        if let Ok(Some(msg)) = self.app_state.from_ws.try_next() {
+            self.app_state.server_status = msg;
+            // self.state = State::Disconnected(msg);
         }
 
         egui::TopBottomPanel::bottom("bottom_menu").show(ctx, |ui| {
