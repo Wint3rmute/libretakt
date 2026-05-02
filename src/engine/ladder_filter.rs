@@ -50,6 +50,7 @@ pub struct LadderFilter {
 }
 
 impl LadderFilter {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             vout: [0f32; 4],
@@ -193,6 +194,7 @@ impl LadderParameters {
     }
 
     // returns the value used to set cutoff. for get_parameter function
+    #[must_use]
     pub fn get_cutoff(&self) -> f32 {
         1. + 0.170_129_75 * (0.00005 * self.cutoff).ln()
     }

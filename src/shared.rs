@@ -20,6 +20,7 @@ pub struct TrackState {
 }
 
 impl TrackState {
+    #[must_use]
     pub fn new(num_steps: usize) -> Self {
         Self {
             steps: vec![false; num_steps],
@@ -35,6 +36,7 @@ pub struct SequencerState {
 }
 
 impl SequencerState {
+    #[must_use]
     pub fn new(num_tracks: usize, steps_per_track: usize) -> Self {
         Self {
             tracks: (0..num_tracks)
