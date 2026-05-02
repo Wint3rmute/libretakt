@@ -12,6 +12,21 @@ pub type ParamValue = u8;
 pub type ParamNum = usize;
 pub type TrackLength = usize;
 
+/// Commands sent from a client to the server.
+///
+/// All index fields use [`u32`] rather than `usize` so the on-the-wire
+/// representation is identical on 32-bit WASM and 64-bit native targets.
+/// Convert to `usize` at the server boundary with `field as usize`.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum ClientCommand {
+    /// Request exclusive edit access to a track.
+    RequestLock { track: u32 },
+    /// Relinquish edit access to a track.
+    ReleaseLock { track: u32 },
+    /// Toggle a step. Silently ignored by the server if the caller does not hold the lock.
+    ToggleStep { track: u32, step: u32 },
+}
+
 /// Represents a single change applied to the [Sequencer] structure
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SequencerMutation {
