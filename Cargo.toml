@@ -22,6 +22,7 @@ lto = true
 members = ["mverb"]
 
 [workspace.lints.clippy]
+cast_lossless = "warn"
 doc_markdown = "warn"
 must_use_candidate = "warn"
 semicolon_if_nothing_returned = "warn"

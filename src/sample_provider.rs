@@ -58,7 +58,7 @@ impl SampleData {
         let mut sample_data: Vec<f32> = vec![];
 
         while let Some(s) = decoder.next() {
-            sample_data.push(s / i16::MAX as f32);
+            sample_data.push(s / f32::from(i16::MAX));
             decoder.next(); // Skip the 2nd channel
         }
 
