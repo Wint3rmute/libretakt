@@ -1,7 +1,7 @@
 //! Implementation of Dattoro's figure-of-eight reverb structure.
 //!
 //! Code inspired by a C++ implementation available at
-//! https://github.com/martineastwood/mverb
+//! <https://github.com/martineastwood/mverb>
 
 pub enum MVerbParam {
     DampingFrequency,
