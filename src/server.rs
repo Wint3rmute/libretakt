@@ -14,9 +14,20 @@ use std::sync::{
 };
 use tokio::sync::{broadcast, Mutex};
 
+/// Shared server state, cloned cheaply into each connection handler via [`Arc`] internals.
 #[derive(Clone)]
 struct AppState {
+    /// The canonical sequencer state, shared across all connected clients.
+    ///
+    /// Guarded by a [`Mutex`] so that command handlers can read-modify-write
+    /// atomically. Always lock, mutate, clone what you need, then drop the guard
+    /// before any `.await` point to avoid holding the lock across yield points.
     sequencer: Arc<Mutex<SequencerState>>,
+    /// Broadcast channel used to fan out [`ServerMessage`]s to every connected client.
+    ///
+    /// Each connection handler holds a [`broadcast::Receiver`] subscribed to this
+    /// sender. Sending is fire-and-forget: lagging receivers are dropped by Tokio
+    /// automatically.
     broadcast: broadcast::Sender<ServerMessage>,
 }
 
