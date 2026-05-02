@@ -28,16 +28,20 @@ async fn static_handler(uri: axum::http::Uri) -> impl IntoResponse {
             let mime = mime_guess::from_path(path).first_or_octet_stream();
             ([(header::CONTENT_TYPE, mime.essence_str())], content.data).into_response()
         }
-        None => {
-            // SPA fallback — serve index.html for unknown paths
-            let index = StaticAssets::get("index.html").unwrap();
-            (
+        None => match StaticAssets::get("index.html") {
+            Some(index) => (
                 StatusCode::OK,
                 [(header::CONTENT_TYPE, "text/html")],
                 index.data,
             )
-                .into_response()
-        }
+                .into_response(),
+            None => (
+                StatusCode::NOT_FOUND,
+                [(header::CONTENT_TYPE, "text/plain")],
+                "404 not found".as_bytes(),
+            )
+                .into_response(),
+        },
     }
 }
 
