@@ -53,5 +53,5 @@ async fn accept_connection(stream: TcpStream) {
     read.try_filter(|msg| future::ready(msg.is_text() || msg.is_binary()))
         .forward(write)
         .await
-        .expect("Failed to forward messages")
+        .expect("Failed to forward messages");
 }

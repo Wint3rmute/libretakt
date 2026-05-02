@@ -49,7 +49,7 @@ impl Adsr {
                 Phase::Sustain => {}
                 Phase::Release | Phase::Finished => {
                     self.state = 0.0;
-                    self.phase = Phase::Attack
+                    self.phase = Phase::Attack;
                 }
             }
         } else {

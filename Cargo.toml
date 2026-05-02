@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 default-run = "client"
 
+[lints]
+workspace = true
+
 # Required to use library in the `examples` folder
 [lib]
 bench = false
@@ -17,6 +20,9 @@ lto = true
 
 [workspace]
 members = ["mverb"]
+
+[workspace.lints.clippy]
+semicolon_if_nothing_returned = "warn"
 
 [workspace.dependencies]
 uuid = { version = "1.11", features = ["v4", "serde"] } # uuid's fit well in this context.
