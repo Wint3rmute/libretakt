@@ -53,8 +53,15 @@ pub fn main() {
         loop {
             let options = ewebsock::Options::default();
 
-            // TODO: make the WebSocket URL configurable (e.g. via a URL parameter).
-            let ws_result = ewebsock::connect("ws://localhost:3000/ws", options);
+            // In debug builds connect to a local dev server; in release builds
+            // connect to the production endpoint.
+            let ws_url = if cfg!(debug_assertions) {
+                "ws://localhost:3000/ws"
+            } else {
+                "wss://libretakt.fly.dev/ws"
+            };
+            tracing::info!("Connecting to WebSocket at {}", ws_url);
+            let ws_result = ewebsock::connect(ws_url, options);
             let (mut sender, receiver) = match ws_result {
                 Ok(pair) => pair,
                 Err(e) => {
