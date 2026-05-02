@@ -6,7 +6,7 @@ RUN rustup target add wasm32-unknown-unknown \
 WORKDIR /app
 COPY . .
 
-RUN make build-release
+RUN trunk build --release && cargo build --release
 
 FROM debian:bookworm-slim
 
