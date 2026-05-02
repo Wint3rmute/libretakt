@@ -13,7 +13,7 @@
 
 use std::{env, io::Error};
 
-use futures_util::{future, StreamExt, TryStreamExt};
+use futures_util::{future, StreamExt as _, TryStreamExt as _};
 use tokio::net::{TcpListener, TcpStream};
 use tracing::info;
 
@@ -22,7 +22,7 @@ async fn main() -> Result<(), Error> {
     let _ = tracing_subscriber::fmt().try_init();
     let addr = env::args()
         .nth(1)
-        .unwrap_or_else(|| "127.0.0.1:8081".to_string());
+        .unwrap_or_else(|| "127.0.0.1:8081".to_owned());
 
     // Create the event loop and TCP listener we'll accept connections on.
     let try_socket = TcpListener::bind(&addr).await;
@@ -53,5 +53,5 @@ async fn accept_connection(stream: TcpStream) {
     read.try_filter(|msg| future::ready(msg.is_text() || msg.is_binary()))
         .forward(write)
         .await
-        .expect("Failed to forward messages")
+        .expect("Failed to forward messages");
 }

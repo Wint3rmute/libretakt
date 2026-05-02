@@ -1,9 +1,9 @@
 //! Multimode resonant ladder filter emulation.
 //!
-//! Copied from https://github.com/RustAudio/vst-rs
+//! Copied from <https://github.com/RustAudio/vst-rs>.
 //!
 //! The MIT License (MIT)
-//! Copyright (c) 2015 Marko Mijalkovic
+//! Copyright (c) 2015 Marko Mijalkovic.
 //!
 //! Permission is hereby granted, free of charge, to any person obtaining a copy
 //! of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,12 @@
 //! This zero-delay feedback filter is based on a 4-stage transistor ladder filter.
 //! It follows the following equations:
 //! x = input - tanh(self.res * self.vout[3])
-//! vout[0] = self.params.g.get() * (tanh(x) - tanh(self.vout[0])) + self.s[0]
-//! vout[1] = self.params.g.get() * (tanh(self.vout[0]) - tanh(self.vout[1])) + self.s[1]
-//! vout[0] = self.params.g.get() * (tanh(self.vout[1]) - tanh(self.vout[2])) + self.s[2]
-//! vout[0] = self.params.g.get() * (tanh(self.vout[2]) - tanh(self.vout[3])) + self.s[3]
+//! vout[0] = `self.params.g.get()` * (tanh(x) - tanh(self.vout[0])) + self.s[0]
+//! vout[1] = `self.params.g.get()` * (tanh(self.vout[0]) - tanh(self.vout[1])) + self.s[1]
+//! vout[0] = `self.params.g.get()` * (tanh(self.vout[1]) - tanh(self.vout[2])) + self.s[2]
+//! vout[0] = `self.params.g.get()` * (tanh(self.vout[2]) - tanh(self.vout[3])) + self.s[3]
 //! since we can't easily solve a nonlinear equation,
-//! Mystran's fixed-pivot method is used to approximate the tanh() parts.
+//! Mystran's fixed-pivot method is used to approximate the `tanh()` parts.
 //! Quality can be improved a lot by oversampling a bit.
 //! Feedback is clipped independently of the input, so it doesn't disappear at high gains.
 
@@ -50,6 +50,7 @@ pub struct LadderFilter {
 }
 
 impl LadderFilter {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             vout: [0f32; 4],
@@ -90,8 +91,8 @@ pub struct LadderParameters {
 }
 
 impl Default for LadderParameters {
-    fn default() -> LadderParameters {
-        LadderParameters {
+    fn default() -> Self {
+        Self {
             cutoff: 1000.0,
             res: 2.,
             poles: 3,
@@ -99,7 +100,7 @@ impl Default for LadderParameters {
             drive: 0.,
             // sample_rate: 44100.,
             sample_rate: 44100. * 2.0,
-            g: 0.07135868,
+            g: 0.071_358_68,
         }
     }
 }
@@ -132,10 +133,10 @@ impl LadderFilter {
         let base = [input, self.s[0], self.s[1], self.s[2], self.s[3]];
         // a[n] is the fixed-pivot approximation for tanh()
         for n in 0..base.len() {
-            if base[n] != 0. {
-                a[n] = base[n].tanh() / base[n];
-            } else {
+            if base[n] == 0. {
                 a[n] = 1.;
+            } else {
+                a[n] = base[n].tanh() / base[n];
             }
         }
         // denominators of solutions of individual stages. Simplifies the math a bit
@@ -193,8 +194,9 @@ impl LadderParameters {
     }
 
     // returns the value used to set cutoff. for get_parameter function
+    #[must_use]
     pub fn get_cutoff(&self) -> f32 {
-        1. + 0.17012975 * (0.00005 * self.cutoff).ln()
+        1. + 0.170_129_75 * (0.00005 * self.cutoff).ln()
     }
 
     pub fn set_poles(&mut self, value: f32) {

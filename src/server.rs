@@ -38,7 +38,7 @@ async fn static_handler(uri: axum::http::Uri) -> impl IntoResponse {
             None => (
                 StatusCode::NOT_FOUND,
                 [(header::CONTENT_TYPE, "text/plain")],
-                "404 not found".as_bytes(),
+                b"404 not found",
             )
                 .into_response(),
         },
@@ -163,28 +163,23 @@ async fn handle_command(
             // Acquire, mutate, clone what we need, drop — then do async work.
             let maybe_track_state = {
                 let mut seq = state.sequencer.lock().await;
-                if seq.tracks[track as usize].locked_by.is_none() {
+                seq.tracks[track as usize].locked_by.is_none().then(|| {
                     seq.tracks[track as usize].locked_by = Some(client_id);
-                    Some(seq.tracks[track as usize].clone())
-                } else {
-                    None
-                }
+                    seq.tracks[track as usize].clone()
+                })
                 // seq dropped here
             };
 
-            match maybe_track_state {
-                Some(track_state) => {
-                    tracing::info!(client_id, track, "Lock acquired");
-                    let _ = state.broadcast.send(ServerMessage::TrackUpdate {
-                        track,
-                        state: track_state,
-                    });
-                    None
-                }
-                None => {
-                    tracing::debug!(client_id, track, "Lock denied — track already held");
-                    Some(ServerMessage::LockDenied { track })
-                }
+            if let Some(track_state) = maybe_track_state {
+                tracing::info!(client_id, track, "Lock acquired");
+                let _ = state.broadcast.send(ServerMessage::TrackUpdate {
+                    track,
+                    state: track_state,
+                });
+                None
+            } else {
+                tracing::debug!(client_id, track, "Lock denied — track already held");
+                Some(ServerMessage::LockDenied { track })
             }
         }
 
@@ -279,6 +274,8 @@ fn make_app_state(num_tracks: usize, steps_per_track: usize) -> AppState {
 
 #[tokio::main]
 pub async fn main() {
+    const BIND_ADDR: &str = "0.0.0.0:3000";
+
     tracing_subscriber::fmt()
         .with_file(true)
         .with_line_number(true)
@@ -297,7 +294,6 @@ pub async fn main() {
         .fallback(static_handler)
         .with_state(app_state);
 
-    const BIND_ADDR: &str = "0.0.0.0:3000";
     tracing::info!("Binding listener to {}...", BIND_ADDR);
     let listener = tokio::net::TcpListener::bind(BIND_ADDR).await.unwrap();
     tracing::info!("Application running at {}", BIND_ADDR);

@@ -1,6 +1,6 @@
 use rodio::decoder::Decoder;
 use rodio::source::Source;
-use std::io::{self, Write};
+use std::io::{self, Write as _};
 
 use std::time::Duration;
 
@@ -19,11 +19,11 @@ impl Sample {
         let mut sample_data: Vec<f32> = vec![];
 
         while let Some(s) = decoder.next() {
-            sample_data.push(s / i16::MAX as f32);
+            sample_data.push(s / f32::from(i16::MAX));
             decoder.next(); // Skip the 2nd channel
         }
 
-        Sample {
+        Self {
             play_position: 0,
             data: sample_data,
         }

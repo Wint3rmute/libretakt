@@ -21,7 +21,7 @@ impl Default for SampleProvider {
         let mut paths_vec = vec![];
         for path in paths {
             let path_str = path.unwrap().path().into_os_string();
-            let path_str = path_str.to_str().unwrap().to_string();
+            let path_str = path_str.to_str().unwrap().to_owned();
             paths_vec.push(path_str);
         }
 
@@ -43,7 +43,7 @@ impl Default for SampleProvider {
     }
 }
 
-/// Data of a single sample used within Libretakt
+/// Data of a single sample used within Libretakt.
 pub struct SampleData {
     pub name: String,
     pub data: Vec<f32>,
@@ -58,13 +58,13 @@ impl SampleData {
         let mut sample_data: Vec<f32> = vec![];
 
         while let Some(s) = decoder.next() {
-            sample_data.push(s / i16::MAX as f32);
+            sample_data.push(s / f32::from(i16::MAX));
             decoder.next(); // Skip the 2nd channel
         }
 
-        SampleData {
+        Self {
             data: sample_data,
-            name: file_name.to_string(),
+            name: file_name.to_owned(),
         }
     }
 }

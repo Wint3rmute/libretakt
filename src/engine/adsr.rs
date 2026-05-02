@@ -49,7 +49,7 @@ impl Adsr {
                 Phase::Sustain => {}
                 Phase::Release | Phase::Finished => {
                     self.state = 0.0;
-                    self.phase = Phase::Attack
+                    self.phase = Phase::Attack;
                 }
             }
         } else {
@@ -62,7 +62,7 @@ impl Adsr {
                         self.phase = Phase::Finished;
                     }
                 }
-                _ => {
+                Phase::Attack | Phase::Decay | Phase::Sustain => {
                     self.phase = Phase::Release;
                 }
             }
@@ -70,7 +70,7 @@ impl Adsr {
         self.state
     }
 
-    pub fn reset(&mut self) {
+    pub const fn reset(&mut self) {
         self.state = 0.0;
         self.phase = Phase::Attack;
     }
