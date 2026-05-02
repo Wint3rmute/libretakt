@@ -599,7 +599,6 @@ impl<const MAX_LENGTH: usize> StaticDelayLineFourTap<MAX_LENGTH> {
 
     fn get_index(&self, index: usize) -> f32 {
         match index {
-            0 => self.buffer[self.index1],
             1 => self.buffer[self.index2],
             2 => self.buffer[self.index3],
             3 => self.buffer[self.index4],
@@ -703,7 +702,6 @@ impl<const MAX_LENGTH: usize> StaticDelayLineEightTap<MAX_LENGTH> {
 
     fn get_index(&self, index: usize) -> f32 {
         match index {
-            0 => self.buffer[self.index1],
             1 => self.buffer[self.index2],
             2 => self.buffer[self.index3],
             3 => self.buffer[self.index4],
