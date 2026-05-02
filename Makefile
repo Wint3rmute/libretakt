@@ -1,4 +1,4 @@
-.PHONY: build-backend build-frontend build fmt serve check test
+.PHONY: build-backend build-frontend build build-release fmt serve check test clean
 
 build-backend:
 	cargo build
@@ -7,6 +7,10 @@ build-frontend:
 	~/.cargo/bin/trunk build
 
 build: build-backend build-frontend
+
+build-release:
+	~/.cargo/bin/trunk build --release
+	cargo build --release
 
 fmt:
 	cargo fmt
@@ -23,3 +27,8 @@ check:
 
 test:
 	cargo test --all-targets --all-features --examples --workspace
+
+clean:
+	cargo clean
+	rm -rf target
+	rm -rf dist

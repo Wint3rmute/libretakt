@@ -3,8 +3,9 @@ use axum::{
         ws::{Message, WebSocket, WebSocketUpgrade},
         State,
     },
-    response::Response,
-    routing::{any, get},
+    http::{header, StatusCode},
+    response::{IntoResponse, Response},
+    routing::any,
     Router,
 };
 use libretakt::shared::{ClientCommand, ClientId, SequencerState, ServerMessage};
@@ -13,6 +14,36 @@ use std::sync::{
     Arc,
 };
 use tokio::sync::{broadcast, Mutex};
+
+#[derive(rust_embed::RustEmbed)]
+#[folder = "dist/"]
+struct StaticAssets;
+
+async fn static_handler(uri: axum::http::Uri) -> impl IntoResponse {
+    let path = uri.path().trim_start_matches('/');
+    let path = if path.is_empty() { "index.html" } else { path };
+
+    match StaticAssets::get(path) {
+        Some(content) => {
+            let mime = mime_guess::from_path(path).first_or_octet_stream();
+            ([(header::CONTENT_TYPE, mime.essence_str())], content.data).into_response()
+        }
+        None => match StaticAssets::get("index.html") {
+            Some(index) => (
+                StatusCode::OK,
+                [(header::CONTENT_TYPE, "text/html")],
+                index.data,
+            )
+                .into_response(),
+            None => (
+                StatusCode::NOT_FOUND,
+                [(header::CONTENT_TYPE, "text/plain")],
+                "404 not found".as_bytes(),
+            )
+                .into_response(),
+        },
+    }
+}
 
 /// Shared server state, cloned cheaply into each connection handler via [`Arc`] internals.
 #[derive(Clone)]
@@ -262,8 +293,8 @@ pub async fn main() {
 
     tracing::info!("Building app & router");
     let app = Router::new()
-        .route("/", get(|| async { "libretakt server" }))
         .route("/ws", any(websocket_handler))
+        .fallback(static_handler)
         .with_state(app_state);
 
     const BIND_ADDR: &str = "0.0.0.0:3000";
