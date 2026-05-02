@@ -16,10 +16,9 @@ overflow-checks = false
 lto = true
 
 [workspace]
-members = ["mverb", "common"]
+members = ["mverb"]
 
 [workspace.dependencies]
-common = { path = "common" }
 uuid = { version = "1.11", features = ["v4", "serde"] } # uuid's fit well in this context.
 url = "2.5"
 futures-channel = "0.3.31"
@@ -29,10 +28,10 @@ tracing = "0.1"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.145"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mverb = {path = "mverb" }
-common = { path = "common" }
 url = {workspace = true}
 futures-util = {workspace = true}
 tokio = {workspace = true}
@@ -44,7 +43,6 @@ egui = "0.27.0"
 axum = { version = "0.8.6", features = ["ws"] }
 
 rodio = { version = "0.21", default-features = true }
-serde_json = "1.0.145"
 flume = "0.11.1"
 serde_derive = "1.0.228"
 tokio-tungstenite = "0.28.0"
