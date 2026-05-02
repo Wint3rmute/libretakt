@@ -11,18 +11,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Build
-        run: |
-          cargo fmt --check
+      - name: Check formatting
+        run: cargo fmt --check
 
   build-server:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - name: Install system dependencies
+        run: sudo apt-get install -y libasound2-dev
+      - uses: swatinem/rust-cache@v2
       - name: Build
-        run: |
-          sudo apt install libasound2-dev
-          make build-backend
+        run: make build-backend
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install system dependencies
+        run: sudo apt-get install -y libasound2-dev
+      - uses: swatinem/rust-cache@v2
+      - name: Clippy
+        run: make check
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install system dependencies
+        run: sudo apt-get install -y libasound2-dev
+      - uses: swatinem/rust-cache@v2
+      - name: Test
+        run: make test
 
   deploy-wasm:
     runs-on: ubuntu-latest
@@ -32,12 +52,23 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
-      - name: setup toolchain
+      - name: Setup WASM target
         run: rustup target add wasm32-unknown-unknown
-      - name: Build
-        run: |
-          wget -qO- https://github.com/thedodd/trunk/releases/download/v0.20.2/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
-          TRUNK_BUILD_PUBLIC_URL="https://wint3rmute.github.io/libretakt/" ./trunk build --release
+      # Separate cache key from native jobs — different target directory contents
+      - uses: swatinem/rust-cache@v2
+        with:
+          key: wasm
+      - name: Cache Trunk binary
+        id: cache-trunk
+        uses: actions/cache@v4
+        with:
+          path: trunk
+          key: trunk-v0.20.2-x86_64-linux
+      - name: Install Trunk
+        if: steps.cache-trunk.outputs.cache-hit != 'true'
+        run: wget -qO- https://github.com/thedodd/trunk/releases/download/v0.20.2/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+      - name: Build WASM
+        run: TRUNK_BUILD_PUBLIC_URL="https://wint3rmute.github.io/libretakt/" ./trunk build --release
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
@@ -47,28 +78,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Build
-        run: |
-          sudo apt install libasound2-dev
-          make check
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Build
-        run: |
-          sudo apt install libasound2-dev
-          make test
-
-  rust_docker:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Build and push Docker images
-        uses: docker/build-push-action@v3.2.0
