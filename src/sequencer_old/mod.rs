@@ -87,47 +87,172 @@ impl Sequencer {
 
             match mutation {
                 SequencerMutation::CreateStep(track, pattern, step) => {
-                    self.tracks[track].patterns[pattern].steps[step] = Some(Step::default());
+                    let Some(t) = self.tracks.get_mut(track) else {
+                        tracing::warn!(
+                            "CreateStep: track {track} out of range (len={})",
+                            self.tracks.len()
+                        );
+                        continue;
+                    };
+                    let Some(p) = t.patterns.get_mut(pattern) else {
+                        tracing::warn!(
+                            "CreateStep: pattern {pattern} out of range (len={})",
+                            t.patterns.len()
+                        );
+                        continue;
+                    };
+                    let Some(s) = p.steps.get_mut(step) else {
+                        tracing::warn!(
+                            "CreateStep: step {step} out of range (len={})",
+                            p.steps.len()
+                        );
+                        continue;
+                    };
+                    *s = Some(Step::default());
                 }
                 SequencerMutation::RemoveStep(track, pattern, step) => {
-                    self.tracks[track].patterns[pattern].steps[step] = None;
+                    let Some(t) = self.tracks.get_mut(track) else {
+                        tracing::warn!(
+                            "RemoveStep: track {track} out of range (len={})",
+                            self.tracks.len()
+                        );
+                        continue;
+                    };
+                    let Some(p) = t.patterns.get_mut(pattern) else {
+                        tracing::warn!(
+                            "RemoveStep: pattern {pattern} out of range (len={})",
+                            t.patterns.len()
+                        );
+                        continue;
+                    };
+                    let Some(s) = p.steps.get_mut(step) else {
+                        tracing::warn!(
+                            "RemoveStep: step {step} out of range (len={})",
+                            p.steps.len()
+                        );
+                        continue;
+                    };
+                    *s = None;
                 }
                 SequencerMutation::SetParam(track, pattern, step, parameter, value) => {
-                    if self.tracks[track].patterns[pattern].steps[step].is_none() {
-                        self.tracks[track].patterns[pattern].steps[step] = Some(Step::default());
+                    let Some(t) = self.tracks.get_mut(track) else {
+                        tracing::warn!(
+                            "SetParam: track {track} out of range (len={})",
+                            self.tracks.len()
+                        );
+                        continue;
+                    };
+                    let Some(p) = t.patterns.get_mut(pattern) else {
+                        tracing::warn!(
+                            "SetParam: pattern {pattern} out of range (len={})",
+                            t.patterns.len()
+                        );
+                        continue;
+                    };
+                    let Some(s) = p.steps.get_mut(step) else {
+                        tracing::warn!(
+                            "SetParam: step {step} out of range (len={})",
+                            p.steps.len()
+                        );
+                        continue;
+                    };
+                    if s.is_none() {
+                        *s = Some(Step::default());
                     }
-
-                    self.tracks[track].patterns[pattern].steps[step]
-                        .as_mut()
-                        .unwrap()
-                        .parameters[parameter as usize] = Some(value);
+                    s.as_mut().unwrap().parameters[parameter as usize] = Some(value);
                 }
                 SequencerMutation::RemoveParam(track, pattern, step, parameter) => {
-                    if self.tracks[track].patterns[pattern].steps[step].is_none() {
-                        self.tracks[track].patterns[pattern].steps[step] = Some(Step::default());
+                    let Some(t) = self.tracks.get_mut(track) else {
+                        tracing::warn!(
+                            "RemoveParam: track {track} out of range (len={})",
+                            self.tracks.len()
+                        );
+                        continue;
+                    };
+                    let Some(p) = t.patterns.get_mut(pattern) else {
+                        tracing::warn!(
+                            "RemoveParam: pattern {pattern} out of range (len={})",
+                            t.patterns.len()
+                        );
+                        continue;
+                    };
+                    let Some(s) = p.steps.get_mut(step) else {
+                        tracing::warn!(
+                            "RemoveParam: step {step} out of range (len={})",
+                            p.steps.len()
+                        );
+                        continue;
+                    };
+                    if s.is_none() {
+                        *s = Some(Step::default());
                     }
-
-                    self.tracks[track].patterns[pattern].steps[step]
-                        .as_mut()
-                        .unwrap()
-                        .parameters[parameter as usize] = None;
+                    s.as_mut().unwrap().parameters[parameter as usize] = None;
                 }
                 SequencerMutation::UpdateTrackParam(track, index, value) => {
-                    self.tracks[track].default_parameters.parameters[index] = value;
+                    let Some(t) = self.tracks.get_mut(track) else {
+                        tracing::warn!(
+                            "UpdateTrackParam: track {track} out of range (len={})",
+                            self.tracks.len()
+                        );
+                        continue;
+                    };
+                    let Some(p) = t.default_parameters.parameters.get_mut(index) else {
+                        tracing::warn!(
+                            "UpdateTrackParam: param index {index} out of range (len={})",
+                            t.default_parameters.parameters.len()
+                        );
+                        continue;
+                    };
+                    *p = value;
                 }
                 SequencerMutation::SilenceTrack(track) => {
-                    self.tracks[track].silenced = true;
+                    let Some(t) = self.tracks.get_mut(track) else {
+                        tracing::warn!(
+                            "SilenceTrack: track {track} out of range (len={})",
+                            self.tracks.len()
+                        );
+                        continue;
+                    };
+                    t.silenced = true;
                 }
                 SequencerMutation::UnSilenceTrack(track) => {
-                    self.tracks[track].silenced = false;
+                    let Some(t) = self.tracks.get_mut(track) else {
+                        tracing::warn!(
+                            "UnSilenceTrack: track {track} out of range (len={})",
+                            self.tracks.len()
+                        );
+                        continue;
+                    };
+                    t.silenced = false;
                 }
                 SequencerMutation::SelectPattern(track, pattern) => {
-                    self.tracks[track].current_pattern = pattern;
+                    let Some(t) = self.tracks.get_mut(track) else {
+                        tracing::warn!(
+                            "SelectPattern: track {track} out of range (len={})",
+                            self.tracks.len()
+                        );
+                        continue;
+                    };
+                    if pattern >= t.patterns.len() {
+                        tracing::warn!(
+                            "SelectPattern: pattern {pattern} out of range (len={})",
+                            t.patterns.len()
+                        );
+                        continue;
+                    }
+                    t.current_pattern = pattern;
                 }
                 SequencerMutation::StopPlayback => self.stop_playback(),
                 SequencerMutation::StartPlayback => self.start_playback(),
                 SequencerMutation::SetTrackLength(track, new_length) => {
-                    self.tracks[track].set_length(new_length);
+                    let Some(t) = self.tracks.get_mut(track) else {
+                        tracing::warn!(
+                            "SetTrackLength: track {track} out of range (len={})",
+                            self.tracks.len()
+                        );
+                        continue;
+                    };
+                    t.set_length(new_length);
                 }
             }
         }
@@ -220,7 +345,7 @@ impl Track {
     /// Applies all parameter locks defined in the step to default [PlaybackParameters](Track::playback_parameters).
     fn next_step(&mut self) -> Option<PlaybackParameters> {
         self.current_step += 1;
-        let pattern = &self.patterns[self.current_pattern];
+        let pattern = self.patterns.get(self.current_pattern)?;
 
         if self.current_step >= pattern.steps.len() {
             self.current_step = 0;
@@ -230,13 +355,13 @@ impl Track {
             return None;
         }
 
-        if let Some(step) = &pattern.steps[self.current_step] {
-            let playback_parameters = self.default_parameters.merge(step);
-            // TODO: parameter locks
-            Some(playback_parameters)
-        } else {
-            None
-        }
+        // Use get() so an empty step list (e.g. after set_length(0)) never panics.
+        // TODO: parameter locks
+        pattern
+            .steps
+            .get(self.current_step)
+            .and_then(|s| s.as_ref())
+            .map(|step| self.default_parameters.merge(step))
     }
 
     fn set_length(&mut self, new_length: usize) {
