@@ -41,6 +41,8 @@ futures = "0.3.31"
 
 egui = "0.27.0"
 axum = { version = "0.8.6", features = ["ws"] }
+rust-embed = "8"
+mime_guess = "2"
 
 rodio = { version = "0.21", default-features = true }
 flume = "0.11.1"
