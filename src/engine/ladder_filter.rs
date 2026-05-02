@@ -1,9 +1,9 @@
 //! Multimode resonant ladder filter emulation.
 //!
-//! Copied from <https://github.com/RustAudio/vst-rs>
+//! Copied from <https://github.com/RustAudio/vst-rs>.
 //!
 //! The MIT License (MIT)
-//! Copyright (c) 2015 Marko Mijalkovic
+//! Copyright (c) 2015 Marko Mijalkovic.
 //!
 //! Permission is hereby granted, free of charge, to any person obtaining a copy
 //! of this software and associated documentation files (the "Software"), to deal
@@ -133,10 +133,10 @@ impl LadderFilter {
         let base = [input, self.s[0], self.s[1], self.s[2], self.s[3]];
         // a[n] is the fixed-pivot approximation for tanh()
         for n in 0..base.len() {
-            if base[n] != 0. {
-                a[n] = base[n].tanh() / base[n];
-            } else {
+            if base[n] == 0. {
                 a[n] = 1.;
+            } else {
+                a[n] = base[n].tanh() / base[n];
             }
         }
         // denominators of solutions of individual stages. Simplifies the math a bit

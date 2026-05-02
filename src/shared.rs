@@ -39,8 +39,8 @@ impl SequencerState {
     #[must_use]
     pub fn new(num_tracks: usize, steps_per_track: usize) -> Self {
         Self {
-            tracks: (0..num_tracks)
-                .map(|_| TrackState::new(steps_per_track))
+            tracks: std::iter::repeat_with(|| TrackState::new(steps_per_track))
+                .take(num_tracks)
                 .collect(),
         }
     }

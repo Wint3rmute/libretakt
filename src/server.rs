@@ -163,28 +163,23 @@ async fn handle_command(
             // Acquire, mutate, clone what we need, drop — then do async work.
             let maybe_track_state = {
                 let mut seq = state.sequencer.lock().await;
-                if seq.tracks[track as usize].locked_by.is_none() {
+                seq.tracks[track as usize].locked_by.is_none().then(|| {
                     seq.tracks[track as usize].locked_by = Some(client_id);
-                    Some(seq.tracks[track as usize].clone())
-                } else {
-                    None
-                }
+                    seq.tracks[track as usize].clone()
+                })
                 // seq dropped here
             };
 
-            match maybe_track_state {
-                Some(track_state) => {
-                    tracing::info!(client_id, track, "Lock acquired");
-                    let _ = state.broadcast.send(ServerMessage::TrackUpdate {
-                        track,
-                        state: track_state,
-                    });
-                    None
-                }
-                None => {
-                    tracing::debug!(client_id, track, "Lock denied — track already held");
-                    Some(ServerMessage::LockDenied { track })
-                }
+            if let Some(track_state) = maybe_track_state {
+                tracing::info!(client_id, track, "Lock acquired");
+                let _ = state.broadcast.send(ServerMessage::TrackUpdate {
+                    track,
+                    state: track_state,
+                });
+                None
+            } else {
+                tracing::debug!(client_id, track, "Lock denied — track already held");
+                Some(ServerMessage::LockDenied { track })
             }
         }
 

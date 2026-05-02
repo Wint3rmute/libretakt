@@ -1,7 +1,7 @@
 //! Implementation of Dattoro's figure-of-eight reverb structure.
 //!
 //! Code inspired by a C++ implementation available at
-//! <https://github.com/martineastwood/mverb>
+//! <https://github.com/martineastwood/mverb>.
 
 pub enum MVerbParam {
     DampingFrequency,
@@ -56,13 +56,13 @@ impl Default for MVerb {
         let sample_rate = 44100.0;
 
         let mut result = Self {
-            all_pass: Default::default(),
-            all_pass_four_tap: Default::default(),
-            bandwidth_filter: Default::default(),
-            early_reflections_delay_line: Default::default(),
-            predelay: Default::default(),
-            damping: Default::default(),
-            static_delay_line: Default::default(),
+            all_pass: [AllPass::default(), AllPass::default(), AllPass::default(), AllPass::default()],
+            all_pass_four_tap: [StaticAllPassFourTap::default(), StaticAllPassFourTap::default(), StaticAllPassFourTap::default(), StaticAllPassFourTap::default()],
+            bandwidth_filter: [LowPassFilter::default(), LowPassFilter::default()],
+            early_reflections_delay_line: [StaticDelayLineEightTap::default(), StaticDelayLineEightTap::default()],
+            predelay: StaticDelayLine::default(),
+            damping: [LowPassFilter::default(), LowPassFilter::default()],
+            static_delay_line: [StaticDelayLineFourTap::default(), StaticDelayLineFourTap::default(), StaticDelayLineFourTap::default(), StaticDelayLineFourTap::default()],
 
             damping_frequency: 0.9,
             bandwidth_frequency: 0.9,
@@ -808,54 +808,55 @@ mod tests {
 
     #[test]
     fn filter_construct_and_process() {
-        let mut filter: LowPassFilter<4> = Default::default();
+        let mut filter: LowPassFilter<4> = LowPassFilter::default();
         filter.operator(1.0);
     }
 
     #[test]
     fn allpass_construct_and_process() {
-        let mut allpass: AllPass<96000> = Default::default();
+        let mut allpass: AllPass<96000> = AllPass::default();
         allpass.operator(1.0);
         allpass.clear();
     }
 
     #[test]
     fn all_pass_four_tap_construct_and_process() {
-        let mut all_pass_four_tap: StaticAllPassFourTap<96000> = Default::default();
+        let mut all_pass_four_tap: StaticAllPassFourTap<96000> = StaticAllPassFourTap::default();
         all_pass_four_tap.operator(1.0);
         all_pass_four_tap.clear();
     }
 
     #[test]
     fn delay_line_construct_and_process() {
-        let mut delay_line: StaticDelayLine<96000> = Default::default();
+        let mut delay_line: StaticDelayLine<96000> = StaticDelayLine::default();
         delay_line.operator(1.0);
         delay_line.clear();
     }
 
     #[test]
     fn delay_line_four_tap_construct_and_process() {
-        let mut delay_line_four_tap: StaticDelayLineFourTap<96000> = Default::default();
+        let mut delay_line_four_tap: StaticDelayLineFourTap<96000> = StaticDelayLineFourTap::default();
         delay_line_four_tap.operator(1.0);
         delay_line_four_tap.clear();
     }
 
     #[test]
     fn delay_line_eight_tap_construct_and_process() {
-        let mut delay_line_eight_tap: StaticDelayLineEightTap<96000> = Default::default();
+        let mut delay_line_eight_tap: StaticDelayLineEightTap<96000> = StaticDelayLineEightTap::default();
         delay_line_eight_tap.operator(1.0);
         delay_line_eight_tap.clear();
     }
 
     #[test]
     fn taps_array_can_be_constructed() {
-        let tap1: StaticDelayLineEightTap<96000> = Default::default();
-        let tap2: StaticDelayLineEightTap<96000> = Default::default();
-        let tap3: StaticDelayLineEightTap<96000> = Default::default();
-        let tap4: StaticDelayLineEightTap<96000> = Default::default();
+        let tap1: StaticDelayLineEightTap<96000> = StaticDelayLineEightTap::default();
+        let tap2: StaticDelayLineEightTap<96000> = StaticDelayLineEightTap::default();
+        let tap3: StaticDelayLineEightTap<96000> = StaticDelayLineEightTap::default();
+        let tap4: StaticDelayLineEightTap<96000> = StaticDelayLineEightTap::default();
 
         // This part blows up!
-        let _taps_array = [tap1, tap2, tap3, tap4];
+        let taps_array = [tap1, tap2, tap3, tap4];
+        let _ = taps_array;
     }
 
     #[test]

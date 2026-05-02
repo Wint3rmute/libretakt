@@ -62,7 +62,7 @@ impl Adsr {
                         self.phase = Phase::Finished;
                     }
                 }
-                _ => {
+                Phase::Attack | Phase::Decay | Phase::Sustain => {
                     self.phase = Phase::Release;
                 }
             }

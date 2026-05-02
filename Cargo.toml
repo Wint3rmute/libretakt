@@ -22,16 +22,86 @@ lto = true
 members = ["mverb"]
 
 [workspace.lints.clippy]
-cast_lossless = "warn"
-doc_markdown = "warn"
-items_after_statements = "warn"
-match_same_arms = "warn"
-missing_const_for_fn = "warn"
-must_use_candidate = "warn"
-semicolon_if_nothing_returned = "warn"
-string_lit_as_bytes = "warn"
-unreadable_literal = "warn"
-use_self = "warn"
+# Enable the full pedantic and restriction groups
+pedantic = { level = "warn", priority = -1 }
+restriction = { level = "warn", priority = -1 }
+# Clippy warns about enabling the restriction group as a whole; suppress that meta-lint
+blanket_clippy_restriction_lints = "allow"
+
+# --- Allowed pedantic lints ---
+# DSP code requires casts; cast_lossless is already enforced for the safe cases
+cast_possible_truncation = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+# Function is slightly over the 100-line threshold; not worth splitting
+too_many_lines = "allow"
+
+# --- Allowed restriction lints (impractical or anti-idiomatic for this codebase) ---
+# Explicit `return` is non-idiomatic in Rust
+implicit_return = "allow"
+# Float arithmetic is fundamental to a DSP application
+float_arithmetic = "allow"
+# `as` casts are required in DSP code; cast_lossless covers the safe cases
+as_conversions = "allow"
+# DSP buffer access uses direct indexing; bounds are maintained by the algorithms
+indexing_slicing = "allow"
+# Integer arithmetic side-effects are expected in DSP and sequencer logic
+arithmetic_side_effects = "allow"
+# Private-item documentation is not required for this codebase
+missing_docs_in_private_items = "allow"
+# Alphabetical item ordering is not enforced in this codebase
+arbitrary_source_item_ordering = "allow"
+# Single-call helper functions improve readability
+single_call_fn = "allow"
+# Short variable names (e.g., `f`, `g`, `s`) are idiomatic in DSP code
+min_ident_chars = "allow"
+# Unwrap is acceptable in prototype/non-production code paths
+unwrap_used = "allow"
+# Implementing all optional trait default methods is impractical
+missing_trait_methods = "allow"
+# `let _ = broadcast.send(...)` is an intentional fire-and-forget pattern
+let_underscore_must_use = "allow"
+# `let _` bindings are used for intentional side-effect discarding
+let_underscore_untyped = "allow"
+# Mixed pub/non-pub fields reflect intentional API design
+partial_pub_fields = "allow"
+# Existing targeted `#[allow]` attributes are valid suppressions
+allow_attributes = "allow"
+# Reasons on `#[allow]` are not required in this codebase
+allow_attributes_without_reason = "allow"
+# Enums and structs are not marked non-exhaustive by design
+exhaustive_enums = "allow"
+exhaustive_structs = "allow"
+# `#[inline]` on every public method is not required
+missing_inline_in_public_items = "allow"
+# Variable shadowing is idiomatic Rust
+shadow_reuse = "allow"
+shadow_unrelated = "allow"
+# `expect` is acceptable in prototype/non-production code paths
+expect_used = "allow"
+# Function complexity is acceptable
+cognitive_complexity = "allow"
+# `mod.rs` files are an accepted Rust module layout
+mod_module_files = "allow"
+# Multiple impl blocks improve organisation
+multiple_inherent_impl = "allow"
+# `to_le_bytes` is the correct API for raw audio output
+little_endian_bytes = "allow"
+# This codebase targets `std`; `core`/`alloc` substitution is not needed
+std_instead_of_core = "allow"
+std_instead_of_alloc = "allow"
+# Integer modulo (`%`) is used in the sequencer
+integer_division_remainder_used = "allow"
+# Non-ASCII source characters are intentional
+non_ascii_literal = "allow"
+# `panic` in production code is acceptable at this stage
+panic = "allow"
+# Trait method with the same name as a trait method is intentional
+same_name_method = "allow"
+# Absolute paths (`std::f32::consts::PI`, etc.) are acceptable
+absolute_paths = "allow"
+# `unseparated_literal_suffix` and `separated_literal_suffix` conflict; keep default style
+unseparated_literal_suffix = "allow"
 
 [workspace.dependencies]
 uuid = { version = "1.11", features = ["v4", "serde"] } # uuid's fit well in this context.

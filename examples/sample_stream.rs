@@ -1,6 +1,6 @@
 use rodio::decoder::Decoder;
 use rodio::source::Source;
-use std::io::{self, Write};
+use std::io::{self, Write as _};
 
 use std::time::Duration;
 
