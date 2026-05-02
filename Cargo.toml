@@ -24,6 +24,7 @@ members = ["mverb"]
 [workspace.lints.clippy]
 cast_lossless = "warn"
 doc_markdown = "warn"
+missing_const_for_fn = "warn"
 must_use_candidate = "warn"
 semicolon_if_nothing_returned = "warn"
 string_lit_as_bytes = "warn"

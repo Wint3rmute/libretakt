@@ -383,7 +383,7 @@ impl<const MAX_LENGTH: usize> AllPass<MAX_LENGTH> {
         output
     }
 
-    pub fn set_length(&mut self, mut length: usize) {
+    pub const fn set_length(&mut self, mut length: usize) {
         if length >= MAX_LENGTH {
             length = MAX_LENGTH;
         }
@@ -395,7 +395,7 @@ impl<const MAX_LENGTH: usize> AllPass<MAX_LENGTH> {
         self.length = length;
     }
 
-    fn set_feedback(&mut self, feedback: f32) {
+    const fn set_feedback(&mut self, feedback: f32) {
         self.feedback = feedback;
     }
 
@@ -457,7 +457,7 @@ impl<const MAX_LENGTH: usize> StaticAllPassFourTap<MAX_LENGTH> {
         output
     }
 
-    fn set_index(&mut self, index1: usize, index2: usize, index3: usize, index4: usize) {
+    const fn set_index(&mut self, index1: usize, index2: usize, index3: usize, index4: usize) {
         self.index1 = index1;
         self.index2 = index2;
         self.index3 = index3;
@@ -473,7 +473,7 @@ impl<const MAX_LENGTH: usize> StaticAllPassFourTap<MAX_LENGTH> {
         }
     }
 
-    fn set_length(&mut self, mut length: usize) {
+    const fn set_length(&mut self, mut length: usize) {
         if length > MAX_LENGTH {
             length = MAX_LENGTH;
         }
@@ -489,7 +489,7 @@ impl<const MAX_LENGTH: usize> StaticAllPassFourTap<MAX_LENGTH> {
         self.index4 = 0;
     }
 
-    fn set_feedback(&mut self, feedback: f32) {
+    const fn set_feedback(&mut self, feedback: f32) {
         self.feedback = feedback;
     }
 }
@@ -524,7 +524,7 @@ impl<const MAX_LENGTH: usize> StaticDelayLine<MAX_LENGTH> {
         output
     }
 
-    fn set_length(&mut self, mut length: usize) {
+    const fn set_length(&mut self, mut length: usize) {
         if length > MAX_LENGTH {
             length = MAX_LENGTH;
         }
@@ -590,7 +590,7 @@ impl<const MAX_LENGTH: usize> StaticDelayLineFourTap<MAX_LENGTH> {
         output
     }
 
-    fn set_index(&mut self, index1: usize, index2: usize, index3: usize, index4: usize) {
+    const fn set_index(&mut self, index1: usize, index2: usize, index3: usize, index4: usize) {
         self.index1 = index1;
         self.index2 = index2;
         self.index3 = index3;
@@ -607,7 +607,7 @@ impl<const MAX_LENGTH: usize> StaticDelayLineFourTap<MAX_LENGTH> {
         }
     }
 
-    fn set_length(&mut self, mut length: usize) {
+    const fn set_length(&mut self, mut length: usize) {
         if length > MAX_LENGTH {
             length = MAX_LENGTH;
         }
@@ -680,7 +680,7 @@ impl<const MAX_LENGTH: usize> StaticDelayLineEightTap<MAX_LENGTH> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn set_index(
+    const fn set_index(
         &mut self,
         index1: usize,
         index2: usize,
@@ -715,7 +715,7 @@ impl<const MAX_LENGTH: usize> StaticDelayLineEightTap<MAX_LENGTH> {
         }
     }
 
-    fn set_length(&mut self, mut length: usize) {
+    const fn set_length(&mut self, mut length: usize) {
         if length >= MAX_LENGTH {
             length = MAX_LENGTH;
         }
@@ -778,7 +778,7 @@ impl<const OVER_SAMPLE_COUNT: usize> LowPassFilter<OVER_SAMPLE_COUNT> {
         self.low
     }
 
-    fn reset(&mut self) {
+    const fn reset(&mut self) {
         self.low = 0.0;
         self.high = 0.0;
         self.band = 0.0;
