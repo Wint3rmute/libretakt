@@ -279,6 +279,8 @@ fn make_app_state(num_tracks: usize, steps_per_track: usize) -> AppState {
 
 #[tokio::main]
 pub async fn main() {
+    const BIND_ADDR: &str = "0.0.0.0:3000";
+
     tracing_subscriber::fmt()
         .with_file(true)
         .with_line_number(true)
@@ -297,7 +299,6 @@ pub async fn main() {
         .fallback(static_handler)
         .with_state(app_state);
 
-    const BIND_ADDR: &str = "0.0.0.0:3000";
     tracing::info!("Binding listener to {}...", BIND_ADDR);
     let listener = tokio::net::TcpListener::bind(BIND_ADDR).await.unwrap();
     tracing::info!("Application running at {}", BIND_ADDR);
