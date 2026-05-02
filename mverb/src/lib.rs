@@ -56,13 +56,31 @@ impl Default for MVerb {
         let sample_rate = 44100.0;
 
         let mut result = Self {
-            all_pass: [AllPass::default(), AllPass::default(), AllPass::default(), AllPass::default()],
-            all_pass_four_tap: [StaticAllPassFourTap::default(), StaticAllPassFourTap::default(), StaticAllPassFourTap::default(), StaticAllPassFourTap::default()],
+            all_pass: [
+                AllPass::default(),
+                AllPass::default(),
+                AllPass::default(),
+                AllPass::default(),
+            ],
+            all_pass_four_tap: [
+                StaticAllPassFourTap::default(),
+                StaticAllPassFourTap::default(),
+                StaticAllPassFourTap::default(),
+                StaticAllPassFourTap::default(),
+            ],
             bandwidth_filter: [LowPassFilter::default(), LowPassFilter::default()],
-            early_reflections_delay_line: [StaticDelayLineEightTap::default(), StaticDelayLineEightTap::default()],
+            early_reflections_delay_line: [
+                StaticDelayLineEightTap::default(),
+                StaticDelayLineEightTap::default(),
+            ],
             predelay: StaticDelayLine::default(),
             damping: [LowPassFilter::default(), LowPassFilter::default()],
-            static_delay_line: [StaticDelayLineFourTap::default(), StaticDelayLineFourTap::default(), StaticDelayLineFourTap::default(), StaticDelayLineFourTap::default()],
+            static_delay_line: [
+                StaticDelayLineFourTap::default(),
+                StaticDelayLineFourTap::default(),
+                StaticDelayLineFourTap::default(),
+                StaticDelayLineFourTap::default(),
+            ],
 
             damping_frequency: 0.9,
             bandwidth_frequency: 0.9,
@@ -835,14 +853,16 @@ mod tests {
 
     #[test]
     fn delay_line_four_tap_construct_and_process() {
-        let mut delay_line_four_tap: StaticDelayLineFourTap<96000> = StaticDelayLineFourTap::default();
+        let mut delay_line_four_tap: StaticDelayLineFourTap<96000> =
+            StaticDelayLineFourTap::default();
         delay_line_four_tap.operator(1.0);
         delay_line_four_tap.clear();
     }
 
     #[test]
     fn delay_line_eight_tap_construct_and_process() {
-        let mut delay_line_eight_tap: StaticDelayLineEightTap<96000> = StaticDelayLineEightTap::default();
+        let mut delay_line_eight_tap: StaticDelayLineEightTap<96000> =
+            StaticDelayLineEightTap::default();
         delay_line_eight_tap.operator(1.0);
         delay_line_eight_tap.clear();
     }
