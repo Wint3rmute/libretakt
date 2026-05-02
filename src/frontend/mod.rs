@@ -69,11 +69,13 @@ impl LibretaktUI {
 
                     if lock_resp.clicked() {
                         if i_own_lock {
-                            self.outbox
-                                .push(ClientCommand::ReleaseLock { track: track_idx });
+                            self.outbox.push(ClientCommand::ReleaseLock {
+                                track: track_idx as u32,
+                            });
                         } else if !is_locked_by_other {
-                            self.outbox
-                                .push(ClientCommand::RequestLock { track: track_idx });
+                            self.outbox.push(ClientCommand::RequestLock {
+                                track: track_idx as u32,
+                            });
                         }
                         // locked_by == Some(other_id): button visible but does nothing
                     }
@@ -105,8 +107,8 @@ impl LibretaktUI {
 
                         if step_resp.clicked() && i_own_lock {
                             self.outbox.push(ClientCommand::ToggleStep {
-                                track: track_idx,
-                                step: step_idx,
+                                track: track_idx as u32,
+                                step: step_idx as u32,
                             });
                         }
                     }
@@ -129,13 +131,13 @@ impl eframe::App for LibretaktUI {
                     self.state = State::Connected(ProjectData, UiState::PlayerSelection);
                 }
                 ServerMessage::TrackUpdate { track, state } => {
-                    if let Some(t) = self.app_state.sequencer.tracks.get_mut(track) {
+                    if let Some(t) = self.app_state.sequencer.tracks.get_mut(track as usize) {
                         *t = state;
                     }
                 }
                 ServerMessage::LockDenied { track } => {
                     tracing::warn!("Lock denied for track {}", track);
-                    self.app_state.lock_denied_track = Some(track);
+                    self.app_state.lock_denied_track = Some(track as usize);
                 }
             }
         }
