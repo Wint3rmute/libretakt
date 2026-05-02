@@ -63,7 +63,12 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
                     Some(Ok(Message::Text(text))) => {
                         match serde_json::from_str::<ClientCommand>(&text) {
                             Ok(cmd) => {
-                                handle_command(cmd, client_id, &state, &mut socket).await;
+                                if let Some(reply) = handle_command(cmd, client_id, &state).await {
+                                    if socket.send(to_ws_text(&reply)).await.is_err() {
+                                        tracing::warn!(client_id, "Failed to send reply, closing");
+                                        break;
+                                    }
+                                }
                             }
                             Err(e) => {
                                 tracing::warn!(client_id, error = %e, "Failed to parse ClientCommand");
@@ -101,12 +106,16 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
     release_all_locks(client_id, &state).await;
 }
 
+/// Process a [`ClientCommand`] and mutate shared state.
+///
+/// Returns `Some(reply)` for messages that should be sent directly back to the
+/// requesting client (e.g. [`ServerMessage::LockDenied`]), or `None` when the
+/// response (if any) was already dispatched via the broadcast channel.
 async fn handle_command(
     cmd: ClientCommand,
     client_id: ClientId,
     state: &AppState,
-    socket: &mut WebSocket,
-) {
+) -> Option<ServerMessage> {
     match cmd {
         ClientCommand::RequestLock { track } => {
             // Acquire, mutate, clone what we need, drop — then do async work.
@@ -128,12 +137,11 @@ async fn handle_command(
                         track,
                         state: track_state,
                     });
+                    None
                 }
                 None => {
                     tracing::debug!(client_id, track, "Lock denied — track already held");
-                    let _ = socket
-                        .send(to_ws_text(&ServerMessage::LockDenied { track }))
-                        .await;
+                    Some(ServerMessage::LockDenied { track })
                 }
             }
         }
@@ -162,6 +170,7 @@ async fn handle_command(
                     state: track_state,
                 });
             }
+            None
         }
 
         ClientCommand::ToggleStep { track, step } => {
@@ -190,6 +199,7 @@ async fn handle_command(
                     state: track_state,
                 });
             }
+            None
         }
     }
 }
@@ -217,6 +227,14 @@ async fn release_all_locks(client_id: ClientId, state: &AppState) {
     }
 }
 
+fn make_app_state(num_tracks: usize, steps_per_track: usize) -> AppState {
+    let (broadcast_tx, _) = broadcast::channel::<ServerMessage>(64);
+    AppState {
+        sequencer: Arc::new(Mutex::new(SequencerState::new(num_tracks, steps_per_track))),
+        broadcast: broadcast_tx,
+    }
+}
+
 #[tokio::main]
 pub async fn main() {
     tracing_subscriber::fmt()
@@ -229,12 +247,7 @@ pub async fn main() {
         )
         .init();
 
-    let (broadcast_tx, _) = broadcast::channel::<ServerMessage>(64);
-    let sequencer = Arc::new(Mutex::new(SequencerState::new(8, 16)));
-    let app_state = AppState {
-        sequencer,
-        broadcast: broadcast_tx,
-    };
+    let app_state = make_app_state(8, 16);
 
     tracing::info!("Building app & router");
     let app = Router::new()
@@ -247,4 +260,117 @@ pub async fn main() {
     let listener = tokio::net::TcpListener::bind(BIND_ADDR).await.unwrap();
     tracing::info!("Application running at {}", BIND_ADDR);
     axum::serve(listener, app).await.unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Run a command as `client_id` against `state` and return the optional direct reply.
+    async fn cmd(
+        state: &AppState,
+        client_id: ClientId,
+        command: ClientCommand,
+    ) -> Option<ServerMessage> {
+        handle_command(command, client_id, state).await
+    }
+
+    #[tokio::test]
+    async fn request_lock_grants_then_denies() {
+        let state = make_app_state(2, 8);
+        let mut broadcast = state.broadcast.subscribe();
+
+        // Client 1 acquires the lock - no direct reply, broadcast carries the update.
+        let reply = cmd(&state, 1, ClientCommand::RequestLock { track: 0 }).await;
+        assert!(
+            reply.is_none(),
+            "successful lock should not produce a direct reply"
+        );
+
+        let msg = broadcast
+            .try_recv()
+            .expect("broadcast should carry TrackUpdate");
+        assert!(
+            matches!(msg, ServerMessage::TrackUpdate { track: 0, .. }),
+            "expected TrackUpdate for track 0, got {msg:?}"
+        );
+
+        // Client 2 tries to acquire the same track - should get LockDenied directly.
+        let reply = cmd(&state, 2, ClientCommand::RequestLock { track: 0 }).await;
+        assert!(
+            matches!(reply, Some(ServerMessage::LockDenied { track: 0 })),
+            "expected LockDenied, got {reply:?}"
+        );
+        assert!(
+            broadcast.try_recv().is_err(),
+            "a denied lock should not broadcast anything"
+        );
+    }
+
+    #[tokio::test]
+    async fn toggle_step_requires_lock() {
+        let state = make_app_state(2, 8);
+        let mut broadcast = state.broadcast.subscribe();
+
+        // Toggle without holding the lock - silently ignored, nothing broadcast.
+        let reply = cmd(&state, 1, ClientCommand::ToggleStep { track: 0, step: 3 }).await;
+        assert!(reply.is_none());
+        assert!(
+            broadcast.try_recv().is_err(),
+            "ignored toggle should not broadcast"
+        );
+
+        // Acquire the lock, then toggle.
+        cmd(&state, 1, ClientCommand::RequestLock { track: 0 }).await;
+        let _ = broadcast.try_recv(); // consume the RequestLock TrackUpdate
+
+        let reply = cmd(&state, 1, ClientCommand::ToggleStep { track: 0, step: 3 }).await;
+        assert!(reply.is_none());
+
+        let msg = broadcast
+            .try_recv()
+            .expect("toggle should broadcast TrackUpdate");
+        if let ServerMessage::TrackUpdate {
+            track: 0,
+            state: track_state,
+        } = msg
+        {
+            assert!(track_state.steps[3], "step 3 should now be true");
+        } else {
+            panic!("expected TrackUpdate for track 0, got {msg:?}");
+        }
+    }
+
+    #[tokio::test]
+    async fn release_lock_frees_track_for_others() {
+        let state = make_app_state(2, 8);
+        let mut broadcast = state.broadcast.subscribe();
+
+        cmd(&state, 1, ClientCommand::RequestLock { track: 0 }).await;
+        let _ = broadcast.try_recv();
+
+        cmd(&state, 1, ClientCommand::ReleaseLock { track: 0 }).await;
+        let msg = broadcast
+            .try_recv()
+            .expect("release should broadcast TrackUpdate");
+        if let ServerMessage::TrackUpdate {
+            track: 0,
+            state: track_state,
+        } = msg
+        {
+            assert!(
+                track_state.locked_by.is_none(),
+                "track should be free after release"
+            );
+        } else {
+            panic!("expected TrackUpdate for track 0, got {msg:?}");
+        }
+
+        // Another client can now acquire the lock.
+        let reply = cmd(&state, 2, ClientCommand::RequestLock { track: 0 }).await;
+        assert!(
+            reply.is_none(),
+            "lock should be granted to client 2 after release"
+        );
+    }
 }
