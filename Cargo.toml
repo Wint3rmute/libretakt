@@ -23,6 +23,7 @@ members = ["mverb"]
 
 [workspace.lints.clippy]
 semicolon_if_nothing_returned = "warn"
+string_lit_as_bytes = "warn"
 unreadable_literal = "warn"
 
 [workspace.dependencies]

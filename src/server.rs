@@ -38,7 +38,7 @@ async fn static_handler(uri: axum::http::Uri) -> impl IntoResponse {
             None => (
                 StatusCode::NOT_FOUND,
                 [(header::CONTENT_TYPE, "text/plain")],
-                "404 not found".as_bytes(),
+                b"404 not found",
             )
                 .into_response(),
         },
