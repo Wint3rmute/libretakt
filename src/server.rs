@@ -112,9 +112,9 @@ async fn handle_command(
             // Acquire, mutate, clone what we need, drop — then do async work.
             let maybe_track_state = {
                 let mut seq = state.sequencer.lock().await;
-                if seq.tracks[track].locked_by.is_none() {
-                    seq.tracks[track].locked_by = Some(client_id);
-                    Some(seq.tracks[track].clone())
+                if seq.tracks[track as usize].locked_by.is_none() {
+                    seq.tracks[track as usize].locked_by = Some(client_id);
+                    Some(seq.tracks[track as usize].clone())
                 } else {
                     None
                 }
@@ -141,9 +141,9 @@ async fn handle_command(
         ClientCommand::ReleaseLock { track } => {
             let maybe_track_state = {
                 let mut seq = state.sequencer.lock().await;
-                if seq.tracks[track].locked_by == Some(client_id) {
-                    seq.tracks[track].locked_by = None;
-                    Some(seq.tracks[track].clone())
+                if seq.tracks[track as usize].locked_by == Some(client_id) {
+                    seq.tracks[track as usize].locked_by = None;
+                    Some(seq.tracks[track as usize].clone())
                 } else {
                     tracing::warn!(
                         client_id,
@@ -167,9 +167,10 @@ async fn handle_command(
         ClientCommand::ToggleStep { track, step } => {
             let maybe_track_state = {
                 let mut seq = state.sequencer.lock().await;
-                if seq.tracks[track].locked_by == Some(client_id) {
-                    seq.tracks[track].steps[step] = !seq.tracks[track].steps[step];
-                    Some(seq.tracks[track].clone())
+                if seq.tracks[track as usize].locked_by == Some(client_id) {
+                    seq.tracks[track as usize].steps[step as usize] =
+                        !seq.tracks[track as usize].steps[step as usize];
+                    Some(seq.tracks[track as usize].clone())
                 } else {
                     tracing::warn!(
                         client_id,
@@ -196,11 +197,11 @@ async fn handle_command(
 async fn release_all_locks(client_id: ClientId, state: &AppState) {
     let released = {
         let mut seq = state.sequencer.lock().await;
-        let mut pairs: Vec<(usize, _)> = Vec::new();
+        let mut pairs: Vec<(u32, _)> = Vec::new();
         for (idx, track) in seq.tracks.iter_mut().enumerate() {
             if track.locked_by == Some(client_id) {
                 track.locked_by = None;
-                pairs.push((idx, track.clone()));
+                pairs.push((idx as u32, track.clone()));
             }
         }
         pairs

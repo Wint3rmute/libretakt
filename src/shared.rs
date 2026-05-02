@@ -54,18 +54,18 @@ pub enum ServerMessage {
     },
     /// A single track's state has changed (steps toggled, lock acquired, or lock released).
     /// Always carries the full new [`TrackState`] so clients stay consistent.
-    TrackUpdate { track: usize, state: TrackState },
+    TrackUpdate { track: u32, state: TrackState },
     /// Sent only to the requesting client when the track is already locked by someone else.
-    LockDenied { track: usize },
+    LockDenied { track: u32 },
 }
 
 /// Commands sent from a client to the server.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ClientCommand {
     /// Request exclusive edit access to a track.
-    RequestLock { track: usize },
+    RequestLock { track: u32 },
     /// Relinquish edit access to a track.
-    ReleaseLock { track: usize },
+    ReleaseLock { track: u32 },
     /// Toggle a step. Silently ignored by the server if the caller does not hold the lock.
-    ToggleStep { track: usize, step: usize },
+    ToggleStep { track: u32, step: u32 },
 }
