@@ -23,6 +23,7 @@ members = ["mverb"]
 
 [workspace.lints.clippy]
 semicolon_if_nothing_returned = "warn"
+unreadable_literal = "warn"
 
 [workspace.dependencies]
 uuid = { version = "1.11", features = ["v4", "serde"] } # uuid's fit well in this context.

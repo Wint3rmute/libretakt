@@ -99,7 +99,7 @@ impl Default for LadderParameters {
             drive: 0.,
             // sample_rate: 44100.,
             sample_rate: 44100. * 2.0,
-            g: 0.07135868,
+            g: 0.071_358_68,
         }
     }
 }
@@ -194,7 +194,7 @@ impl LadderParameters {
 
     // returns the value used to set cutoff. for get_parameter function
     pub fn get_cutoff(&self) -> f32 {
-        1. + 0.17012975 * (0.00005 * self.cutoff).ln()
+        1. + 0.170_129_75 * (0.00005 * self.cutoff).ln()
     }
 
     pub fn set_poles(&mut self, value: f32) {
