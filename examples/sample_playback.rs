@@ -23,7 +23,7 @@ impl Sample {
             decoder.next(); // Skip the 2nd channel
         }
 
-        Sample {
+        Self {
             play_position: 0,
             data: sample_data,
         }

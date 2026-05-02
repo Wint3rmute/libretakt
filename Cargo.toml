@@ -26,6 +26,7 @@ doc_markdown = "warn"
 semicolon_if_nothing_returned = "warn"
 string_lit_as_bytes = "warn"
 unreadable_literal = "warn"
+use_self = "warn"
 
 [workspace.dependencies]
 uuid = { version = "1.11", features = ["v4", "serde"] } # uuid's fit well in this context.

@@ -62,7 +62,7 @@ impl SampleData {
             decoder.next(); // Skip the 2nd channel
         }
 
-        SampleData {
+        Self {
             data: sample_data,
             name: file_name.to_string(),
         }

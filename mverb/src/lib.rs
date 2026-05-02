@@ -359,7 +359,7 @@ pub struct AllPass<const MAX_LENGTH: usize> {
 
 impl<const MAX_LENGTH: usize> Default for AllPass<MAX_LENGTH> {
     fn default() -> Self {
-        AllPass {
+        Self {
             feedback: 0.5,
             buffer: vec![0.0; MAX_LENGTH],
             index: 0,

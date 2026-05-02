@@ -11,7 +11,7 @@ struct SineWaveSource {
 
 impl SineWaveSource {
     fn from_frequency(frequency_hz: f32) -> Self {
-        SineWaveSource {
+        Self {
             phase: 0.0,
             phase_diff: (2.0 * std::f32::consts::PI * frequency_hz) / SAMPLE_RATE as f32,
         }

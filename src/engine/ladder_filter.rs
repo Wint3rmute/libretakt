@@ -90,8 +90,8 @@ pub struct LadderParameters {
 }
 
 impl Default for LadderParameters {
-    fn default() -> LadderParameters {
-        LadderParameters {
+    fn default() -> Self {
+        Self {
             cutoff: 1000.0,
             res: 2.,
             poles: 3,
