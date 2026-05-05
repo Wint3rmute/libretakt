@@ -1,9 +1,10 @@
 FROM rust:latest AS builder
 
-RUN rustup target add wasm32-unknown-unknown \
-    && cargo install trunk
+RUN apt-get update && apt-get install -y libasound2-dev ca-certificates wget && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y libasound2-dev ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN rustup target add wasm32-unknown-unknown
+
+RUN wget -qO- https://github.com/thedodd/trunk/releases/download/v0.20.2/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin trunk
 
 WORKDIR /app
 COPY . .
