@@ -51,7 +51,7 @@ impl LibretaktUI {
 
         let my_id = self.app_state.client_id;
         let i_own_lock = track_state.locked_by == Some(my_id);
-        let is_locked_by_other = track_state.locked_by.is_some() && !i_own_lock;
+        let _is_locked_by_other = track_state.locked_by.is_some() && !i_own_lock;
 
         // -- Top half: parameter placeholders ---------------------------------
         let params_height = ui.available_height() * 0.5;
@@ -206,7 +206,7 @@ impl eframe::App for LibretaktUI {
                     },
                 );
             });
-        });https://libretakt.fly.dev/!
+        });
 
         // Central panel: player selection, sequencer, or disconnected notice.
         let mut lock_request: Option<u32> = None;
