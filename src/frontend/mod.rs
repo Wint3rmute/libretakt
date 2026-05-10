@@ -58,22 +58,31 @@ impl LibretaktUI {
         let _is_locked_by_other = track_state.locked_by.is_some() && !i_own_lock;
 
         // -- Top half: parameter sliders (local-only prototype) ---------------
-        let params_height = ui.available_height() * 0.5;
+        // Mirror the step-grid sizing: base slider height on available screen
+        // height so it scales on any device, then clamp to a sensible range.
+        let n = 4.0_f32;
+        let item_spacing = ui.spacing().item_spacing.y;
+        let label_height = ui.text_style_height(&egui::TextStyle::Small);
+        let slider_height =
+            ((ui.available_height() / 3.0 - item_spacing * (n - 1.0)) / n).clamp(32.0, 64.0);
+        // Account for the small label above each slider when allocating space.
+        let params_height =
+            n * (label_height + item_spacing + slider_height) + (n - 1.0) * item_spacing;
+
         ui.allocate_ui(egui::Vec2::new(ui.available_width(), params_height), |ui| {
             let params = &mut self.track_params[track_idx];
             let width = ui.available_width();
-            let n = 4.0_f32;
-            let slider_height =
-                (ui.available_height() - ui.spacing().item_spacing.y * (n - 1.0)) / n;
             ui.vertical(|ui| {
                 for (value, label) in
                     params
                         .iter_mut()
                         .zip(["Filter", "Resonance", "Volume", "Pan"])
                 {
+                    // Label above the slider so the track can fill the full width.
+                    ui.label(egui::RichText::new(label).small());
                     ui.add_sized(
                         [width, slider_height],
-                        egui::Slider::new(value, 0.0..=1.0).text(label),
+                        egui::Slider::new(value, 0.0..=1.0).text(""),
                     );
                 }
             });
