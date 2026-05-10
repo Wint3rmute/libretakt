@@ -3,3 +3,5 @@ data
 sample.flv
 dist/*
 !dist/.gitkeep
+
+.DS_Store

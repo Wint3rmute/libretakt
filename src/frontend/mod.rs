@@ -44,7 +44,6 @@ impl LibretaktUI {
     }
 
     /// Construct a `LibretaktUI` without an `eframe::CreationContext`, for use in tests.
-    // #[cfg(test)]
     pub fn new_for_test(app_state: ApplicationState) -> Self {
         Self {
             state: State::Disconnected("Connecting...".to_string()),
