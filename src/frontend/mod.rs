@@ -75,14 +75,14 @@ impl LibretaktUI {
             // Drive track width and thumb height directly through the spacing
             // API — add_sized does not reliably override Slider's own sizing.
             ui.spacing_mut().slider_width = (width - 60.0).max(60.0);
-            ui.spacing_mut().interact_size.y = slider_height;
+            ui.spacing_mut().interact_size.y = slider_height / 2.0;
             ui.vertical(|ui| {
                 for (value, label) in
                     params
                         .iter_mut()
                         .zip(["Filter", "Resonance", "Volume", "Pan"])
                 {
-                    ui.label(egui::RichText::new(label).small());
+                    ui.label(label);
                     ui.add(egui::Slider::new(value, 0.0..=1.0).text(""));
                 }
             });
