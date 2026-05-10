@@ -76,10 +76,14 @@ impl LibretaktUI {
                         self.outbox.push(ClientCommand::ReleaseLock {
                             track: track_idx as u32,
                         });
+                        self.notifications
+                            .push(format!("Track {} unlocked", track_idx + 1));
                     } else if !is_locked_by_other {
                         self.outbox.push(ClientCommand::RequestLock {
                             track: track_idx as u32,
                         });
+                        self.notifications
+                            .push(format!("Track {} locked", track_idx + 1));
                     }
                 }
 
