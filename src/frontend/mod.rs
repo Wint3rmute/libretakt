@@ -32,63 +32,75 @@ impl LibretaktUI {
         }
     }
 
-    /// Render the sequencer grid for all tracks.
+    /// Render the single-track sequencer view for `track_idx`.
     ///
-    /// Clones the track list up front so that `self.outbox` can be borrowed
-    /// mutably within the loop without conflicting with `self.app_state`.
-    fn show_sequencer(&mut self, _ctx: &Context, ui: &mut Ui) {
+    /// Layout:
+    ///   * Top half  - lock button + reserved space for track parameters.
+    ///   * Bottom half - 4x4 step grid, sized to fill the available width.
+    fn show_sequencer(&mut self, _ctx: &Context, ui: &mut Ui, track_idx: usize) {
+        let Some(track_state) = self.app_state.sequencer.tracks.get(track_idx).cloned() else {
+            ui.centered_and_justified(|ui| {
+                ui.label(format!("Track {} not found", track_idx + 1));
+            });
+            return;
+        };
+
         let my_id = self.app_state.client_id;
-        // Clone tracks to avoid a simultaneous immutable borrow of app_state
-        // and a mutable borrow of outbox inside the loop.
-        let tracks: Vec<_> = self
-            .app_state
-            .sequencer
-            .tracks
-            .iter()
-            .cloned()
-            .enumerate()
-            .collect();
+        let i_own_lock = track_state.locked_by == Some(my_id);
+        let is_locked_by_other = track_state.locked_by.is_some() && !i_own_lock;
 
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            for (track_idx, track_state) in tracks {
-                ui.horizontal(|ui| {
-                    let i_own_lock = track_state.locked_by == Some(my_id);
-                    let is_locked_by_other = track_state.locked_by.is_some() && !i_own_lock;
+        // -- Top half: lock button + parameter placeholders -----------------
+        let params_height = ui.available_height() * 0.5;
+        ui.allocate_ui(egui::Vec2::new(ui.available_width(), params_height), |ui| {
+            ui.vertical(|ui| {
+                let (lock_label, lock_fill) = if i_own_lock {
+                    ("Lock (owned)", egui::Color32::DARK_GREEN)
+                } else if is_locked_by_other {
+                    ("Lock (busy)", egui::Color32::DARK_RED)
+                } else {
+                    ("Lock", egui::Color32::TRANSPARENT)
+                };
 
-                    // --- Lock button (60×36 px) ---
-                    let (lock_label, lock_fill) = if i_own_lock {
-                        ("🔒 Mine", egui::Color32::DARK_GREEN)
-                    } else if is_locked_by_other {
-                        ("🔒 Busy", egui::Color32::DARK_RED)
-                    } else {
-                        ("🔓 Free", egui::Color32::TRANSPARENT)
-                    };
-
-                    let lock_resp =
-                        ui.add_sized([60.0, 36.0], egui::Button::new(lock_label).fill(lock_fill));
-
-                    if lock_resp.clicked() {
-                        if i_own_lock {
-                            self.outbox.push(ClientCommand::ReleaseLock {
-                                track: track_idx as u32,
-                            });
-                        } else if !is_locked_by_other {
-                            self.outbox.push(ClientCommand::RequestLock {
-                                track: track_idx as u32,
-                            });
-                        }
-                        // locked_by == Some(other_id): button visible but does nothing
+                if ui
+                    .add_sized(
+                        [ui.available_width(), 44.0],
+                        egui::Button::new(lock_label).fill(lock_fill),
+                    )
+                    .clicked()
+                {
+                    if i_own_lock {
+                        self.outbox.push(ClientCommand::ReleaseLock {
+                            track: track_idx as u32,
+                        });
+                    } else if !is_locked_by_other {
+                        self.outbox.push(ClientCommand::RequestLock {
+                            track: track_idx as u32,
+                        });
                     }
+                }
 
-                    // --- Step buttons (36×36 px each) ---
-                    let current_step = self.local_seq.current_step;
-                    let text_color = if i_own_lock {
-                        egui::Color32::WHITE
-                    } else {
-                        egui::Color32::GRAY
-                    };
+                ui.separator();
+                // TODO: track parameters (filters, step lengths, etc.)
+                ui.weak("Parameters coming soon");
+            });
+        });
 
-                    for (step_idx, &active) in track_state.steps.iter().enumerate() {
+        ui.separator();
+
+        // -- Bottom half: 4x4 step grid -------------------------------------
+        let spacing = 4.0;
+        let step_size = ((ui.available_width() - 3.0 * spacing) / 4.0).min(120.0);
+        let step_size = egui::Vec2::splat(step_size);
+        let current_step = self.local_seq.current_step;
+
+        egui::Grid::new(format!("steps_{track_idx}"))
+            .spacing([spacing, spacing])
+            .show(ui, |ui| {
+                for row in 0..4_usize {
+                    for col in 0..4_usize {
+                        let step_idx = row * 4 + col;
+                        let active = track_state.steps.get(step_idx).copied().unwrap_or(false);
+
                         let fill = if active && step_idx == current_step {
                             egui::Color32::LIGHT_GREEN
                         } else if active {
@@ -99,22 +111,26 @@ impl LibretaktUI {
                             egui::Color32::TRANSPARENT
                         };
 
-                        let step_text =
+                        let text_color = if i_own_lock {
+                            ui.visuals().strong_text_color()
+                        } else {
+                            ui.visuals().weak_text_color()
+                        };
+
+                        let label =
                             egui::RichText::new(format!("{}", step_idx + 1)).color(text_color);
+                        let resp = ui.add_sized(step_size, egui::Button::new(label).fill(fill));
 
-                        let step_resp =
-                            ui.add_sized([36.0, 36.0], egui::Button::new(step_text).fill(fill));
-
-                        if step_resp.clicked() && i_own_lock {
+                        if resp.clicked() && i_own_lock {
                             self.outbox.push(ClientCommand::ToggleStep {
                                 track: track_idx as u32,
                                 step: step_idx as u32,
                             });
                         }
                     }
-                });
-            }
-        });
+                    ui.end_row();
+                }
+            });
     }
 }
 
@@ -184,33 +200,31 @@ impl eframe::App for LibretaktUI {
 
         // Central panel: player selection, sequencer, or disconnected notice.
         egui::CentralPanel::default().show(ctx, |ui| {
-            // Determine what to render. The mutable borrow of self.state ends
-            // when the match expression is done, before show_sequencer is called.
-            let show_seq = match &mut self.state {
+            // Resolve which track to display before calling show_sequencer, so
+            // that the borrow of self.state ends before the mutable borrow in
+            // show_sequencer begins.
+            let selected_track: Option<usize> = match &mut self.state {
                 State::Disconnected(msg) => {
                     ui.label(msg.clone());
-                    false
+                    None
                 }
                 State::Connected(_, ui_state) => match ui_state {
                     UiState::PlayerSelection => {
                         show_player_selection(ui_state, ctx, ui);
-                        false
+                        None
                     }
-                    // All non-selection views currently show the collaborative sequencer.
-                    UiState::AudioTrackT1
-                    | UiState::AudioTrackT2
-                    | UiState::AudioTrackT3
-                    | UiState::AudioTrackT4
-                    | UiState::AudioTrackT5
-                    | UiState::AudioTrackT6
-                    | UiState::AudioTrackT7
-                    | UiState::AudioTrackT8
-                    | UiState::MixingConsoleT0 => true,
+                    UiState::MixingConsoleT0 => {
+                        ui.centered_and_justified(|ui| {
+                            ui.label("Mixing Console - coming soon");
+                        });
+                        None
+                    }
+                    other => other.track_index(),
                 },
             };
 
-            if show_seq {
-                self.show_sequencer(ctx, ui);
+            if let Some(track_idx) = selected_track {
+                self.show_sequencer(ctx, ui, track_idx);
             }
         });
 
