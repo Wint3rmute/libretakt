@@ -19,6 +19,9 @@ pub struct LibretaktUI {
     local_seq: LocalSequencerState,
     app_state: ApplicationState,
     notifications: NotificationQueue,
+    /// Local-only parameter values for each track: [filter, resonance, volume, pan].
+    /// Indexed by track index; not synced to the server.
+    track_params: Vec<[f32; 4]>,
     /// Commands queued during rendering, flushed to the WebSocket at the end of each frame.
     outbox: Vec<ClientCommand>,
 }
@@ -32,6 +35,7 @@ impl LibretaktUI {
             local_seq: LocalSequencerState::default(),
             app_state,
             notifications: NotificationQueue::default(),
+            track_params: vec![[0.5; 4]; 8],
             outbox: Vec::new(),
         }
     }
@@ -53,13 +57,22 @@ impl LibretaktUI {
         let i_own_lock = track_state.locked_by == Some(my_id);
         let _is_locked_by_other = track_state.locked_by.is_some() && !i_own_lock;
 
-        // -- Top half: parameter placeholders ---------------------------------
+        // -- Top half: parameter sliders (local-only prototype) ---------------
         let params_height = ui.available_height() * 0.5;
         ui.allocate_ui(egui::Vec2::new(ui.available_width(), params_height), |ui| {
+            let params = &mut self.track_params[track_idx];
+            let width = ui.available_width();
             ui.vertical(|ui| {
-                ui.separator();
-                // TODO: track parameters (filters, step lengths, etc.)
-                ui.weak("Parameters coming soon");
+                for (value, label) in
+                    params
+                        .iter_mut()
+                        .zip(["Filter", "Resonance", "Volume", "Pan"])
+                {
+                    ui.add_sized(
+                        [width, 0.0],
+                        egui::Slider::new(value, 0.0..=1.0).text(label),
+                    );
+                }
             });
         });
 
