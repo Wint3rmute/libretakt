@@ -1,7 +1,7 @@
 use ewebsock::WsEvent;
 use std::time::Duration;
 
-use super::app_state::create_channels;
+use super::app_state::{create_channels, WsToUiMsg};
 use crate::shared::ServerMessage;
 
 pub fn main() {
@@ -66,6 +66,10 @@ pub fn main() {
                 Ok(pair) => pair,
                 Err(e) => {
                     tracing::error!("Failed to open WebSocket connection: {:?}", e);
+                    ws_channels
+                        .to_ui
+                        .unbounded_send(WsToUiMsg::Disconnected)
+                        .ok();
                     gloo_timers::future::sleep(Duration::from_secs(5)).await;
                     continue;
                 }
@@ -96,13 +100,20 @@ pub fn main() {
                         }
                         WsEvent::Closed => {
                             tracing::info!("WebSocket closed, will reconnect.");
+                            ws_channels
+                                .to_ui
+                                .unbounded_send(WsToUiMsg::Disconnected)
+                                .ok();
                             break;
                         }
                         WsEvent::Message(message) => match message {
                             ewebsock::WsMessage::Text(text) => {
                                 match serde_json::from_str::<ServerMessage>(&text) {
                                     Ok(msg) => {
-                                        ws_channels.to_ui.unbounded_send(msg).ok();
+                                        ws_channels
+                                            .to_ui
+                                            .unbounded_send(WsToUiMsg::Server(msg))
+                                            .ok();
                                     }
                                     Err(e) => {
                                         tracing::warn!("Failed to parse server message: {:?}", e);
@@ -128,6 +139,10 @@ pub fn main() {
                         },
                         WsEvent::Error(error) => {
                             tracing::error!("WebSocket error, disconnecting: {:?}", error);
+                            ws_channels
+                                .to_ui
+                                .unbounded_send(WsToUiMsg::Disconnected)
+                                .ok();
                             break;
                         }
                     }

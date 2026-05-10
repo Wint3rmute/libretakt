@@ -3,7 +3,12 @@ use futures_channel::mpsc;
 use crate::shared::{ClientCommand, ClientId, SequencerState, ServerMessage};
 
 /// Messages sent from the WebSocket background task to the UI.
-pub type WsToUiMsg = ServerMessage;
+pub enum WsToUiMsg {
+    /// A decoded message received from the server.
+    Server(ServerMessage),
+    /// The WebSocket connection was lost (closed or errored).
+    Disconnected,
+}
 
 /// Messages sent from the UI to the WebSocket background task.
 pub type UiToWsMsg = ClientCommand;

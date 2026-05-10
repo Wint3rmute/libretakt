@@ -6,7 +6,7 @@ mod notifications;
 mod sequencer;
 mod state;
 
-use app_state::ApplicationState;
+use app_state::{ApplicationState, WsToUiMsg};
 use egui::{Context, Ui};
 use notifications::NotificationQueue;
 use sequencer::LocalSequencerState;
@@ -148,18 +148,24 @@ impl eframe::App for LibretaktUI {
         // Drain all available WebSocket messages and mutate app_state.
         while let Ok(Some(msg)) = self.app_state.from_ws.try_next() {
             match msg {
-                ServerMessage::Init { client_id, state } => {
+                WsToUiMsg::Disconnected => {
+                    tracing::warn!("Disconnected from server");
+                    self.state = State::Disconnected("Reconnecting...".to_string());
+                    self.notifications.push("Disconnected, reconnecting...");
+                }
+                WsToUiMsg::Server(ServerMessage::Init { client_id, state }) => {
                     tracing::info!("Received Init as client {}", client_id);
                     self.app_state.client_id = client_id;
                     self.app_state.sequencer = state;
                     self.state = State::Connected(ProjectData, UiState::PlayerSelection);
+                    self.notifications.push("Connected");
                 }
-                ServerMessage::TrackUpdate { track, state } => {
+                WsToUiMsg::Server(ServerMessage::TrackUpdate { track, state }) => {
                     if let Some(t) = self.app_state.sequencer.tracks.get_mut(track as usize) {
                         *t = state;
                     }
                 }
-                ServerMessage::LockDenied { track } => {
+                WsToUiMsg::Server(ServerMessage::LockDenied { track }) => {
                     tracing::warn!("Lock denied for track {}", track);
                     self.notifications
                         .push(format!("Lock denied for track {}", track + 1));
@@ -189,7 +195,7 @@ impl eframe::App for LibretaktUI {
                 .show(ctx, |_ui| {});
         }
 
-        // Bottom status bar: current notification (with fade) or connection status.
+        // Bottom status bar: notifications only.
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             let now = ctx.input(|i| i.time);
             if let Some((msg, alpha)) = self.notifications.current(now) {
@@ -203,11 +209,7 @@ impl eframe::App for LibretaktUI {
                 ui.colored_label(color, msg);
                 ctx.request_repaint(); // keep animating while a notification is visible
             } else {
-                let conn_str = match &self.state {
-                    State::Connected(_, _) => "Connected",
-                    State::Disconnected(msg) => msg.as_str(),
-                };
-                ui.label(conn_str);
+                ui.label(""); // maintain consistent panel height
             }
         });
 
