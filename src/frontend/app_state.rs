@@ -43,6 +43,7 @@ pub struct WsChannels {
 /// `ApplicationState` is owned by the UI task; `WsChannels` is owned by the
 /// WebSocket background task. Together they form two `mpsc` channels that
 /// bridge the two tasks.
+#[must_use]
 pub fn create_channels() -> (ApplicationState, WsChannels) {
     let (ws_to_ui_tx, ws_to_ui_rx) = mpsc::unbounded();
     let (ui_to_ws_tx, ui_to_ws_rx) = mpsc::unbounded();
