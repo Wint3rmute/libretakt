@@ -2,11 +2,13 @@ mod main;
 pub use main::main;
 
 pub mod app_state;
+mod notifications;
 mod sequencer;
 mod state;
 
 use app_state::ApplicationState;
 use egui::{Context, Ui};
+use notifications::NotificationQueue;
 use sequencer::LocalSequencerState;
 use state::{ProjectData, State, UiState};
 
@@ -16,6 +18,7 @@ pub struct LibretaktUI {
     state: State,
     local_seq: LocalSequencerState,
     app_state: ApplicationState,
+    notifications: NotificationQueue,
     /// Commands queued during rendering, flushed to the WebSocket at the end of each frame.
     outbox: Vec<ClientCommand>,
 }
@@ -28,6 +31,7 @@ impl LibretaktUI {
             state: State::Disconnected("Connecting...".to_string()),
             local_seq: LocalSequencerState::default(),
             app_state,
+            notifications: NotificationQueue::default(),
             outbox: Vec::new(),
         }
     }
@@ -153,7 +157,8 @@ impl eframe::App for LibretaktUI {
                 }
                 ServerMessage::LockDenied { track } => {
                     tracing::warn!("Lock denied for track {}", track);
-                    self.app_state.lock_denied_track = Some(track as usize);
+                    self.notifications
+                        .push(format!("Lock denied for track {}", track + 1));
                 }
             }
         }
@@ -180,19 +185,26 @@ impl eframe::App for LibretaktUI {
                 .show(ctx, |_ui| {});
         }
 
-        // Bottom status bar: connection state + transient lock-denied notice.
+        // Bottom status bar: current notification (with fade) or connection status.
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-            let conn_str = match &self.state {
-                State::Connected(_, _) => "Connected".to_string(),
-                State::Disconnected(msg) => format!("Disconnected: {msg}"),
-            };
-            // .take() clears the flag after one frame so the notice is a brief flash.
-            let status = if let Some(track) = self.app_state.lock_denied_track.take() {
-                format!("{conn_str} | ⚠ Lock denied for track {}", track + 1)
+            let now = ctx.input(|i| i.time);
+            if let Some((msg, alpha)) = self.notifications.current(now) {
+                let base = ui.visuals().text_color();
+                let color = egui::Color32::from_rgba_unmultiplied(
+                    base.r(),
+                    base.g(),
+                    base.b(),
+                    (alpha * 255.0) as u8,
+                );
+                ui.colored_label(color, msg);
+                ctx.request_repaint(); // keep animating while a notification is visible
             } else {
-                conn_str
-            };
-            ui.label(status);
+                let conn_str = match &self.state {
+                    State::Connected(_, _) => "Connected",
+                    State::Disconnected(msg) => msg.as_str(),
+                };
+                ui.label(conn_str);
+            }
         });
 
         // Top panel: "Back" button + state summary label.

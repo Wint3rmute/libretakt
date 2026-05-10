@@ -22,10 +22,6 @@ pub struct ApplicationState {
     /// The authoritative sequencer state, kept in sync with the server via
     /// `ServerMessage::Init` and `ServerMessage::TrackUpdate` messages.
     pub sequencer: SequencerState,
-
-    /// Set transiently when the server denies a lock request; shown in the
-    /// status bar on the next rendered frame.
-    pub lock_denied_track: Option<usize>,
 }
 
 /// Companion channels that belong to the WebSocket background task.
@@ -51,7 +47,6 @@ pub fn create_channels() -> (ApplicationState, WsChannels) {
         to_ws: ui_to_ws_tx,
         client_id: 0,
         sequencer: SequencerState::default(),
-        lock_denied_track: None,
     };
 
     let ws_channels = WsChannels {
