@@ -21,6 +21,71 @@ lto = true
 [workspace]
 members = ["mverb"]
 
+[workspace.dependencies]
+uuid = { version = "1.11", features = ["v4", "serde"] } # uuid's fit well in this context.
+url = "2.5"
+futures-channel = "0.3.31"
+tokio = { version = "1.48", features = ["full"] }
+futures-util = "0.3.31"
+tracing = "0.1"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.145"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+mverb = {path = "mverb" }
+url = {workspace = true}
+futures-util = {workspace = true}
+tokio = {workspace = true}
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+futures = "0.3.31"
+
+egui = "0.34.0"
+axum = { version = "0.8.6", features = ["ws"] }
+rust-embed = "8"
+mime_guess = "2"
+
+rodio = { version = "0.21", default-features = true }
+flume = "0.11.1"
+serde_derive = "1.0.228"
+tokio-tungstenite = "0.28.0"
+num = "0.4"
+num-derive = "0.4"
+num-traits = "0.2"
+strum = "0.27"
+strum_macros = "0.27"
+
+# For cargo-fuzz
+arbitrary = { version = "1", features = ["derive"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen-futures = "0.4"
+egui = "0.34.0"
+eframe = { version = "0.34.0", default-features = false, features = [
+    "default_fonts", # Embed the default egui fonts.
+    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
+    "persistence",   # Enable restoring app state when restarting the app.
+] }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "registry"] }
+tracing-web = "0.1"
+reqwasm = "0.5.0"
+ewebsock = "0.5.0"
+gloo-timers = { version = "0.3", features = ["futures"] }
+futures-channel = { workspace = true }
+web-sys = { version = "0.3", features = ["Window", "Location", "Document", "Element", "HtmlCanvasElement"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+egui_kittest = { version = "0.34.2", features = ["snapshot", "wgpu"] }
+
+[[bin]]
+bench = false
+path = "src/main.rs"
+name = "client"
+
+
 [workspace.lints.clippy]
 # Enable the full pedantic and restriction groups
 pedantic = { level = "warn", priority = -1 }
@@ -102,64 +167,3 @@ same_name_method = "allow"
 absolute_paths = "allow"
 # `unseparated_literal_suffix` and `separated_literal_suffix` conflict; keep default style
 unseparated_literal_suffix = "allow"
-
-[workspace.dependencies]
-uuid = { version = "1.11", features = ["v4", "serde"] } # uuid's fit well in this context.
-url = "2.5"
-futures-channel = "0.3.31"
-tokio = { version = "1.48", features = ["full"] }
-futures-util = "0.3.31"
-tracing = "0.1"
-
-[dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.145"
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-mverb = {path = "mverb" }
-url = {workspace = true}
-futures-util = {workspace = true}
-tokio = {workspace = true}
-tracing = { workspace = true }
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-futures = "0.3.31"
-
-egui = "0.34.0"
-axum = { version = "0.8.6", features = ["ws"] }
-rust-embed = "8"
-mime_guess = "2"
-
-rodio = { version = "0.21", default-features = true }
-flume = "0.11.1"
-serde_derive = "1.0.228"
-tokio-tungstenite = "0.28.0"
-num = "0.4"
-num-derive = "0.4"
-num-traits = "0.2"
-strum = "0.27"
-strum_macros = "0.27"
-
-# For cargo-fuzz
-arbitrary = { version = "1", features = ["derive"] }
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen-futures = "0.4"
-egui = "0.34.0"
-eframe = { version = "0.34.0", default-features = false, features = [
-    "default_fonts", # Embed the default egui fonts.
-    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
-    "persistence",   # Enable restoring app state when restarting the app.
-] }
-tracing = { workspace = true }
-tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "registry"] }
-tracing-web = "0.1"
-reqwasm = "0.5.0"
-ewebsock = "0.5.0"
-gloo-timers = { version = "0.3", features = ["futures"] }
-futures-channel = { workspace = true }
-web-sys = { version = "0.3", features = ["Window", "Location", "Document", "Element", "HtmlCanvasElement"] }
-
-[[bin]]
-bench = false
-path = "src/main.rs"
-name = "client"
