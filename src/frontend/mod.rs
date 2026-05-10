@@ -111,6 +111,10 @@ impl LibretaktUI {
 }
 
 impl eframe::App for LibretaktUI {
+    fn ui(&mut self, _ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        // All rendering is handled in `update` via explicit panel layout.
+    }
+
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // ── Phase 1 — Inbound ──────────────────────────────────────────────
         self.process_inbound();

@@ -31,18 +31,24 @@ pub fn main() {
 
     let (app_state, mut ws_channels) = create_channels();
 
-    let web_options = eframe::WebOptions {
-        follow_system_theme: true,
-        ..eframe::WebOptions::default()
-    };
+    let web_options = eframe::WebOptions::default();
 
     tracing::info!("Spawning UI task...");
     wasm_bindgen_futures::spawn_local(async move {
+        use wasm_bindgen::JsCast as _;
+        let canvas = web_sys::window()
+            .expect("no window")
+            .document()
+            .expect("no document")
+            .get_element_by_id("the_canvas_id")
+            .expect("canvas element not found")
+            .dyn_into::<web_sys::HtmlCanvasElement>()
+            .expect("element is not a canvas");
         eframe::WebRunner::new()
             .start(
-                "the_canvas_id",
+                canvas,
                 web_options,
-                Box::new(|cc| Box::new(super::LibretaktUI::new(cc, app_state))),
+                Box::new(|cc| Ok(Box::new(super::LibretaktUI::new(cc, app_state)))),
             )
             .await
             .expect("failed to start eframe");

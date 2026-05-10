@@ -124,7 +124,7 @@ tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 futures = "0.3.31"
 
-egui = "0.27.0"
+egui = "0.34.0"
 axum = { version = "0.8.6", features = ["ws"] }
 rust-embed = "8"
 mime_guess = "2"
@@ -144,8 +144,9 @@ arbitrary = { version = "1", features = ["derive"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"
-egui = "0.27.0"
-eframe = { version = "0.27.0", default-features = false, features = [
+wasm-bindgen = "0.2"
+egui = "0.34.0"
+eframe = { version = "0.34.0", default-features = false, features = [
     "default_fonts", # Embed the default egui fonts.
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
     "persistence",   # Enable restoring app state when restarting the app.
@@ -157,7 +158,7 @@ reqwasm = "0.5.0"
 ewebsock = "0.5.0"
 gloo-timers = { version = "0.3", features = ["futures"] }
 futures-channel = { workspace = true }
-web-sys = { version = "0.3", features = ["Window", "Location"] }
+web-sys = { version = "0.3", features = ["Window", "Location", "Document", "Element", "HtmlCanvasElement"] }
 
 [[bin]]
 bench = false
