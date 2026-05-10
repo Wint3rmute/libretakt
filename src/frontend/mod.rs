@@ -214,6 +214,7 @@ impl eframe::App for LibretaktUI {
         });
 
         // Top panel: "Back" button + state summary label.
+        let mut back_clicked = false;
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                 // Mutable borrow of self.state released at the end of this match.
@@ -221,6 +222,7 @@ impl eframe::App for LibretaktUI {
                     State::Connected(_, ui_state) => {
                         if ui.add(egui::Button::new("Back")).clicked() {
                             ui_state.back();
+                            back_clicked = true;
                         }
                     }
                     State::Disconnected(_) => {}
@@ -237,6 +239,7 @@ impl eframe::App for LibretaktUI {
         });
 
         // Central panel: player selection, sequencer, or disconnected notice.
+        let mut lock_request: Option<u32> = None;
         egui::CentralPanel::default().show(ctx, |ui| {
             // Resolve which track to display before calling show_sequencer, so
             // that the borrow of self.state ends before the mutable borrow in
@@ -249,7 +252,11 @@ impl eframe::App for LibretaktUI {
                 State::Connected(_, ui_state) => match ui_state {
                     UiState::PlayerSelection => {
                         show_player_selection(ui_state, ctx, ui);
-                        None
+                        // If show_player_selection navigated to a track, request its lock.
+                        if let Some(idx) = ui_state.track_index() {
+                            lock_request = Some(idx as u32);
+                        }
+                        ui_state.track_index()
                     }
                     UiState::MixingConsoleT0 => {
                         ui.centered_and_justified(|ui| {
@@ -265,6 +272,22 @@ impl eframe::App for LibretaktUI {
                 self.show_sequencer(ctx, ui, track_idx);
             }
         });
+
+        // Release all owned locks when Back is pressed.
+        if back_clicked {
+            let client_id = self.app_state.client_id;
+            for (idx, track) in self.app_state.sequencer.tracks.iter().enumerate() {
+                if track.locked_by == Some(client_id) {
+                    self.outbox
+                        .push(ClientCommand::ReleaseLock { track: idx as u32 });
+                }
+            }
+        }
+
+        // Request lock for a newly selected track.
+        if let Some(track) = lock_request {
+            self.outbox.push(ClientCommand::RequestLock { track });
+        }
 
         // ── Phase 3 — Outbound ─────────────────────────────────────────────
         // Serialise and send every command that was queued during rendering.
