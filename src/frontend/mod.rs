@@ -62,6 +62,9 @@ impl LibretaktUI {
         ui.allocate_ui(egui::Vec2::new(ui.available_width(), params_height), |ui| {
             let params = &mut self.track_params[track_idx];
             let width = ui.available_width();
+            let n = 4.0_f32;
+            let slider_height =
+                (ui.available_height() - ui.spacing().item_spacing.y * (n - 1.0)) / n;
             ui.vertical(|ui| {
                 for (value, label) in
                     params
@@ -69,7 +72,7 @@ impl LibretaktUI {
                         .zip(["Filter", "Resonance", "Volume", "Pan"])
                 {
                     ui.add_sized(
-                        [width, 0.0],
+                        [width, slider_height],
                         egui::Slider::new(value, 0.0..=1.0).text(label),
                     );
                 }
