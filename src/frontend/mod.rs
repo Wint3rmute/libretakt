@@ -53,40 +53,10 @@ impl LibretaktUI {
         let i_own_lock = track_state.locked_by == Some(my_id);
         let is_locked_by_other = track_state.locked_by.is_some() && !i_own_lock;
 
-        // -- Top half: lock button + parameter placeholders -----------------
+        // -- Top half: parameter placeholders ---------------------------------
         let params_height = ui.available_height() * 0.5;
         ui.allocate_ui(egui::Vec2::new(ui.available_width(), params_height), |ui| {
             ui.vertical(|ui| {
-                let (lock_label, lock_fill) = if i_own_lock {
-                    ("Lock (owned)", egui::Color32::DARK_GREEN)
-                } else if is_locked_by_other {
-                    ("Lock (busy)", egui::Color32::DARK_RED)
-                } else {
-                    ("Lock", egui::Color32::TRANSPARENT)
-                };
-
-                if ui
-                    .add_sized(
-                        [ui.available_width(), 44.0],
-                        egui::Button::new(lock_label).fill(lock_fill),
-                    )
-                    .clicked()
-                {
-                    if i_own_lock {
-                        self.outbox.push(ClientCommand::ReleaseLock {
-                            track: track_idx as u32,
-                        });
-                        self.notifications
-                            .push(format!("Track {} unlocked", track_idx + 1));
-                    } else if !is_locked_by_other {
-                        self.outbox.push(ClientCommand::RequestLock {
-                            track: track_idx as u32,
-                        });
-                        self.notifications
-                            .push(format!("Track {} locked", track_idx + 1));
-                    }
-                }
-
                 ui.separator();
                 // TODO: track parameters (filters, step lengths, etc.)
                 ui.weak("Parameters coming soon");
@@ -236,7 +206,7 @@ impl eframe::App for LibretaktUI {
                     },
                 );
             });
-        });
+        });https://libretakt.fly.dev/!
 
         // Central panel: player selection, sequencer, or disconnected notice.
         let mut lock_request: Option<u32> = None;
