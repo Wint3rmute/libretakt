@@ -1,16 +1,21 @@
+#[cfg(target_arch = "wasm32")]
 mod main;
+#[cfg(target_arch = "wasm32")]
 pub use main::main;
 
 pub mod app_state;
 mod notifications;
 mod sequencer;
 mod state;
+mod view_ctx;
+mod views;
 
 use app_state::{ApplicationState, WsToUiMsg};
-use egui::{Context, Ui};
 use notifications::NotificationQueue;
 use sequencer::LocalSequencerState;
 use state::{ProjectData, State, UiState};
+use view_ctx::ViewCtx;
+use views::{show_bottom_panel, show_central_panel, show_top_panel};
 
 use crate::shared::{ClientCommand, ServerMessage};
 
@@ -20,14 +25,12 @@ pub struct LibretaktUI {
     app_state: ApplicationState,
     notifications: NotificationQueue,
     /// Local-only parameter values for each track: [filter, resonance, volume, pan].
-    /// Indexed by track index; not synced to the server.
     track_params: Vec<[f32; 4]>,
     /// Commands queued during rendering, flushed to the WebSocket at the end of each frame.
     outbox: Vec<ClientCommand>,
 }
 
 impl LibretaktUI {
-    /// Called once before the first frame.
     pub fn new(_cc: &eframe::CreationContext<'_>, app_state: ApplicationState) -> Self {
         tracing::info!("Creating UI...");
         Self {
@@ -40,107 +43,20 @@ impl LibretaktUI {
         }
     }
 
-    /// Render the single-track sequencer view for `track_idx`.
-    ///
-    /// Layout:
-    ///   * Top half  - lock button + reserved space for track parameters.
-    ///   * Bottom half - 4x4 step grid, sized to fill the available width.
-    fn show_sequencer(&mut self, _ctx: &Context, ui: &mut Ui, track_idx: usize) {
-        let Some(track_state) = self.app_state.sequencer.tracks.get(track_idx).cloned() else {
-            ui.centered_and_justified(|ui| {
-                ui.label(format!("Track {} not found", track_idx + 1));
-            });
-            return;
-        };
-
-        let my_id = self.app_state.client_id;
-        let i_own_lock = track_state.locked_by == Some(my_id);
-        let _is_locked_by_other = track_state.locked_by.is_some() && !i_own_lock;
-
-        // -- Top half: parameter sliders (local-only prototype) ---------------
-        // Mirror the step-grid sizing: base slider height on available screen
-        // height so it scales on any device, then clamp to a sensible range.
-        let n = 4.0_f32;
-        let item_spacing = ui.spacing().item_spacing.y;
-        let label_height = ui.text_style_height(&egui::TextStyle::Small);
-        let slider_height =
-            ((ui.available_height() / 3.0 - item_spacing * (n - 1.0)) / n).clamp(32.0, 64.0);
-        // Account for the small label above each slider when allocating space.
-        let params_height =
-            n * (label_height + item_spacing + slider_height) + (n - 1.0) * item_spacing;
-
-        ui.allocate_ui(egui::Vec2::new(ui.available_width(), params_height), |ui| {
-            let params = &mut self.track_params[track_idx];
-            let width = ui.available_width();
-            // Drive track width and thumb height directly through the spacing
-            // API — add_sized does not reliably override Slider's own sizing.
-            ui.spacing_mut().slider_width = (width - 60.0).max(60.0);
-            ui.spacing_mut().interact_size.y = slider_height / 2.0;
-            ui.vertical(|ui| {
-                for (value, label) in
-                    params
-                        .iter_mut()
-                        .zip(["Filter", "Resonance", "Volume", "Pan"])
-                {
-                    ui.label(label);
-                    ui.add(egui::Slider::new(value, 0.0..=1.0).text(""));
-                }
-            });
-        });
-
-        ui.separator();
-
-        // -- Bottom half: 4x4 step grid -------------------------------------
-        let spacing = 4.0;
-        let step_size = ((ui.available_width() - 3.0 * spacing) / 4.0).min(120.0);
-        let step_size = egui::Vec2::splat(step_size);
-        let current_step = self.local_seq.current_step;
-
-        egui::Grid::new(format!("steps_{track_idx}"))
-            .spacing([spacing, spacing])
-            .show(ui, |ui| {
-                for row in 0..4_usize {
-                    for col in 0..4_usize {
-                        let step_idx = row * 4 + col;
-                        let active = track_state.steps.get(step_idx).copied().unwrap_or(false);
-
-                        let fill = if active && step_idx == current_step {
-                            egui::Color32::LIGHT_GREEN
-                        } else if active {
-                            egui::Color32::DARK_GREEN
-                        } else if step_idx == current_step {
-                            egui::Color32::DARK_GRAY
-                        } else {
-                            egui::Color32::TRANSPARENT
-                        };
-
-                        let text_color = if i_own_lock {
-                            ui.visuals().strong_text_color()
-                        } else {
-                            ui.visuals().weak_text_color()
-                        };
-
-                        let label =
-                            egui::RichText::new(format!("{}", step_idx + 1)).color(text_color);
-                        let resp = ui.add_sized(step_size, egui::Button::new(label).fill(fill));
-
-                        if resp.clicked() && i_own_lock {
-                            self.outbox.push(ClientCommand::ToggleStep {
-                                track: track_idx as u32,
-                                step: step_idx as u32,
-                            });
-                        }
-                    }
-                    ui.end_row();
-                }
-            });
+    /// Construct a `LibretaktUI` without an `eframe::CreationContext`, for use in tests.
+    pub fn new_for_test(app_state: ApplicationState) -> Self {
+        Self {
+            state: State::Disconnected("Connecting...".to_string()),
+            local_seq: LocalSequencerState::default(),
+            app_state,
+            notifications: NotificationQueue::default(),
+            track_params: vec![[0.5; 4]; 8],
+            outbox: Vec::new(),
+        }
     }
-}
 
-impl eframe::App for LibretaktUI {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // ── Phase 1 — Inbound ──────────────────────────────────────────────
-        // Drain all available WebSocket messages and mutate app_state.
+    /// Drain incoming WebSocket messages and update application state.
+    fn process_inbound(&mut self) {
         while let Ok(Some(msg)) = self.app_state.from_ws.try_next() {
             match msg {
                 WsToUiMsg::Disconnected => {
@@ -167,12 +83,10 @@ impl eframe::App for LibretaktUI {
                 }
             }
         }
+    }
 
-        // ── Phase 2 — Render ───────────────────────────────────────────────
-
-        // Center the UI in a 9:16 portrait column so it looks natural on both
-        // mobile (margin == 0, panels fill the screen) and desktop (equal
-        // margins push all panels into the center).
+    /// Render invisible side panels that center the content in a 9:16 portrait column.
+    fn render_margins(&self, ctx: &egui::Context) {
         let viewport = ctx.screen_rect();
         let content_width = (viewport.height() * (9.0 / 16.0)).min(viewport.width());
         let h_margin = ((viewport.width() - content_width) / 2.0).max(0.0);
@@ -189,178 +103,86 @@ impl eframe::App for LibretaktUI {
                 .frame(margin_frame)
                 .show(ctx, |_ui| {});
         }
+    }
 
-        // Bottom status bar: notifications only.
+    /// Draw all panels. Called from both `eframe::App::update` and the test harness.
+    pub fn render(&mut self, ctx: &egui::Context) {
+        self.render_margins(ctx);
+
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-            let now = ctx.input(|i| i.time);
-            if let Some((msg, alpha)) = self.notifications.current(now) {
-                let base = ui.visuals().text_color();
-                let color = egui::Color32::from_rgba_unmultiplied(
-                    base.r(),
-                    base.g(),
-                    base.b(),
-                    (alpha * 255.0) as u8,
-                );
-                ui.colored_label(color, msg);
-                ctx.request_repaint(); // keep animating while a notification is visible
-            } else {
-                ui.label(""); // maintain consistent panel height
-            }
+            show_bottom_panel(&mut self.notifications, ctx, ui);
         });
 
-        // Top panel: "Back" button + state summary label.
-        let mut back_clicked = false;
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                // Mutable borrow of self.state released at the end of this match.
-                match &mut self.state {
-                    State::Connected(_, ui_state) => {
-                        if ui.add(egui::Button::new("Back")).clicked() {
-                            ui_state.back();
-                            back_clicked = true;
-                        }
-                    }
-                    State::Disconnected(_) => {}
-                }
+        let back_clicked = egui::TopBottomPanel::top("top_panel")
+            .show(ctx, |ui| show_top_panel(&mut self.state, ui))
+            .inner;
 
-                // Immutable borrow of self.state; no overlap with the match above.
-                ui.with_layout(
-                    egui::Layout::centered_and_justified(egui::Direction::TopDown),
-                    |ui| {
-                        ui.label(self.state.summary_string());
-                    },
-                );
-            });
-        });
-
-        // Central panel: player selection, sequencer, or disconnected notice.
         let mut lock_request: Option<u32> = None;
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // Resolve which track to display before calling show_sequencer, so
-            // that the borrow of self.state ends before the mutable borrow in
-            // show_sequencer begins.
-            let selected_track: Option<usize> = match &mut self.state {
-                State::Disconnected(msg) => {
-                    ui.label(msg.clone());
-                    None
-                }
-                State::Connected(_, ui_state) => match ui_state {
-                    UiState::PlayerSelection => {
-                        show_player_selection(ui_state, ctx, ui);
-                        // If show_player_selection navigated to a track, request its lock.
-                        if let Some(idx) = ui_state.track_index() {
-                            lock_request = Some(idx as u32);
-                        }
-                        ui_state.track_index()
-                    }
-                    UiState::MixingConsoleT0 => {
-                        ui.centered_and_justified(|ui| {
-                            ui.label("Mixing Console - coming soon");
-                        });
-                        None
-                    }
-                    other => other.track_index(),
-                },
+        {
+            // Construct ViewCtx with explicit field borrows so that self.state
+            // remains unborrowed and can be passed to show_central_panel.
+            let mut vctx = ViewCtx {
+                app_state: &self.app_state,
+                outbox: &mut self.outbox,
+                notifications: &mut self.notifications,
+                track_params: &mut self.track_params,
+                local_seq: &self.local_seq,
             };
-
-            if let Some(track_idx) = selected_track {
-                self.show_sequencer(ctx, ui, track_idx);
-            }
-        });
-
-        // Release all owned locks when Back is pressed.
-        if back_clicked {
-            let client_id = self.app_state.client_id;
-            for (idx, track) in self.app_state.sequencer.tracks.iter().enumerate() {
-                if track.locked_by == Some(client_id) {
-                    self.outbox
-                        .push(ClientCommand::ReleaseLock { track: idx as u32 });
-                }
-            }
+            egui::CentralPanel::default().show(ctx, |ui| {
+                show_central_panel(&mut vctx, &mut self.state, ui, &mut lock_request);
+            });
         }
 
-        // Request lock for a newly selected track.
+        if back_clicked {
+            self.release_all_locks();
+        }
         if let Some(track) = lock_request {
             self.outbox.push(ClientCommand::RequestLock { track });
         }
+    }
 
-        // ── Phase 3 — Outbound ─────────────────────────────────────────────
-        // Serialise and send every command that was queued during rendering.
+    /// Release every track lock held by this client.
+    fn release_all_locks(&mut self) {
+        let client_id = self.app_state.client_id;
+        for (idx, track) in self.app_state.sequencer.tracks.iter().enumerate() {
+            if track.locked_by == Some(client_id) {
+                self.outbox
+                    .push(ClientCommand::ReleaseLock { track: idx as u32 });
+            }
+        }
+    }
+
+    /// Run all three frame phases (inbound → render → outbound) in one call.
+    ///
+    /// Use this instead of [`Self::render`] inside test harness closures so that
+    /// queued [`WsToUiMsg`] messages are processed before the frame is drawn.
+    pub fn tick(&mut self, ctx: &egui::Context) {
+        self.process_inbound();
+        self.render(ctx);
+        self.flush_outbox();
+    }
+
+    /// Send all queued commands over the WebSocket.
+    fn flush_outbox(&mut self) {
         for cmd in self.outbox.drain(..) {
             self.app_state.to_ws.unbounded_send(cmd).ok();
         }
     }
 }
 
-/// Render the player / view selection screen.
-///
-/// Every `UiState` variant that can be navigated to must be constructed here
-/// so the compiler considers it "used" (required for `-D dead-code`).
-fn show_player_selection(ui_state: &mut UiState, _ctx: &Context, ui: &mut Ui) {
-    let w = ui.min_size().x / 2.0;
-    let h = 60.0;
-    let c = egui::Color32::TRANSPARENT;
+impl eframe::App for LibretaktUI {
+    fn ui(&mut self, _ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        // All rendering is handled in `update` via explicit panel layout.
+    }
 
-    egui::Grid::new("player_selection_id")
-        .spacing(egui::Vec2::ZERO)
-        .show(ui, |ui| {
-            if ui
-                .add_sized([w, h], egui::Button::new("Sequencer").fill(c))
-                .clicked()
-            {
-                *ui_state = UiState::AudioTrackT1;
-            }
-            if ui
-                .add_sized([w, h], egui::Button::new("Track 2").fill(c))
-                .clicked()
-            {
-                *ui_state = UiState::AudioTrackT2;
-            }
-            ui.end_row();
-            if ui
-                .add_sized([w, h], egui::Button::new("Track 3").fill(c))
-                .clicked()
-            {
-                *ui_state = UiState::AudioTrackT3;
-            }
-            if ui
-                .add_sized([w, h], egui::Button::new("Track 4").fill(c))
-                .clicked()
-            {
-                *ui_state = UiState::AudioTrackT4;
-            }
-            ui.end_row();
-            if ui
-                .add_sized([w, h], egui::Button::new("Track 5").fill(c))
-                .clicked()
-            {
-                *ui_state = UiState::AudioTrackT5;
-            }
-            if ui
-                .add_sized([w, h], egui::Button::new("Track 6").fill(c))
-                .clicked()
-            {
-                *ui_state = UiState::AudioTrackT6;
-            }
-            ui.end_row();
-            if ui
-                .add_sized([w, h], egui::Button::new("Track 7").fill(c))
-                .clicked()
-            {
-                *ui_state = UiState::AudioTrackT7;
-            }
-            if ui
-                .add_sized([w, h], egui::Button::new("Track 8").fill(c))
-                .clicked()
-            {
-                *ui_state = UiState::AudioTrackT8;
-            }
-            ui.end_row();
-            if ui
-                .add_sized([w, h], egui::Button::new("Mixing Console").fill(c))
-                .clicked()
-            {
-                *ui_state = UiState::MixingConsoleT0;
-            }
-        });
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // ── Phase 1 — Inbound ──────────────────────────────────────────────
+        self.process_inbound();
+
+        // ── Phase 2 — Render ───────────────────────────────────────────────
+        self.render(ctx);
+
+        // ── Phase 3 — Outbound ─────────────────────────────────────────────
+        self.flush_outbox();
+    }
 }
