@@ -17,7 +17,7 @@ pub fn show_track_view(vctx: &mut ViewCtx, ui: &mut egui::Ui, track_idx: usize) 
 
 /// Parameter sliders for the selected track (local-only prototype).
 fn show_params(vctx: &mut ViewCtx, ui: &mut egui::Ui, track_idx: usize) {
-    let n = 4.0_f32;
+    let n = 4.0f32;
     let item_spacing = ui.spacing().item_spacing.y;
     let label_height = ui.text_style_height(&egui::TextStyle::Small);
     let slider_height =
@@ -60,8 +60,8 @@ fn show_step_grid(
     egui::Grid::new(format!("steps_{track_idx}"))
         .spacing([spacing, spacing])
         .show(ui, |ui| {
-            for row in 0..4_usize {
-                for col in 0..4_usize {
+            for row in 0..4usize {
+                for col in 0..4usize {
                     let step_idx = row * 4 + col;
                     let active = track_state.steps.get(step_idx).copied().unwrap_or(false);
 

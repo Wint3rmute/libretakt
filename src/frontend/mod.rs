@@ -34,7 +34,7 @@ impl LibretaktUI {
     pub fn new(_cc: &eframe::CreationContext<'_>, app_state: ApplicationState) -> Self {
         tracing::info!("Creating UI...");
         Self {
-            state: State::Disconnected("Connecting...".to_string()),
+            state: State::Disconnected("Connecting...".to_owned()),
             local_seq: LocalSequencerState::default(),
             app_state,
             notifications: NotificationQueue::default(),
@@ -44,9 +44,10 @@ impl LibretaktUI {
     }
 
     /// Construct a `LibretaktUI` without an `eframe::CreationContext`, for use in tests.
+    #[must_use]
     pub fn new_for_test(app_state: ApplicationState) -> Self {
         Self {
-            state: State::Disconnected("Connecting...".to_string()),
+            state: State::Disconnected("Connecting...".to_owned()),
             local_seq: LocalSequencerState::default(),
             app_state,
             notifications: NotificationQueue::default(),
@@ -61,7 +62,7 @@ impl LibretaktUI {
             match msg {
                 WsToUiMsg::Disconnected => {
                     tracing::warn!("Disconnected from server");
-                    self.state = State::Disconnected("Reconnecting...".to_string());
+                    self.state = State::Disconnected("Reconnecting...".to_owned());
                     self.notifications.push("Disconnected, reconnecting...");
                 }
                 WsToUiMsg::Server(ServerMessage::Init { client_id, state }) => {
@@ -131,7 +132,7 @@ impl LibretaktUI {
             egui::CentralPanel::default().show(ctx, |ui| {
                 show_central_panel(&mut vctx, &mut self.state, ui, &mut lock_request);
             });
-        }
+        };
 
         if back_clicked {
             self.release_all_locks();
@@ -165,7 +166,7 @@ impl LibretaktUI {
     /// Send all queued commands over the WebSocket.
     fn flush_outbox(&mut self) {
         for cmd in self.outbox.drain(..) {
-            self.app_state.to_ws.unbounded_send(cmd).ok();
+            let _ = self.app_state.to_ws.unbounded_send(cmd);
         }
     }
 }
