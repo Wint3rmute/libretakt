@@ -160,6 +160,25 @@ impl eframe::App for LibretaktUI {
 
         // ── Phase 2 — Render ───────────────────────────────────────────────
 
+        // Center the UI in a 9:16 portrait column so it looks natural on both
+        // mobile (margin == 0, panels fill the screen) and desktop (equal
+        // margins push all panels into the center).
+        let viewport = ctx.screen_rect();
+        let content_width = (viewport.height() * (9.0 / 16.0)).min(viewport.width());
+        let h_margin = ((viewport.width() - content_width) / 2.0).max(0.0);
+        if h_margin > 0.0 {
+            egui::SidePanel::left("left_margin")
+                .exact_width(h_margin)
+                .resizable(false)
+                .frame(egui::Frame::none())
+                .show(ctx, |_ui| {});
+            egui::SidePanel::right("right_margin")
+                .exact_width(h_margin)
+                .resizable(false)
+                .frame(egui::Frame::none())
+                .show(ctx, |_ui| {});
+        }
+
         // Bottom status bar: connection state + transient lock-denied notice.
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             let conn_str = match &self.state {
