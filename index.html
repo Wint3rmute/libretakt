@@ -1,14 +1,14 @@
 <!doctype html>
 <html>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-    <!-- Disable zooming: -->
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, user-scalable=no"
-    />
-
     <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <!-- Disable zooming: -->
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=no"
+        />
+
         <!-- change this to your project name -->
         <title>eframe template</title>
 
@@ -69,8 +69,10 @@
                 width: 100%;
             }
 
-            /* Canvas fills the full viewport; egui handles centering via margin panels internally. */
+            /* Make canvas fill entire document: */
             canvas {
+                margin-right: auto;
+                margin-left: auto;
                 display: block;
                 position: absolute;
                 top: 0;
@@ -128,10 +130,16 @@
     <body>
         <!-- The WASM code will resize the canvas dynamically -->
         <!-- the id is hardcoded in main.rs . so, make sure both match. -->
-        <canvas id="the_canvas_id">
-            Libretakt is loading... if you're stuck here, try refreshing the
-            page and checking if your browser supports WASM.
-        </canvas>
+        <canvas id="the_canvas_id"></canvas>
+
+        <!-- the loading spinner will be removed in main.rs -->
+        <div class="centered" id="loading_text">
+            <noscript>You need javascript to use this website</noscript>
+            <p style="font-size: 16px">
+                Loading… If you're stuck here, refresh the page!
+            </p>
+            <div class="lds-dual-ring"></div>
+        </div>
 
         <!--Register Service Worker. this will cache the wasm / js scripts for offline use (for PWA functionality). -->
         <!-- Force refresh (Ctrl + F5) to load the latest files instead of cached files  -->

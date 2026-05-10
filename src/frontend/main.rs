@@ -35,23 +35,41 @@ pub fn main() {
 
     tracing::info!("Spawning UI task...");
     wasm_bindgen_futures::spawn_local(async move {
-        use wasm_bindgen::JsCast as _;
-        let canvas = web_sys::window()
+        use eframe::wasm_bindgen::JsCast as _;
+
+        let document = web_sys::window()
             .expect("no window")
             .document()
-            .expect("no document")
+            .expect("no document");
+
+        let canvas = document
             .get_element_by_id("the_canvas_id")
             .expect("canvas element not found")
             .dyn_into::<web_sys::HtmlCanvasElement>()
             .expect("element is not a canvas");
-        eframe::WebRunner::new()
+
+        let start_result = eframe::WebRunner::new()
             .start(
                 canvas,
                 web_options,
                 Box::new(|cc| Ok(Box::new(super::LibretaktUI::new(cc, app_state)))),
             )
-            .await
-            .expect("failed to start eframe");
+            .await;
+
+        // Remove the loading spinner, or replace it with an error message.
+        if let Some(loading_text) = document.get_element_by_id("loading_text") {
+            match start_result {
+                Ok(()) => {
+                    loading_text.remove();
+                }
+                Err(e) => {
+                    loading_text.set_inner_html(
+                        "<p>The app has crashed. See the developer console for details.</p>",
+                    );
+                    panic!("Failed to start eframe: {e:?}");
+                }
+            }
+        }
     });
 
     tracing::info!("Spawning WebSocket task...");
