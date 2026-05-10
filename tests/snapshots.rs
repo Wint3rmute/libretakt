@@ -1,3 +1,4 @@
+use egui_kittest::kittest::Queryable as _;
 use libretakt::frontend::app_state::WsToUiMsg;
 use libretakt::frontend::{app_state::create_channels, LibretaktUI};
 use libretakt::shared::{ClientId, SequencerState, ServerMessage};
@@ -9,7 +10,18 @@ use libretakt::shared::{ClientId, SequencerState, ServerMessage};
 /// channel receiver and cannot be cloned or reused).
 ///
 /// Snapshot files are written as `{name}_dark.png` and `{name}_light.png`.
-fn snapshot_themes(name: &str, mut make_app: impl FnMut() -> LibretaktUI) {
+fn snapshot_themes(name: &str, make_app: impl FnMut() -> LibretaktUI) {
+    snapshot_themes_interact(name, make_app, |_| {});
+}
+
+/// Like [`snapshot_themes`], but runs `interact` on the harness between
+/// construction and snapshotting. Use this to simulate user navigation
+/// (e.g. clicking a button to open a view) before taking the screenshot.
+fn snapshot_themes_interact(
+    name: &str,
+    mut make_app: impl FnMut() -> LibretaktUI,
+    mut interact: impl FnMut(&mut egui_kittest::Harness<LibretaktUI>),
+) {
     // Collect results from both harnesses into one before asserting, as
     // required by egui_kittest when multiple harnesses exist in a single test.
     let mut all_results = egui_kittest::SnapshotResults::new();
@@ -20,11 +32,12 @@ fn snapshot_themes(name: &str, mut make_app: impl FnMut() -> LibretaktUI) {
             .with_theme(theme)
             .build_ui_state(
                 |ui: &mut egui::Ui, app: &mut LibretaktUI| {
-                    app.render(ui.ctx());
+                    app.tick(ui.ctx());
                 },
                 make_app(),
             );
-        harness.run();
+        interact(&mut harness);
+        harness.step(); // apply any queued interactions
         harness.snapshot(&format!("{name}_{suffix}"));
         all_results.extend(harness.take_snapshot_results());
     }
@@ -122,4 +135,40 @@ fn app_disconnected_snapshot() {
 
         LibretaktUI::new_for_test(app_state)
     });
+}
+
+/// The track-1 sequencer view, with a few active steps and the lock held by
+/// this client. Exercises the step grid, parameter sliders, and lock styling.
+#[test]
+fn app_sequencer_view_snapshot() {
+    const MY_ID: ClientId = 1;
+
+    snapshot_themes_interact(
+        "app_sequencer_view",
+        || {
+            let (app_state, ws_channels) = create_channels();
+
+            let mut sequencer = SequencerState::new(8, 16);
+            // Activate a simple four-on-the-floor pattern on track 1.
+            for step in [0, 4, 8, 12] {
+                sequencer.tracks[0].steps[step] = true;
+            }
+            // This client holds the lock on track 1.
+            sequencer.tracks[0].locked_by = Some(MY_ID);
+
+            ws_channels
+                .to_ui
+                .unbounded_send(WsToUiMsg::Server(ServerMessage::Init {
+                    client_id: MY_ID,
+                    state: sequencer,
+                }))
+                .unwrap();
+
+            LibretaktUI::new_for_test(app_state)
+        },
+        |harness| {
+            // Navigate from PlayerSelection into the track-1 sequencer view.
+            harness.get_by_label("Sequencer").click();
+        },
+    );
 }

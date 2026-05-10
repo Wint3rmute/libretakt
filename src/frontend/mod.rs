@@ -152,6 +152,16 @@ impl LibretaktUI {
         }
     }
 
+    /// Run all three frame phases (inbound → render → outbound) in one call.
+    ///
+    /// Use this instead of [`Self::render`] inside test harness closures so that
+    /// queued [`WsToUiMsg`] messages are processed before the frame is drawn.
+    pub fn tick(&mut self, ctx: &egui::Context) {
+        self.process_inbound();
+        self.render(ctx);
+        self.flush_outbox();
+    }
+
     /// Send all queued commands over the WebSocket.
     fn flush_outbox(&mut self) {
         for cmd in self.outbox.drain(..) {
