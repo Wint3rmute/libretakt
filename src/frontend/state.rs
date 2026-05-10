@@ -29,8 +29,8 @@ impl State {
 
 impl UiState {
     /// Returns the sequencer track index this view corresponds to, or `None`
-    /// for views that do not display a single track (e.g. PlayerSelection,
-    /// MixingConsole).
+    /// for views that do not display a single track (e.g. `PlayerSelection`,
+    /// `MixingConsole`).
     pub fn track_index(&self) -> Option<usize> {
         match self {
             UiState::PlayerSelection | UiState::MixingConsoleT0 => None,
@@ -54,7 +54,7 @@ impl UiState {
             UiState::AudioTrackT3 => "Track 3",
             _ => "TODO: undefined status summary",
         }
-        .to_string()
+        .to_owned()
     }
     pub fn back(&mut self) {
         match &self {
