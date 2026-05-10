@@ -87,7 +87,7 @@ impl LibretaktUI {
     }
 
     /// Render invisible side panels that center the content in a 9:16 portrait column.
-    fn render_margins(&self, ctx: &egui::Context) {
+    fn render_margins(ctx: &egui::Context) {
         let viewport = ctx.screen_rect();
         let content_width = (viewport.height() * (9.0 / 16.0)).min(viewport.width());
         let h_margin = ((viewport.width() - content_width) / 2.0).max(0.0);
@@ -108,7 +108,7 @@ impl LibretaktUI {
 
     /// Draw all panels. Called from both `eframe::App::update` and the test harness.
     pub fn render(&mut self, ctx: &egui::Context) {
-        self.render_margins(ctx);
+        Self::render_margins(ctx);
 
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             show_bottom_panel(&mut self.notifications, ctx, ui);
@@ -125,7 +125,6 @@ impl LibretaktUI {
             let mut vctx = ViewCtx {
                 app_state: &self.app_state,
                 outbox: &mut self.outbox,
-                notifications: &mut self.notifications,
                 track_params: &mut self.track_params,
                 local_seq: &self.local_seq,
             };

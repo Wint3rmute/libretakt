@@ -1,3 +1,5 @@
+#![allow(clippy::pub_use)]
+
 mod bottom_panel;
 mod central_panel;
 mod player_selection;
