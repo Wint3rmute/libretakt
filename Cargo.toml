@@ -18,6 +18,8 @@ overflow-checks = false
 [profile.release]
 lto = true
 
+
+
 [workspace]
 members = ["mverb"]
 
@@ -32,6 +34,16 @@ tracing = "0.1"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.145"
+egui = "0.34.0"
+eframe = { version = "0.34.0", default-features = false, features = [
+    "default_fonts",
+    "glow",
+    "persistence",
+] }
+futures-channel = { workspace = true }
+
+[dev-dependencies]
+egui_kittest = { version = "0.34.2", features = ["snapshot", "wgpu"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mverb = {path = "mverb" }
@@ -42,7 +54,6 @@ tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 futures = "0.3.31"
 
-egui = "0.34.0"
 axum = { version = "0.8.6", features = ["ws"] }
 rust-embed = "8"
 mime_guess = "2"
@@ -62,23 +73,13 @@ arbitrary = { version = "1", features = ["derive"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"
-egui = "0.34.0"
-eframe = { version = "0.34.0", default-features = false, features = [
-    "default_fonts", # Embed the default egui fonts.
-    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
-    "persistence",   # Enable restoring app state when restarting the app.
-] }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "registry"] }
 tracing-web = "0.1"
 reqwasm = "0.5.0"
 ewebsock = "0.5.0"
 gloo-timers = { version = "0.3", features = ["futures"] }
-futures-channel = { workspace = true }
 web-sys = { version = "0.3", features = ["Window", "Location", "Document", "Element", "HtmlCanvasElement"] }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-egui_kittest = { version = "0.34.2", features = ["snapshot", "wgpu"] }
 
 [[bin]]
 bench = false

@@ -1,4 +1,6 @@
+#[cfg(target_arch = "wasm32")]
 mod main;
+#[cfg(target_arch = "wasm32")]
 pub use main::main;
 
 pub mod app_state;
@@ -31,6 +33,19 @@ pub struct LibretaktUI {
 impl LibretaktUI {
     pub fn new(_cc: &eframe::CreationContext<'_>, app_state: ApplicationState) -> Self {
         tracing::info!("Creating UI...");
+        Self {
+            state: State::Disconnected("Connecting...".to_string()),
+            local_seq: LocalSequencerState::default(),
+            app_state,
+            notifications: NotificationQueue::default(),
+            track_params: vec![[0.5; 4]; 8],
+            outbox: Vec::new(),
+        }
+    }
+
+    /// Construct a `LibretaktUI` without an `eframe::CreationContext`, for use in tests.
+    // #[cfg(test)]
+    pub fn new_for_test(app_state: ApplicationState) -> Self {
         Self {
             state: State::Disconnected("Connecting...".to_string()),
             local_seq: LocalSequencerState::default(),
@@ -91,35 +106,8 @@ impl LibretaktUI {
         }
     }
 
-    /// Release every track lock held by this client.
-    fn release_all_locks(&mut self) {
-        let client_id = self.app_state.client_id;
-        for (idx, track) in self.app_state.sequencer.tracks.iter().enumerate() {
-            if track.locked_by == Some(client_id) {
-                self.outbox
-                    .push(ClientCommand::ReleaseLock { track: idx as u32 });
-            }
-        }
-    }
-
-    /// Send all queued commands over the WebSocket.
-    fn flush_outbox(&mut self) {
-        for cmd in self.outbox.drain(..) {
-            self.app_state.to_ws.unbounded_send(cmd).ok();
-        }
-    }
-}
-
-impl eframe::App for LibretaktUI {
-    fn ui(&mut self, _ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        // All rendering is handled in `update` via explicit panel layout.
-    }
-
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // ── Phase 1 — Inbound ──────────────────────────────────────────────
-        self.process_inbound();
-
-        // ── Phase 2 — Render ───────────────────────────────────────────────
+    /// Draw all panels. Called from both `eframe::App::update` and the test harness.
+    pub fn render(&mut self, ctx: &egui::Context) {
         self.render_margins(ctx);
 
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
@@ -152,6 +140,38 @@ impl eframe::App for LibretaktUI {
         if let Some(track) = lock_request {
             self.outbox.push(ClientCommand::RequestLock { track });
         }
+    }
+
+    /// Release every track lock held by this client.
+    fn release_all_locks(&mut self) {
+        let client_id = self.app_state.client_id;
+        for (idx, track) in self.app_state.sequencer.tracks.iter().enumerate() {
+            if track.locked_by == Some(client_id) {
+                self.outbox
+                    .push(ClientCommand::ReleaseLock { track: idx as u32 });
+            }
+        }
+    }
+
+    /// Send all queued commands over the WebSocket.
+    fn flush_outbox(&mut self) {
+        for cmd in self.outbox.drain(..) {
+            self.app_state.to_ws.unbounded_send(cmd).ok();
+        }
+    }
+}
+
+impl eframe::App for LibretaktUI {
+    fn ui(&mut self, _ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        // All rendering is handled in `update` via explicit panel layout.
+    }
+
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // ── Phase 1 — Inbound ──────────────────────────────────────────────
+        self.process_inbound();
+
+        // ── Phase 2 — Render ───────────────────────────────────────────────
+        self.render(ctx);
 
         // ── Phase 3 — Outbound ─────────────────────────────────────────────
         self.flush_outbox();
