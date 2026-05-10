@@ -167,15 +167,16 @@ impl eframe::App for LibretaktUI {
         let content_width = (viewport.height() * (9.0 / 16.0)).min(viewport.width());
         let h_margin = ((viewport.width() - content_width) / 2.0).max(0.0);
         if h_margin > 0.0 {
+            let margin_frame = egui::Frame::none().fill(ctx.style().visuals.panel_fill);
             egui::SidePanel::left("left_margin")
                 .exact_width(h_margin)
                 .resizable(false)
-                .frame(egui::Frame::none())
+                .frame(margin_frame)
                 .show(ctx, |_ui| {});
             egui::SidePanel::right("right_margin")
                 .exact_width(h_margin)
                 .resizable(false)
-                .frame(egui::Frame::none())
+                .frame(margin_frame)
                 .show(ctx, |_ui| {});
         }
 
