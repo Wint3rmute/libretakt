@@ -2,20 +2,35 @@ use libretakt::frontend::app_state::WsToUiMsg;
 use libretakt::frontend::{app_state::create_channels, LibretaktUI};
 use libretakt::shared::{ClientId, SequencerState, ServerMessage};
 
-/// Build a phone-sized harness with the given app, run one frame so that all
-/// queued `WsToUiMsg` messages are processed, then return the harness ready
-/// for snapshotting.
-fn phone_harness(app: LibretaktUI) -> egui_kittest::Harness<'static, LibretaktUI> {
-    let mut harness = egui_kittest::Harness::builder()
-        .with_size(egui::Vec2::new(390.0, 844.0))
-        .build_ui_state(
-            |ui: &mut egui::Ui, libretakt_ui: &mut LibretaktUI| {
-                libretakt_ui.render(ui.ctx());
-            },
-            app,
-        );
-    harness.run();
-    harness
+/// Render `make_app` in both dark and light themes and save a snapshot for each.
+///
+/// `make_app` is called twice — once per theme — so it must produce a fresh
+/// `LibretaktUI` each time (required because `ApplicationState` owns the
+/// channel receiver and cannot be cloned or reused).
+///
+/// Snapshot files are written as `{name}_dark.png` and `{name}_light.png`.
+fn snapshot_themes(name: &str, mut make_app: impl FnMut() -> LibretaktUI) {
+    // Collect results from both harnesses into one before asserting, as
+    // required by egui_kittest when multiple harnesses exist in a single test.
+    let mut all_results = egui_kittest::SnapshotResults::new();
+
+    for (theme, suffix) in [(egui::Theme::Dark, "dark"), (egui::Theme::Light, "light")] {
+        let mut harness = egui_kittest::Harness::builder()
+            .with_size(egui::Vec2::new(390.0, 844.0))
+            .with_theme(theme)
+            .build_ui_state(
+                |ui: &mut egui::Ui, app: &mut LibretaktUI| {
+                    app.render(ui.ctx());
+                },
+                make_app(),
+            );
+        harness.run();
+        harness.snapshot(&format!("{name}_{suffix}"));
+        all_results.extend(harness.take_snapshot_results());
+    }
+
+    // Panics here (on drop) if any snapshot mismatched or was missing.
+    drop(all_results);
 }
 
 #[test]
@@ -28,41 +43,30 @@ fn hello_world_snapshot() {
     harness.snapshot("hello_world");
 }
 
+/// Initial state before the server has replied: shows the "Connecting…" splash.
 #[test]
 fn app_default_view_snapshot() {
-    let (app_state, _ws_channels) = create_channels();
-    let app = LibretaktUI::new_for_test(app_state);
-
-    let mut harness = egui_kittest::Harness::builder()
-        .with_size(egui::Vec2::new(390.0, 844.0)) // portrait phone viewport
-        .build_ui_state(
-            |ui: &mut egui::Ui, libretakt_ui: &mut LibretaktUI| {
-                libretakt_ui.render(ui.ctx());
-            },
-            app,
-        );
-
-    harness.snapshot("app_default_view");
+    snapshot_themes("app_default_view", || {
+        let (app_state, _ws_channels) = create_channels();
+        LibretaktUI::new_for_test(app_state)
+    });
 }
 
 /// After a `ServerMessage::Init` the UI should transition out of the
 /// "Connecting..." state and show the player-selection screen.
 #[test]
 fn app_connected_player_selection_snapshot() {
-    let (app_state, ws_channels) = create_channels();
-
-    // Simulate the server sending an Init message to the client.
-    ws_channels
-        .to_ui
-        .unbounded_send(WsToUiMsg::Server(ServerMessage::Init {
-            client_id: 1,
-            state: SequencerState::new(8, 16),
-        }))
-        .unwrap();
-
-    let app = LibretaktUI::new_for_test(app_state);
-    let mut harness = phone_harness(app);
-    harness.snapshot("app_connected_player_selection");
+    snapshot_themes("app_connected_player_selection", || {
+        let (app_state, ws_channels) = create_channels();
+        ws_channels
+            .to_ui
+            .unbounded_send(WsToUiMsg::Server(ServerMessage::Init {
+                client_id: 1,
+                state: SequencerState::new(8, 16),
+            }))
+            .unwrap();
+        LibretaktUI::new_for_test(app_state)
+    });
 }
 
 /// One track locked by this client, one locked by a peer, the rest free.
@@ -72,50 +76,50 @@ fn app_track_lock_states_snapshot() {
     const MY_ID: ClientId = 42;
     const PEER_ID: ClientId = 7;
 
-    let (mut app_state, ws_channels) = create_channels();
+    snapshot_themes("app_track_lock_states", || {
+        let (mut app_state, ws_channels) = create_channels();
 
-    // Pre-populate sequencer with 4 tracks so we can control lock state.
-    let mut sequencer = SequencerState::new(4, 16);
-    sequencer.tracks[0].locked_by = Some(MY_ID); // locked by me
-    sequencer.tracks[1].locked_by = Some(PEER_ID); // locked by someone else
-                                                   // tracks[2] and [3] remain free
-    app_state.sequencer = sequencer;
+        // Pre-populate sequencer with 4 tracks so we can control lock state.
+        let mut sequencer = SequencerState::new(4, 16);
+        sequencer.tracks[0].locked_by = Some(MY_ID); // locked by me
+        sequencer.tracks[1].locked_by = Some(PEER_ID); // locked by someone else
+                                                       // tracks[2] and [3] remain free
+        app_state.sequencer = sequencer;
 
-    // Send Init so the UI moves to the connected/player-selection view
-    // and picks up our client ID.
-    ws_channels
-        .to_ui
-        .unbounded_send(WsToUiMsg::Server(ServerMessage::Init {
-            client_id: MY_ID,
-            state: app_state.sequencer.clone(),
-        }))
-        .unwrap();
+        // Send Init so the UI moves to the connected/player-selection view
+        // and picks up our client ID.
+        ws_channels
+            .to_ui
+            .unbounded_send(WsToUiMsg::Server(ServerMessage::Init {
+                client_id: MY_ID,
+                state: app_state.sequencer.clone(),
+            }))
+            .unwrap();
 
-    let app = LibretaktUI::new_for_test(app_state);
-    let mut harness = phone_harness(app);
-    harness.snapshot("app_track_lock_states");
+        LibretaktUI::new_for_test(app_state)
+    });
 }
 
 /// After a disconnection event the UI should display a reconnecting message.
 #[test]
 fn app_disconnected_snapshot() {
-    let (app_state, ws_channels) = create_channels();
+    snapshot_themes("app_disconnected", || {
+        let (app_state, ws_channels) = create_channels();
 
-    // First connect, then immediately disconnect, so we exercise the
-    // transition rather than just the initial "Connecting..." splash.
-    ws_channels
-        .to_ui
-        .unbounded_send(WsToUiMsg::Server(ServerMessage::Init {
-            client_id: 1,
-            state: SequencerState::new(8, 16),
-        }))
-        .unwrap();
-    ws_channels
-        .to_ui
-        .unbounded_send(WsToUiMsg::Disconnected)
-        .unwrap();
+        // First connect, then immediately disconnect, so we exercise the
+        // transition rather than just the initial "Connecting..." splash.
+        ws_channels
+            .to_ui
+            .unbounded_send(WsToUiMsg::Server(ServerMessage::Init {
+                client_id: 1,
+                state: SequencerState::new(8, 16),
+            }))
+            .unwrap();
+        ws_channels
+            .to_ui
+            .unbounded_send(WsToUiMsg::Disconnected)
+            .unwrap();
 
-    let app = LibretaktUI::new_for_test(app_state);
-    let mut harness = phone_harness(app);
-    harness.snapshot("app_disconnected");
+        LibretaktUI::new_for_test(app_state)
+    });
 }
